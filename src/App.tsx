@@ -1,3 +1,4 @@
+import { useWorkspaceNavigation } from "./hooks/useWorkspaceNavigation";
 import {
   ArrowUpRight,
   Bookmark,
@@ -17,7 +18,6 @@ import {
 import { useEffect, useState } from "react";
 import { CaptureForm, ProjectForm, SignalForm } from "./components/forms";
 import { Modal } from "./components/ui";
-import { type Route } from "./display";
 import {
   activeTasks,
   emptyWorkspace,
@@ -45,10 +45,6 @@ const routes = [
   ["saver", "Saver", Bookmark],
   ["projets", "Projets", Folder],
 ] as const;
-const routeFromHash = (): Route =>
-  routes.some(([key]) => key === location.hash.slice(2))
-    ? (location.hash.slice(2) as Route)
-    : "accueil";
 function errorLabel(error: unknown): string {
   if (error instanceof Error && error.name === "ZodError")
     return "Données invalides : vérifiez les champs, les liens et le format de sauvegarde.";
@@ -77,22 +73,27 @@ export function App() {
   });
   const [data, setData] = useState(initial.data);
   const [fatal, setFatal] = useState(initial.error);
-  const [route, setRoute] = useState<Route>(routeFromHash);
+  const {
+    route,
+    query,
+    projectId,
+    archive,
+    expanded,
+    filter,
+    navigate,
+    openReference,
+    setQuery,
+    setProjectId,
+    setArchive,
+    setExpanded,
+    setFilter,
+  } = useWorkspaceNavigation();
   const [modal, setModal] = useState<
     "capture" | "project" | "signal" | "settings" | null
   >(null);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
-  const [query, setQuery] = useState("");
-  const [projectId, setProjectId] = useState<string | null>(null);
-  const [archive, setArchive] = useState(false);
-  const [expanded, setExpanded] = useState<string | null>(null);
   const [pendingImport, setPendingImport] = useState<Workspace | null>(null);
-  useEffect(() => {
-    const change = () => setRoute(routeFromHash());
-    window.addEventListener("hashchange", change);
-    return () => window.removeEventListener("hashchange", change);
-  }, []);
   useEffect(() => {
     const change = (event: StorageEvent) => {
       if (event.key === STORAGE_KEY) {
@@ -124,13 +125,6 @@ export function App() {
       setError(errorLabel(e));
       return false;
     }
-  }
-  function navigate(next: Route) {
-    location.hash = "/" + next;
-    setRoute(next);
-    setQuery("");
-    setProjectId(null);
-    setExpanded(null);
   }
   function act(task: Task, action: "accept" | "archive" | "restore") {
     try {
@@ -165,15 +159,31 @@ export function App() {
       .toLocaleLowerCase()
       .includes(query.toLocaleLowerCase()),
   );
+  const visibleReferenceCount = refs.filter(
+    (r) => filter === "all" || (filter === "links" ? !!r.url : !r.url),
+  ).length;
   const selected = routes.find(([key]) => key === route)!;
   return (
     <div className="app-frame">
-      <div className="workspace">
+      <a
+        className="skip-link"
+        href="#main-content"
+        onClick={(e) => {
+          e.preventDefault();
+          document.getElementById("main-content")?.focus();
+        }}
+      >
+        Aller au contenu
+      </a>
+      <div className="workspace" data-view={route}>
         <header className="topbar">
           <a
             className="brand"
             href="#/accueil"
-            onClick={() => navigate("accueil")}
+            onClick={(e) => {
+              e.preventDefault();
+              navigate("accueil");
+            }}
             aria-label="A.D — Accueil"
           >
             A.D
@@ -190,7 +200,10 @@ export function App() {
                 key={key}
                 href={"#/" + key}
                 aria-current={route === key ? "page" : undefined}
-                onClick={() => navigate(key)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate(key);
+                }}
               >
                 <Icon size={17} />
                 <span>{label}</span>
@@ -199,7 +212,9 @@ export function App() {
           </nav>
           <div className="top-actions">
             <button
-              className="capture-button"
+              className={
+                "capture-button" + (route === "saver" ? " saver-capture" : "")
+              }
               onClick={() => {
                 setError("");
                 setModal("capture");
@@ -218,7 +233,7 @@ export function App() {
             </button>
           </div>
         </header>
-        <main id="main-content" key={route}>
+        <main id="main-content" tabIndex={-1} key={route}>
           <div className="section-meta">
             <span>
               ESPACE PERSONNEL <span className="meta-divider">/</span>{" "}
@@ -255,12 +270,17 @@ export function App() {
                   now={now}
                   navigate={navigate}
                   setProjectId={setProjectId}
-                  setExpanded={setExpanded}
+                  openReference={openReference}
                   setModal={setModal}
                 />
               )}
               {route !== "accueil" && (
-                <div className="content-page">
+                <div
+                  className={
+                    "content-page" +
+                    (project && route === "projets" ? " project-detail" : "")
+                  }
+                >
                   <header className="page-heading">
                     <div>
                       <p className="eyebrow">
@@ -281,7 +301,9 @@ export function App() {
                           ? "Les références que vous avez choisi de garder."
                           : route === "explorer"
                             ? "Des faits sourcés, des pistes à examiner."
-                            : "Des directions choisies, à votre rythme."}
+                            : project
+                              ? "Idées à examiner, actions acceptées et références."
+                              : "Des directions choisies, à votre rythme."}
                       </p>
                     </div>
                     <button
@@ -329,18 +351,33 @@ export function App() {
                         />
                       </label>
                     )}
-                    <span>
+                    <span className="result-count">
                       {route === "saver"
-                        ? refs.length
+                        ? visibleReferenceCount
                         : route === "explorer"
                           ? signals.length
                           : projects.length}{" "}
                       {route === "saver"
-                        ? "référence(s)"
+                        ? visibleReferenceCount === 1
+                          ? "référence"
+                          : "références"
                         : route === "explorer"
-                          ? "signal(aux)"
-                          : "dossier(s)"}
+                          ? signals.length === 1
+                            ? "signal"
+                            : "signaux"
+                          : projects.length === 1
+                            ? "dossier"
+                            : "dossiers"}
                     </span>
+                    {query && (
+                      <button
+                        className="clear-search"
+                        aria-label="Effacer la recherche"
+                        onClick={() => setQuery("")}
+                      >
+                        <X size={16} />
+                      </button>
+                    )}
                   </div>
                   <div
                     className="collection-scroll"
@@ -354,6 +391,8 @@ export function App() {
                         setExpanded={setExpanded}
                         query={query}
                         data={data}
+                        filter={filter}
+                        setFilter={setFilter}
                       />
                     )}
                     {route === "explorer" && (
@@ -370,8 +409,7 @@ export function App() {
                         act={act}
                         projects={projects}
                         query={query}
-                        navigate={navigate}
-                        setExpanded={setExpanded}
+                        openReference={openReference}
                       />
                     )}
                   </div>
@@ -425,8 +463,7 @@ export function App() {
                   )
                 ) {
                   setModal(null);
-                  navigate("saver");
-                  setExpanded(reference.id);
+                  openReference(reference.id);
                   return true;
                 }
               } catch (e) {

@@ -40,7 +40,6 @@ test("capture réelle locale, relecture UUID, rechargement et association projet
   const id = await page.locator(".receipt code").innerText();
   expect(id).toMatch(/^[a-f0-9-]{36}$/);
   await page.reload();
-  await page.getByRole("button", { name: "Reçu de sauvegarde" }).click();
   await expect(page.locator(".receipt code")).toHaveText(id);
   await page
     .getByRole("navigation")
@@ -97,7 +96,7 @@ test("LATER → NOW humain, KILL exclu puis restauration LATER", async ({
 });
 test("échec de sauvegarde conserve le brouillon et ne confirme rien", async ({
   page,
-}) => {
+}, info) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Capturer", exact: true }).click();
   await page.getByLabel("Votre pensée").fill("Brouillon à conserver");
@@ -113,6 +112,13 @@ test("échec de sauvegarde conserve le brouillon et ne confirme rien", async ({
   );
   await expect(page.getByRole("dialog")).toBeVisible();
   await expect(page.getByRole("status")).toHaveCount(0);
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
+    await page.screenshot({
+      path: info.outputPath(`saver-erreur-${width}.png`),
+      fullPage: true,
+    });
+  }
 });
 test("navigation, clavier, connexion désactivée et historique", async ({
   page,

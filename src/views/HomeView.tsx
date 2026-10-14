@@ -6,20 +6,23 @@ export function HomeView({
   now,
   navigate,
   setProjectId,
-  setExpanded,
+  openReference,
   setModal,
 }: {
   data: Workspace;
   now: Task[];
   navigate: (route: Route) => void;
   setProjectId: (id: string | null) => void;
-  setExpanded: (id: string | null) => void;
+  openReference: (id: string) => void;
   setModal: (value: "project") => void;
 }) {
   return (
     <div className="home-layout">
-      <section className="home-focus">
-        <p className="eyebrow">L’ESPACE POUR FAIRE ÉMERGER L’ESSENTIEL</p>
+      <section className={"home-focus" + (now.length ? " has-priority" : "")}>
+        <p className="eyebrow">L’INTENTION AVANT L’ACTION</p>
+        {now.length > 0 && (
+          <span className="priority-label">NOW · ACCEPTÉ PAR VOUS</span>
+        )}
         <h1>
           {now.length ? (
             <>{now[0].title}</>
@@ -47,10 +50,12 @@ export function HomeView({
           <ArrowUpRight size={18} />
         </button>
         <div className="home-note">
-          <span className="small-cross">✳</span>
+          <span className="small-cross" aria-hidden="true">
+            ✳
+          </span>
           <p>
             {data.tasks.filter((t) => t.lane === "LATER").length
-              ? `${data.tasks.filter((t) => t.lane === "LATER").length} suggestion(s) à examiner dans Projets.`
+              ? `${data.tasks.filter((t) => t.lane === "LATER").length} idée${data.tasks.filter((t) => t.lane === "LATER").length > 1 ? "s" : ""} à examiner. Rien d’imposé.`
               : "Aucune priorité imposée. Vous gardez la main."}
           </p>
         </div>
@@ -116,8 +121,7 @@ export function HomeView({
                   key={r.id}
                   className="reference-row"
                   onClick={() => {
-                    navigate("saver");
-                    setExpanded(r.id);
+                    openReference(r.id);
                   }}
                 >
                   <Link size={18} />
@@ -142,7 +146,7 @@ export function HomeView({
         </section>
       </aside>
       <div className="home-bottom">
-        <span>01 — L’INTENTION AVANT L’ACTION</span>
+        <span>CAPTURER → COMPRENDRE → CHOISIR</span>
         <span>UN ESPACE À VOUS.</span>
       </div>
     </div>

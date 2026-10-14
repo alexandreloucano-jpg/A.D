@@ -14,35 +14,44 @@ export function ExplorerView({
       {signals
         .slice()
         .reverse()
-        .map((s) => (
+        .map((s, index) => (
           <article className="signal-card" key={s.id}>
-            <span className="eyebrow">SOURCE AJOUTÉE PAR VOUS</span>
-            <h2>{s.brand}</h2>
-            <p>{s.observedFact}</p>
-            <dl>
-              <div>
-                <dt>Date du fait</dt>
-                <dd>{dateLabel(s.occurredAt)}</dd>
-              </div>
-              <div>
-                <dt>Collecté le</dt>
-                <dd>{dateLabel(s.collectedAt)}</dd>
-              </div>
-            </dl>
+            <div className="signal-observation">
+              <span className="eyebrow">
+                <span className="signal-number">
+                  {(index + 1).toString().padStart(2, "0")} /{" "}
+                </span>
+                OBSERVATION SOURCÉE
+              </span>
+              <h2>{s.brand}</h2>
+              <p>{s.observedFact}</p>
+            </div>
+            <div className="signal-evidence">
+              <dl>
+                <div>
+                  <dt>Date du fait</dt>
+                  <dd>{dateLabel(s.occurredAt)}</dd>
+                </div>
+                <div>
+                  <dt>Collecté le</dt>
+                  <dd>{dateLabel(s.collectedAt)}</dd>
+                </div>
+              </dl>
+              <a
+                className="source-link"
+                href={s.sourceUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Voir la source <ArrowUpRight size={16} />
+              </a>
+            </div>
             {s.inference && (
-              <div className="interpretation">
-                <strong>Interprétation · à examiner</strong>
+              <details className="interpretation">
+                <summary>Interprétation · à examiner</summary>
                 <p>{s.inference}</p>
-              </div>
+              </details>
             )}
-            <a
-              className="source-link"
-              href={s.sourceUrl}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Voir la source <ArrowUpRight size={16} />
-            </a>
           </article>
         ))}
     </div>

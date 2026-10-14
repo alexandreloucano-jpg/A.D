@@ -1,7 +1,7 @@
 import { ArrowUpRight, Bookmark, Folder } from "lucide-react";
 import { TaskForm } from "../components/forms";
 import { Empty } from "../components/ui";
-import { dateLabel, type Route } from "../display";
+import { dateLabel } from "../display";
 import { newTask, type Task, type Workspace } from "../domain";
 export function ProjectsView({
   project,
@@ -13,8 +13,7 @@ export function ProjectsView({
   act,
   projects,
   query,
-  navigate,
-  setExpanded,
+  openReference,
 }: {
   project: Workspace["projects"][number] | undefined;
   archive: boolean;
@@ -25,8 +24,7 @@ export function ProjectsView({
   act: (task: Task, action: "accept" | "archive" | "restore") => void;
   projects: Workspace["projects"];
   query: string;
-  navigate: (route: Route) => void;
-  setExpanded: (id: string | null) => void;
+  openReference: (id: string) => void;
 }) {
   return project ? (
     <>
@@ -65,6 +63,14 @@ export function ProjectsView({
           }
         />
       )}
+      {archive &&
+        !data.tasks.some(
+          (t) => t.projectId === project.id && t.lane === "KILL",
+        ) && (
+          <p className="inline-empty">
+            Aucune action écartée. Vos archives restent récupérables ici.
+          </p>
+        )}
       <div className="task-list">
         {data.tasks
           .filter(
@@ -120,8 +126,7 @@ export function ProjectsView({
             key={r.id}
             className="reference-row"
             onClick={() => {
-              navigate("saver");
-              setExpanded(r.id);
+              openReference(r.id);
             }}
           >
             <Bookmark size={17} />
@@ -150,23 +155,37 @@ export function ProjectsView({
             <span className="row-index">
               DOSSIER / {(i + 1).toString().padStart(2, "0")}
             </span>
-            <ArrowUpRight size={21} />
+            <Folder size={21} strokeWidth={1.3} />
           </div>
           <h2>{p.title}</h2>
-          <p>
-            {
-              data.tasks.filter((t) => t.projectId === p.id && t.lane === "NOW")
-                .length
-            }{" "}
-            action(s) acceptée(s) ·{" "}
-            {
-              data.tasks.filter(
-                (t) => t.projectId === p.id && t.lane === "LATER",
-              ).length
-            }{" "}
-            à examiner
-          </p>
-          <time>{dateLabel(p.updatedAt)}</time>
+          <div className="project-progress">
+            <span>
+              <strong>
+                {
+                  data.tasks.filter(
+                    (t) => t.projectId === p.id && t.lane === "NOW",
+                  ).length
+                }
+              </strong>{" "}
+              acceptée(s)
+            </span>
+            <span>
+              <strong>
+                {
+                  data.tasks.filter(
+                    (t) => t.projectId === p.id && t.lane === "LATER",
+                  ).length
+                }
+              </strong>{" "}
+              à examiner
+            </span>
+          </div>
+          <div className="project-card-footer">
+            <time>{dateLabel(p.updatedAt)}</time>
+            <span>
+              Ouvrir le dossier <ArrowUpRight size={16} />
+            </span>
+          </div>
         </button>
       ))}
     </div>
