@@ -9,7 +9,8 @@
     "preview": "vite preview --host 0.0.0.0",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "preview:export": "npm run build && node scripts/export-preview.mjs"
   },
   "dependencies": {
     "@fontsource/bodoni-moda": "^5.2.0",

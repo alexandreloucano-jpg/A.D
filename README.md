@@ -31,3 +31,9 @@ Les tests navigateur utilisent Chromium installé dans `/usr/bin/chromium` (ou `
 Les données sont propres au navigateur et à l’origine, sans chiffrement applicatif. Exportez régulièrement et utilisez un appareil de confiance. Pas d’extraction web, analyse Taste, upload d’images ou synchronisation automatique. Les états d’intégration indisponibles sont explicites. Ne pas déployer cette version comme remplacement du backend privé.
 
 Voir [l’inventaire de reprise](docs/RECOVERY_INVENTORY.md). Le code Grok contient seulement une spécification de politique testée ; aucune passerelle sécurisée ou connexion n’est revendiquée. OAuth dédié, quotas, révocation et test réel UUID sont des prérequis futurs.
+
+## Voir et vérifier le frontend
+
+`npm run preview:export` produit `artifacts/AD-preview.html` : le véritable bundle de production autonome, fonts et SVG inclus, sans données préchargées. Téléchargez ce fichier et ouvrez-le dans un navigateur de confiance ; il utilise sa propre origine de stockage. Si les fichiers HTML locaux sont interdits par votre navigateur, servez-le via HTTP local. `node scripts/verify-preview.mjs` vérifie ce même fichier via HTTP local, navigation et capture réseau coupé après chargement, puis relecture UUID après reload. Aucun service externe n’est utilisé.
+
+Après `npm run test:e2e`, `node scripts/package-review.mjs` regroupe la prévisualisation et les captures 390/1440 dans `artifacts/review/`. Les captures peuplées proviennent exclusivement de contextes Chromium de QA isolés ; elles ne représentent pas des données Sites ni une intégration distante.
