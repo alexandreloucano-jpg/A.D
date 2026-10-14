@@ -23,11 +23,13 @@ function useDraft(key: string, initialValue = "") {
 export function CaptureForm({
   data,
   defaultProjectId,
+  sourceContext,
   error,
   save,
 }: {
   data: Workspace;
   defaultProjectId?: string;
+  sourceContext?: { url: string; title: string } | null;
   error: string;
   save: (input: {
     title: string;
@@ -37,9 +39,9 @@ export function CaptureForm({
     projectId?: string;
   }) => boolean;
 }) {
-  const [title, setTitle] = useDraft("ad.draft.title");
+  const [title, setTitle] = useDraft("ad.draft.title", sourceContext?.title);
   const [content, setContent] = useDraft("ad.draft.content");
-  const [url, setUrl] = useDraft("ad.draft.url");
+  const [url, setUrl] = useDraft("ad.draft.url", sourceContext?.url);
   const [origin, setOrigin] = useDraft("ad.draft.origin");
   const [projectId, setProjectId] = useDraft(
     "ad.draft.project",
@@ -78,6 +80,12 @@ export function CaptureForm({
       <p className="form-intro">
         Un lien ou quelques mots. Aucun classement imposé.
       </p>
+      {sourceContext && (
+        <p className="source-context">
+          Piste à examiner pour « {sourceContext.title} ». Aucun NOW ne sera
+          créé. Un éventuel brouillon existant est conservé.
+        </p>
+      )}
       <Field label="Lien source (facultatif)">
         <input
           type="url"

@@ -91,6 +91,10 @@ export function App() {
   const [modal, setModal] = useState<
     "capture" | "project" | "signal" | "settings" | null
   >(null);
+  const [captureContext, setCaptureContext] = useState<{
+    url: string;
+    title: string;
+  } | null>(null);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [pendingImport, setPendingImport] = useState<Workspace | null>(null);
@@ -217,6 +221,7 @@ export function App() {
               }
               onClick={() => {
                 setError("");
+                setCaptureContext(null);
                 setModal("capture");
               }}
               disabled={!!fatal}
@@ -236,7 +241,9 @@ export function App() {
         <main id="main-content" tabIndex={-1} key={route}>
           <div className="section-meta">
             <span>
-              ESPACE PERSONNEL <span className="meta-divider">/</span>{" "}
+              <span className="workspace-label">
+                ESPACE PERSONNEL <span className="meta-divider">/</span>{" "}
+              </span>
               {selected[1].toUpperCase()}
             </span>
             <span className="local-state">
@@ -310,6 +317,7 @@ export function App() {
                       className="primary"
                       onClick={() => {
                         setError("");
+                        setCaptureContext(null);
                         setModal(
                           route === "saver"
                             ? "capture"
@@ -396,7 +404,15 @@ export function App() {
                       />
                     )}
                     {route === "explorer" && (
-                      <ExplorerView signals={signals} query={query} />
+                      <ExplorerView
+                        signals={signals}
+                        query={query}
+                        onCapture={(source) => {
+                          setError("");
+                          setCaptureContext(source);
+                          setModal("capture");
+                        }}
+                      />
                     )}
                     {route === "projets" && (
                       <ProjectsView
@@ -448,6 +464,7 @@ export function App() {
       {modal === "capture" && (
         <Modal title="Garder une idée." close={() => setModal(null)}>
           <CaptureForm
+            sourceContext={captureContext}
             defaultProjectId={
               route === "projets" ? projectId || undefined : undefined
             }

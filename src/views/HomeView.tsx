@@ -1,4 +1,4 @@
-import { ArrowUpRight, Folder, Link, Plus } from "lucide-react";
+import { ArrowUpRight, ArrowRight, Folder, Link, Plus } from "lucide-react";
 import { dateLabel, type Route } from "../display";
 import { rediscover, type Task, type Workspace } from "../domain";
 export function HomeView({
@@ -16,12 +16,28 @@ export function HomeView({
   openReference: (id: string) => void;
   setModal: (value: "project") => void;
 }) {
+  const currentProject = now.length
+    ? data.projects.find((p) => p.id === now[0].projectId)
+    : undefined;
   return (
     <div className="home-layout">
       <section className={"home-focus" + (now.length ? " has-priority" : "")}>
         <p className="eyebrow">L’INTENTION AVANT L’ACTION</p>
         {now.length > 0 && (
           <span className="priority-label">NOW · ACCEPTÉ PAR VOUS</span>
+        )}
+        {currentProject && (
+          <button
+            className="priority-project"
+            onClick={() => {
+              navigate("projets");
+              setProjectId(currentProject.id);
+            }}
+          >
+            <Folder size={16} />
+            <span>{currentProject.title}</span>
+            <ArrowUpRight size={15} />
+          </button>
         )}
         <h1>
           {now.length ? (
@@ -34,6 +50,11 @@ export function HomeView({
             </>
           )}
         </h1>
+        {now[0]?.acceptedAt && (
+          <p className="priority-date">
+            Votre décision du {dateLabel(now[0].acceptedAt)}
+          </p>
+        )}
         <p className="intro">
           {now.length
             ? "Une direction choisie par vous. Le reste peut attendre."
@@ -50,9 +71,7 @@ export function HomeView({
           <ArrowUpRight size={18} />
         </button>
         <div className="home-note">
-          <span className="small-cross" aria-hidden="true">
-            ✳
-          </span>
+          <ArrowRight className="small-cross" aria-hidden="true" size={19} />
           <p>
             {data.tasks.filter((t) => t.lane === "LATER").length
               ? `${data.tasks.filter((t) => t.lane === "LATER").length} idée${data.tasks.filter((t) => t.lane === "LATER").length > 1 ? "s" : ""} à examiner. Rien d’imposé.`
@@ -79,6 +98,7 @@ export function HomeView({
               .map((p, i) => (
                 <button
                   className="project-row"
+                  data-current={p.id === currentProject?.id}
                   key={p.id}
                   onClick={() => {
                     navigate("projets");
@@ -88,7 +108,11 @@ export function HomeView({
                   <span className="row-index">0{i + 1}</span>
                   <span>
                     {p.title}
-                    <small>{dateLabel(p.updatedAt)}</small>
+                    <small>
+                      {p.id === currentProject?.id
+                        ? "Projet de votre action NOW"
+                        : dateLabel(p.updatedAt)}
+                    </small>
                   </span>
                   <ArrowUpRight size={17} />
                 </button>

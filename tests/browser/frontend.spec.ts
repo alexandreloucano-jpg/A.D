@@ -121,6 +121,14 @@ for (const width of [390, 1440]) {
       ["Notes de direction", ""],
     ])
       await capture(page, title, url);
+    await capture(
+      page,
+      "Architecture — référence fournie",
+      new URL("/architecture.svg", page.url()).href,
+    );
+    await expect(
+      page.locator(".reference-media[data-state=ready]"),
+    ).toBeVisible();
     await page.getByRole("button", { name: "Réduire", exact: true }).click();
     await nav(page, "Explorer");
     for (const [brand, fact, inference] of [

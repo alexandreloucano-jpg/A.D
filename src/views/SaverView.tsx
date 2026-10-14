@@ -1,3 +1,5 @@
+import { ReferenceMedia } from "../components/ReferenceMedia";
+import { directImageUrl } from "../media";
 import { ArrowRight, ArrowUpRight, Bookmark, Check } from "lucide-react";
 import { Empty } from "../components/ui";
 import { dateLabel } from "../display";
@@ -62,61 +64,79 @@ export function SaverView({
                 className="reference-card"
                 key={r.id}
                 data-expanded={expanded === r.id}
+                data-has-media={!!directImageUrl(r.url)}
               >
-                <div className="card-meta">
-                  <span>
-                    {r.origin === "grok"
-                      ? "GROK · VALIDÉ PAR VOUS"
-                      : "CAPTURE PERSONNELLE"}
-                  </span>
-                  <Bookmark size={17} />
-                </div>
-                <h2>
-                  <button
-                    onClick={() => setExpanded(expanded === r.id ? null : r.id)}
-                    aria-expanded={expanded === r.id}
-                  >
-                    {r.title}
-                  </button>
-                </h2>
-                <p className="excerpt">
-                  {r.content || "Lien enregistré. Aucune analyse automatique."}
-                </p>
-                {r.url && (
-                  <a
-                    className="source-link"
-                    href={r.url}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {new URL(r.url).hostname}
-                    <ArrowUpRight size={16} />
-                  </a>
+                {directImageUrl(r.url) && (
+                  <ReferenceMedia
+                    key={r.url}
+                    url={directImageUrl(r.url)!}
+                    title={r.title}
+                  />
                 )}
-                <div className="card-bottom">
-                  <time>{dateLabel(r.capturedAt)}</time>
-                  <button
-                    className="text-button"
-                    onClick={() => setExpanded(expanded === r.id ? null : r.id)}
-                  >
-                    {expanded === r.id ? "Réduire" : "Reçu de sauvegarde"}
-                    <ArrowRight size={14} />
-                  </button>
-                </div>
-                {expanded === r.id && (
-                  <div className="receipt">
-                    <Check size={15} />
-                    <strong>Sauvegarde locale relue</strong>
-                    <code>{r.id}</code>
+                <div className="reference-body">
+                  <div className="card-meta">
                     <span>
-                      Révision {r.revision} ·{" "}
-                      {r.projectId
-                        ? data.projects.find((p) => p.id === r.projectId)?.title
-                        : "Sans projet associé"}
+                      {r.origin === "grok"
+                        ? "GROK · VALIDÉ PAR VOUS"
+                        : r.url
+                          ? "LIEN ENREGISTRÉ"
+                          : "NOTE PERSONNELLE"}
                     </span>
-                    <span>Analyse Taste non connectée.</span>
+                    <Bookmark size={17} />
                   </div>
-                )}
+                  <h2>
+                    <button
+                      onClick={() =>
+                        setExpanded(expanded === r.id ? null : r.id)
+                      }
+                      aria-expanded={expanded === r.id}
+                    >
+                      {r.title}
+                    </button>
+                  </h2>
+                  <p className="excerpt">
+                    {r.content ||
+                      "Lien enregistré. Aucune analyse automatique."}
+                  </p>
+                  {r.url && (
+                    <a
+                      className="source-link"
+                      href={r.url}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {new URL(r.url).hostname}
+                      <ArrowUpRight size={16} />
+                    </a>
+                  )}
+                  <div className="card-bottom">
+                    <time>{dateLabel(r.capturedAt)}</time>
+                    <button
+                      className="text-button"
+                      onClick={() =>
+                        setExpanded(expanded === r.id ? null : r.id)
+                      }
+                    >
+                      {expanded === r.id ? "Réduire" : "Reçu de sauvegarde"}
+                      <ArrowRight size={14} />
+                    </button>
+                  </div>
+                  {expanded === r.id && (
+                    <div className="receipt">
+                      <Check size={15} />
+                      <strong>Sauvegarde locale relue</strong>
+                      <code>{r.id}</code>
+                      <span>
+                        Révision {r.revision} ·{" "}
+                        {r.projectId
+                          ? data.projects.find((p) => p.id === r.projectId)
+                              ?.title
+                          : "Sans projet associé"}
+                      </span>
+                      <span>Analyse Taste non connectée.</span>
+                    </div>
+                  )}
+                </div>
               </article>
             ))}
         </div>

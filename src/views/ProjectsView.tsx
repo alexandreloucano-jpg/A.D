@@ -26,6 +26,10 @@ export function ProjectsView({
   query: string;
   openReference: (id: string) => void;
 }) {
+  const acceptedCount = (id: string) =>
+    data.tasks.filter((t) => t.projectId === id && t.lane === "NOW").length;
+  const laterCount = (id: string) =>
+    data.tasks.filter((t) => t.projectId === id && t.lane === "LATER").length;
   return project ? (
     <>
       <div className="project-controls">
@@ -160,24 +164,20 @@ export function ProjectsView({
           <h2>{p.title}</h2>
           <div className="project-progress">
             <span>
-              <strong>
-                {
-                  data.tasks.filter(
-                    (t) => t.projectId === p.id && t.lane === "NOW",
-                  ).length
-                }
-              </strong>{" "}
-              acceptée(s)
+              {acceptedCount(p.id) === 0 ? (
+                "Aucune action acceptée"
+              ) : (
+                <>
+                  <strong>{acceptedCount(p.id)}</strong>
+                  {acceptedCount(p.id) === 1
+                    ? "action acceptée"
+                    : "actions acceptées"}
+                </>
+              )}
             </span>
             <span>
-              <strong>
-                {
-                  data.tasks.filter(
-                    (t) => t.projectId === p.id && t.lane === "LATER",
-                  ).length
-                }
-              </strong>{" "}
-              à examiner
+              <strong>{laterCount(p.id)}</strong>
+              {laterCount(p.id) === 1 ? "idée à examiner" : "idées à examiner"}
             </span>
           </div>
           <div className="project-card-footer">
