@@ -1,0 +1,28 @@
+{
+  "source_commit": "8947a4b59f656d1e3a3e03ee58b109a2d8cb5482",
+  "sha256": {
+    "AD-preview.html": "f5258c55964b64f92ad55a79dca6bbd52524bd4dcbcdb6db495da0818632f43c",
+    "README_REVIEW.txt": "624776b42a322055a6ac2a155a2e5146ac98233ca0ff2c07598c8cc9360d3415",
+    "accueil-1440.png": "7608c8bc0b3271f9c431968e01ea18cc8a717861deafaa83f7f4a1d034f38f81",
+    "accueil-390-compact.png": "d6615e9b4b6c6866615c62a83503cbc1e5e03fcce92f04907147946ee5160162",
+    "accueil-390.png": "35931b550d9fc28154f24215b7dfa7c7ed248a046209ff9dae2a2bcde87fdbb3",
+    "accueil-now-1440.png": "4ac7174824412addcb985a9ede6cf273cccf05bbb9afeb12b58cf250819c7b5c",
+    "accueil-now-390.png": "b7a056b1fe130be28ff6f879b6ba4be256171d0edc416d749ea7d668dcd882ab",
+    "explorer-1440.png": "2c725732184d70a559daf5fbe6a24f89d9aa44ac99338c55cda38e8db47ccbb8",
+    "explorer-390-compact.png": "27921b34236a11d814534a1e08fe45875069f5eeec2bbe838329434a622badc1",
+    "explorer-390.png": "cde6b88c0f549d3342908ab754d1079dec4bd46cca6350be67691c2d86138767",
+    "index.html": "13604b4b02bdb1a223c37c7e939d3a83815f4de85aafebebee400cda6b4b1a28",
+    "projet-detail-1440.png": "c568783f5ea225dc01dd4b8e9c7ec0f9d351366ec13e07b418a85fc993070d3f",
+    "projet-detail-390.png": "024a3b0b5b17ced3bb68d29703127a7e2968864bf26309a2bb659078234aad8c",
+    "projets-1440.png": "3d963053c8f25433e32890ef248c0003d784a7dcdc054d4970a73605715bd53a",
+    "projets-390-compact.png": "fa89dad8861eb39155421527ec2af6ee48ed8761f468ae1bfb76a34e31a924bf",
+    "projets-390.png": "4d2f04bcd125305b5d5994e468e362fbdf6c7b0b5c227a38abe7db309005c8ed",
+    "saver-1440.png": "f7c5f95c1be5fc18eeee9056222a8abcdbf6aaf878d2966d2e513d6cb07f193a",
+    "saver-390-compact.png": "c57f31175b9525627002ab7d5619f44457fafb42330c4f80aa918ce40a6a68ca",
+    "saver-390.png": "372c2c5d76b9a39820b9f759ba6c192d484fed829bf9b9f91c799d3fb1b5102d",
+    "saver-empty-390.png": "77431617d2357b9ed35a7d8360b4fb4b71f54f5343deedfde5b2ee4e15b6e882",
+    "saver-erreur-390.png": "195608abf2f66f954bca537f5f7b9d9cf2fc2185cca833a3e67b8a0351ee32e2",
+    "saver-loading-1440.png": "6b839453ff8438c9a9b9326c0eee2288cba8d874f44683e5901e2419a3033f03",
+    "saver-media-error-1440.png": "5843a88148bf12be5b734100b2edefb5f5f72cde8fbf6a0a61114b4e8380808c"
+  }
+}
