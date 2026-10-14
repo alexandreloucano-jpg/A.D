@@ -25,3 +25,7 @@ Le SVG `public/architecture.svg` provient du prototype one-screen du pack, expli
 ## Migration
 
 Sites reste l’application indépendante de référence pour les anciennes données. Aucun déploiement ou changement de passerelle. Avant bascule : obtenir export authentifié du code et contrats, sauvegarde privée vérifiée, identité propriétaire serveur, tests d’isolation, staging, comparaison des IDs/comptages, restauration testée et rollback vers Sites conservé. L’import local accepte uniquement le format de cette reconstruction ; ce n’est pas un import Sites.
+
+## Traçabilité des pièces jointes
+
+SHA256 du recovery ZIP : `a14f5f459d974f2e8be7f6a42fe9663aea303ddc35a78144729f8eab70ee7eee`. Les sept pièces jointes ont été récupérées ; les deux ZIP Cinematic sont identiques (`2fac1ca9a783123fca5b09ed24abd299ba75e20c775ae80c7e70d9fd8c2bc629`). Ils sont des prototypes, pas un export de production. Les deux fichiers AGENTS ont été lus comme références de leurs contextes respectifs.

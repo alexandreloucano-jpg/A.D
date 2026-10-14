@@ -1,0 +1,150 @@
+import { ArrowUpRight, Folder, Link, Plus } from "lucide-react";
+import { dateLabel, type Route } from "../display";
+import { rediscover, type Task, type Workspace } from "../domain";
+export function HomeView({
+  data,
+  now,
+  navigate,
+  setProjectId,
+  setExpanded,
+  setModal,
+}: {
+  data: Workspace;
+  now: Task[];
+  navigate: (route: Route) => void;
+  setProjectId: (id: string | null) => void;
+  setExpanded: (id: string | null) => void;
+  setModal: (value: "project") => void;
+}) {
+  return (
+    <div className="home-layout">
+      <section className="home-focus">
+        <p className="eyebrow">L’ESPACE POUR FAIRE ÉMERGER L’ESSENTIEL</p>
+        <h1>
+          {now.length ? (
+            <>{now[0].title}</>
+          ) : (
+            <>
+              Sur quoi veux-tu
+              <br />
+              <em>avancer ?</em>
+            </>
+          )}
+        </h1>
+        <p className="intro">
+          {now.length
+            ? "Une direction choisie par vous. Le reste peut attendre."
+            : "Rassembler les idées. Choisir une direction.\nFaire de la place à ce qui compte."}
+        </p>
+        <button
+          className="primary"
+          onClick={() => {
+            navigate("projets");
+            if (now.length) setProjectId(now[0].projectId);
+          }}
+        >
+          {now.length ? "Continuer le projet" : "Choisir un projet"}
+          <ArrowUpRight size={18} />
+        </button>
+        <div className="home-note">
+          <span className="small-cross">✳</span>
+          <p>
+            {data.tasks.filter((t) => t.lane === "LATER").length
+              ? `${data.tasks.filter((t) => t.lane === "LATER").length} suggestion(s) à examiner dans Projets.`
+              : "Aucune priorité imposée. Vous gardez la main."}
+          </p>
+        </div>
+      </section>
+      <aside className="home-rail">
+        <section>
+          <div className="section-label">
+            <h2>Dossiers récents</h2>
+            <button
+              aria-label="Voir les projets"
+              onClick={() => navigate("projets")}
+            >
+              <ArrowUpRight size={19} />
+            </button>
+          </div>
+          {data.projects.length ? (
+            data.projects
+              .slice()
+              .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+              .slice(0, 3)
+              .map((p, i) => (
+                <button
+                  className="project-row"
+                  key={p.id}
+                  onClick={() => {
+                    navigate("projets");
+                    setProjectId(p.id);
+                  }}
+                >
+                  <span className="row-index">0{i + 1}</span>
+                  <span>
+                    {p.title}
+                    <small>{dateLabel(p.updatedAt)}</small>
+                  </span>
+                  <ArrowUpRight size={17} />
+                </button>
+              ))
+          ) : (
+            <div className="rail-empty">
+              <Folder size={24} strokeWidth={1} />
+              <h3>Votre prochain chapitre.</h3>
+              <p>Créez un premier dossier pour donner un cadre à vos idées.</p>
+              <button
+                className="text-button"
+                onClick={() => setModal("project")}
+              >
+                Créer un projet <Plus size={15} />
+              </button>
+            </div>
+          )}
+        </section>
+        <section>
+          <div className="section-label">
+            <h2>Dans votre bibliothèque</h2>
+            <span>{rediscover(data).length.toString().padStart(2, "0")}</span>
+          </div>
+          {rediscover(data).length ? (
+            rediscover(data)
+              .slice(-2)
+              .reverse()
+              .map((r) => (
+                <button
+                  key={r.id}
+                  className="reference-row"
+                  onClick={() => {
+                    navigate("saver");
+                    setExpanded(r.id);
+                  }}
+                >
+                  <Link size={18} />
+                  <span>
+                    {r.title}
+                    <small>
+                      {r.origin === "grok"
+                        ? "Grok · source validée"
+                        : "Capture personnelle"}
+                    </small>
+                  </span>
+                  <ArrowUpRight size={17} />
+                </button>
+              ))
+          ) : (
+            <p className="rail-copy">
+              Un lien, une phrase, une intuition.
+              <br />
+              Gardez ce qui mérite de rester.
+            </p>
+          )}
+        </section>
+      </aside>
+      <div className="home-bottom">
+        <span>01 — L’INTENTION AVANT L’ACTION</span>
+        <span>UN ESPACE À VOUS.</span>
+      </div>
+    </div>
+  );
+}

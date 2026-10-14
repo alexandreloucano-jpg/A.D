@@ -1,94 +1,606 @@
-import {useEffect,useRef,useState,type ReactNode,type FormEvent} from 'react';
-import {ArrowUpRight, ArrowRight, Plus, X, Search, Bookmark, Compass, Folder, House, Settings, Download, Upload, Check, ChevronLeft, Link, ShieldCheck} from 'lucide-react';
-import {activeTasks,emptyWorkspace,makeReference,newTask,rediscover,safeUrl,transitionTask,SCOUT_TOOLS,type Workspace,type Task} from './domain';
-import {WorkspaceRepository,exportBackup,parseBackup,STORAGE_KEY} from './storage';
+import {
+  ArrowUpRight,
+  Bookmark,
+  Check,
+  ChevronLeft,
+  Compass,
+  Download,
+  Folder,
+  House,
+  Plus,
+  Search,
+  Settings,
+  ShieldCheck,
+  Upload,
+  X,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { CaptureForm, ProjectForm, SignalForm } from "./components/forms";
+import { Modal } from "./components/ui";
+import { type Route } from "./display";
+import {
+  activeTasks,
+  emptyWorkspace,
+  makeReference,
+  rediscover,
+  SCOUT_TOOLS,
+  transitionTask,
+  type Task,
+  type Workspace,
+} from "./domain";
+import {
+  exportBackup,
+  parseBackup,
+  STORAGE_KEY,
+  WorkspaceRepository,
+} from "./storage";
+import { ExplorerView } from "./views/ExplorerView";
+import { HomeView } from "./views/HomeView";
+import { ProjectsView } from "./views/ProjectsView";
+import { SaverView } from "./views/SaverView";
 
-type Route='accueil'|'explorer'|'saver'|'projets';
-const routes=[['accueil','Accueil',House],['explorer','Explorer',Compass],['saver','Saver',Bookmark],['projets','Projets',Folder]] as const;
-const routeFromHash=():Route=>routes.some(([key])=>key===location.hash.slice(2))?location.hash.slice(2) as Route:'accueil';
-const dateLabel=(value:string)=>new Intl.DateTimeFormat('fr-FR',{day:'numeric',month:'short',year:'numeric'}).format(new Date(value.length===10?value+'T12:00:00':value));
-function errorLabel(error:unknown):string {
- if(error instanceof Error&&error.name==='ZodError') return 'Données invalides : vérifiez les champs, les liens et le format de sauvegarde.';
- return error instanceof Error?error.message:'Une erreur empêche la sauvegarde. Votre brouillon est conservé.';
+const routes = [
+  ["accueil", "Accueil", House],
+  ["explorer", "Explorer", Compass],
+  ["saver", "Saver", Bookmark],
+  ["projets", "Projets", Folder],
+] as const;
+const routeFromHash = (): Route =>
+  routes.some(([key]) => key === location.hash.slice(2))
+    ? (location.hash.slice(2) as Route)
+    : "accueil";
+function errorLabel(error: unknown): string {
+  if (error instanceof Error && error.name === "ZodError")
+    return "Données invalides : vérifiez les champs, les liens et le format de sauvegarde.";
+  return error instanceof Error
+    ? error.message
+    : "Une erreur empêche la sauvegarde. Votre brouillon est conservé.";
 }
-function download(text:string,name:string){const url=URL.createObjectURL(new Blob([text],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
-function useDraft(key:string){
- const [value,set]=useState(()=>{try{return sessionStorage.getItem(key)||''}catch{return ''}});
- function update(next:string){set(next);try{sessionStorage.setItem(key,next)}catch{/* In-memory draft remains available. */}}
- return [value,update] as const;
+function download(text: string, name: string) {
+  const url = URL.createObjectURL(
+    new Blob([text], { type: "application/json" }),
+  );
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-function Modal({title,close,children}:{title:string;close:()=>void;children:ReactNode}){
- const ref=useRef<HTMLDialogElement>(null);
- useEffect(()=>{const d=ref.current!;d.showModal();return()=>d.close()},[]);
- return <dialog ref={ref} aria-labelledby="dialog-title" onCancel={close} onClick={e=>{if(e.target===e.currentTarget)close()}}><header className="dialog-head"><h2 id="dialog-title">{title}</h2><button className="icon-button" aria-label="Fermer" onClick={close}><X size={20}/></button></header>{children}</dialog>;
+export function App() {
+  const [repository] = useState(() => new WorkspaceRepository(localStorage));
+  const [initial] = useState(() => {
+    try {
+      return { data: repository.read(), error: "" };
+    } catch (e) {
+      return { data: emptyWorkspace(), error: errorLabel(e) };
+    }
+  });
+  const [data, setData] = useState(initial.data);
+  const [fatal, setFatal] = useState(initial.error);
+  const [route, setRoute] = useState<Route>(routeFromHash);
+  const [modal, setModal] = useState<
+    "capture" | "project" | "signal" | "settings" | null
+  >(null);
+  const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const [archive, setArchive] = useState(false);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [pendingImport, setPendingImport] = useState<Workspace | null>(null);
+  useEffect(() => {
+    const change = () => setRoute(routeFromHash());
+    window.addEventListener("hashchange", change);
+    return () => window.removeEventListener("hashchange", change);
+  }, []);
+  useEffect(() => {
+    const change = (event: StorageEvent) => {
+      if (event.key === STORAGE_KEY) {
+        try {
+          setData(repository.read());
+          setFatal("");
+          setNotice("Espace actualisé depuis un autre onglet.");
+        } catch (e) {
+          setFatal(errorLabel(e));
+        }
+      }
+    };
+    window.addEventListener("storage", change);
+    return () => window.removeEventListener("storage", change);
+  }, [repository]);
+  function commit(next: Workspace, success: string) {
+    if (fatal) {
+      setError(
+        "Lecture impossible. Exportez les données brutes avant toute récupération.",
+      );
+      return false;
+    }
+    try {
+      setData(repository.commit(next));
+      setError("");
+      setNotice(success);
+      return true;
+    } catch (e) {
+      setError(errorLabel(e));
+      return false;
+    }
+  }
+  function navigate(next: Route) {
+    location.hash = "/" + next;
+    setRoute(next);
+    setQuery("");
+    setProjectId(null);
+    setExpanded(null);
+  }
+  function act(task: Task, action: "accept" | "archive" | "restore") {
+    try {
+      const updated = transitionTask(task, action, true);
+      commit(
+        {
+          ...data,
+          tasks: data.tasks.map((t) => (t.id === task.id ? updated : t)),
+        },
+        action === "accept"
+          ? "Action acceptée. Elle est maintenant dans NOW."
+          : action === "restore"
+            ? "Suggestion restaurée dans LATER."
+            : "Action écartée, conservée dans les archives.",
+      );
+    } catch (e) {
+      setError(errorLabel(e));
+    }
+  }
+  const project = data.projects.find((p) => p.id === projectId);
+  const now = activeTasks(data);
+  const refs = rediscover(data).filter((r) =>
+    (r.title + " " + r.content + " " + (r.url || ""))
+      .toLocaleLowerCase()
+      .includes(query.toLocaleLowerCase()),
+  );
+  const projects = data.projects.filter((p) =>
+    p.title.toLocaleLowerCase().includes(query.toLocaleLowerCase()),
+  );
+  const signals = data.signals.filter((s) =>
+    (s.brand + " " + s.observedFact)
+      .toLocaleLowerCase()
+      .includes(query.toLocaleLowerCase()),
+  );
+  const selected = routes.find(([key]) => key === route)!;
+  return (
+    <div className="app-frame">
+      <div className="workspace">
+        <header className="topbar">
+          <a
+            className="brand"
+            href="#/accueil"
+            onClick={() => navigate("accueil")}
+            aria-label="A.D — Accueil"
+          >
+            A.D
+            <span className="brand-line" />
+            <span className="brand-caption">
+              DIRECTION
+              <br />
+              CRÉATIVE
+            </span>
+          </a>
+          <nav aria-label="Navigation principale">
+            {routes.map(([key, label, Icon]) => (
+              <a
+                key={key}
+                href={"#/" + key}
+                aria-current={route === key ? "page" : undefined}
+                onClick={() => navigate(key)}
+              >
+                <Icon size={17} />
+                <span>{label}</span>
+              </a>
+            ))}
+          </nav>
+          <div className="top-actions">
+            <button
+              className="capture-button"
+              onClick={() => {
+                setError("");
+                setModal("capture");
+              }}
+              disabled={!!fatal}
+            >
+              <Plus size={17} />
+              <span>Capturer</span>
+            </button>
+            <button
+              className="icon-button"
+              aria-label="Réglages et sauvegarde"
+              onClick={() => setModal("settings")}
+            >
+              <Settings size={19} />
+            </button>
+          </div>
+        </header>
+        <main id="main-content" key={route}>
+          <div className="section-meta">
+            <span>
+              ESPACE PERSONNEL <span className="meta-divider">/</span>{" "}
+              {selected[1].toUpperCase()}
+            </span>
+            <span className="local-state">
+              <span /> Local · Sites non connecté
+            </span>
+          </div>
+          {fatal ? (
+            <div role="alert" className="recovery">
+              <h1>Vos données restent protégées.</h1>
+              <p>
+                Le contenu local ne peut pas être lu. Aucune donnée n’a été
+                remplacée.
+              </p>
+              <p>{fatal}</p>
+              <button
+                onClick={() =>
+                  download(
+                    localStorage.getItem(STORAGE_KEY) || "",
+                    "ad-recovery-raw.json",
+                  )
+                }
+              >
+                Exporter le contenu brut <Download size={16} />
+              </button>
+            </div>
+          ) : (
+            <>
+              {route === "accueil" && (
+                <HomeView
+                  data={data}
+                  now={now}
+                  navigate={navigate}
+                  setProjectId={setProjectId}
+                  setExpanded={setExpanded}
+                  setModal={setModal}
+                />
+              )}
+              {route !== "accueil" && (
+                <div className="content-page">
+                  <header className="page-heading">
+                    <div>
+                      <p className="eyebrow">
+                        {route === "saver"
+                          ? "VOTRE MÉMOIRE CRÉATIVE"
+                          : route === "explorer"
+                            ? "OBSERVER AVANT D’INTERPRÉTER"
+                            : "DONNER UNE FORME AUX IDÉES"}
+                      </p>
+                      <h1>
+                        {project && route === "projets"
+                          ? project.title
+                          : selected[1]}
+                        <span className="title-dot">.</span>
+                      </h1>
+                      <p>
+                        {route === "saver"
+                          ? "Les références que vous avez choisi de garder."
+                          : route === "explorer"
+                            ? "Des faits sourcés, des pistes à examiner."
+                            : "Des directions choisies, à votre rythme."}
+                      </p>
+                    </div>
+                    <button
+                      className="primary"
+                      onClick={() => {
+                        setError("");
+                        setModal(
+                          route === "saver"
+                            ? "capture"
+                            : route === "explorer"
+                              ? "signal"
+                              : "project",
+                        );
+                      }}
+                    >
+                      <Plus size={17} />
+                      {route === "saver"
+                        ? "Capturer"
+                        : route === "explorer"
+                          ? "Ajouter un signal"
+                          : "Nouveau projet"}
+                    </button>
+                  </header>
+                  <div className="collection-toolbar">
+                    {project && route === "projets" ? (
+                      <button
+                        className="text-button"
+                        onClick={() => setProjectId(null)}
+                      >
+                        <ChevronLeft size={18} />
+                        Tous les projets
+                      </button>
+                    ) : (
+                      <label className="search">
+                        <Search size={17} />
+                        <input
+                          aria-label="Rechercher"
+                          value={query}
+                          onChange={(e) => setQuery(e.target.value)}
+                          placeholder={
+                            route === "saver"
+                              ? "Retrouver une référence…"
+                              : "Rechercher…"
+                          }
+                        />
+                      </label>
+                    )}
+                    <span>
+                      {route === "saver"
+                        ? refs.length
+                        : route === "explorer"
+                          ? signals.length
+                          : projects.length}{" "}
+                      {route === "saver"
+                        ? "référence(s)"
+                        : route === "explorer"
+                          ? "signal(aux)"
+                          : "dossier(s)"}
+                    </span>
+                  </div>
+                  <div
+                    className="collection-scroll"
+                    tabIndex={0}
+                    aria-label={"Contenu " + selected[1]}
+                  >
+                    {route === "saver" && (
+                      <SaverView
+                        refs={refs}
+                        expanded={expanded}
+                        setExpanded={setExpanded}
+                        query={query}
+                        data={data}
+                      />
+                    )}
+                    {route === "explorer" && (
+                      <ExplorerView signals={signals} query={query} />
+                    )}
+                    {route === "projets" && (
+                      <ProjectsView
+                        project={project}
+                        archive={archive}
+                        setArchive={setArchive}
+                        setProjectId={setProjectId}
+                        data={data}
+                        commit={commit}
+                        act={act}
+                        projects={projects}
+                        query={query}
+                        navigate={navigate}
+                        setExpanded={setExpanded}
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </main>
+        <footer className="statusbar">
+          <span>A.D / ATELIER PERSONNEL</span>
+          <button onClick={() => setModal("settings")}>
+            <ShieldCheck size={13} /> Données dans ce navigateur{" "}
+            <ArrowUpRight size={12} />
+          </button>
+        </footer>
+      </div>
+      {notice && (
+        <div className="toast" role="status">
+          <Check size={17} />
+          <span>{notice}</span>
+          <button
+            className="icon-button"
+            aria-label="Masquer le message"
+            onClick={() => setNotice("")}
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
+      {error && !modal && (
+        <div className="error-toast" role="alert">
+          {error}
+          <button onClick={() => setError("")}>Fermer</button>
+        </div>
+      )}
+      {modal === "capture" && (
+        <Modal title="Garder une idée." close={() => setModal(null)}>
+          <CaptureForm
+            defaultProjectId={
+              route === "projets" ? projectId || undefined : undefined
+            }
+            data={data}
+            error={error}
+            save={(input) => {
+              try {
+                const reference = makeReference(input, true);
+                if (
+                  commit(
+                    { ...data, references: [...data.references, reference] },
+                    `Référence sauvegardée et relue localement · ${reference.id}`,
+                  )
+                ) {
+                  setModal(null);
+                  navigate("saver");
+                  setExpanded(reference.id);
+                  return true;
+                }
+              } catch (e) {
+                setError(errorLabel(e));
+              }
+              return false;
+            }}
+          />
+        </Modal>
+      )}
+      {modal === "project" && (
+        <Modal title="Une nouvelle direction." close={() => setModal(null)}>
+          <ProjectForm
+            error={error}
+            save={(title) => {
+              const p = {
+                id: crypto.randomUUID(),
+                title,
+                updatedAt: new Date().toISOString(),
+              };
+              if (
+                commit(
+                  { ...data, projects: [...data.projects, p] },
+                  "Projet sauvegardé localement.",
+                )
+              ) {
+                setModal(null);
+                navigate("projets");
+                setProjectId(p.id);
+                return true;
+              }
+              return false;
+            }}
+          />
+        </Modal>
+      )}
+      {modal === "signal" && (
+        <Modal title="Un fait, une source." close={() => setModal(null)}>
+          <SignalForm
+            error={error}
+            save={(signal) => {
+              if (
+                commit(
+                  { ...data, signals: [...data.signals, signal] },
+                  "Signal sourcé sauvegardé localement.",
+                )
+              ) {
+                setModal(null);
+                return true;
+              }
+              return false;
+            }}
+          />
+        </Modal>
+      )}
+      {modal === "settings" && (
+        <Modal
+          title="Votre espace, vos données."
+          close={() => {
+            setModal(null);
+            setPendingImport(null);
+          }}
+        >
+          <div className="settings-content">
+            <p className="local-info">
+              Cette reconstruction fonctionne localement. Aucun compte, aucune
+              donnée Sites, aucune API xAI et aucune synchronisation ne sont
+              connectés.
+            </p>
+            <h3>Sauvegarde personnelle</h3>
+            <p>
+              Les données restent dans ce navigateur, sans chiffrement
+              applicatif. Exportez une copie avant de changer d’appareil ou
+              d’effacer les données du navigateur. Utilisez un appareil de
+              confiance.
+            </p>
+            <div className="backup-actions">
+              <button
+                onClick={() =>
+                  download(
+                    fatal
+                      ? localStorage.getItem(STORAGE_KEY) || ""
+                      : exportBackup(data),
+                    "ad-local-backup.json",
+                  )
+                }
+              >
+                <Download size={16} />
+                Exporter mes données
+              </button>
+              <label className="file-button">
+                <Upload size={16} />
+                Importer une sauvegarde
+                <input
+                  type="file"
+                  accept="application/json,.json"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    try {
+                      if (file.size > 20_000_000)
+                        throw new Error("20 Mo maximum.");
+                      setPendingImport(parseBackup(await file.text()));
+                      setError("");
+                    } catch (err) {
+                      setError(errorLabel(err));
+                    }
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            </div>
+            {pendingImport && (
+              <div className="import-confirm">
+                <p>
+                  {pendingImport.projects.length} projet(s),{" "}
+                  {pendingImport.references.length} référence(s),{" "}
+                  {pendingImport.tasks.length} action(s). Cette importation
+                  remplacera l’espace local. Exportez-le d’abord.
+                </p>
+                <button
+                  className="primary"
+                  disabled={!!fatal}
+                  onClick={() => {
+                    if (commit(pendingImport, "Sauvegarde importée et relue."))
+                      setPendingImport(null);
+                  }}
+                >
+                  Confirmer le remplacement
+                </button>
+                <button onClick={() => setPendingImport(null)}>Annuler</button>
+              </div>
+            )}
+            <h3>
+              Grok Scout <span className="connection-badge">Non connecté</span>
+            </h3>
+            <p>
+              Le code et l’authentification de la passerelle Sites ne sont pas
+              récupérés. Aucun jeton propriétaire n’est demandé ni réutilisé. La
+              connexion distante reste désactivée.
+            </p>
+            <details>
+              <summary>Surface Saver prévue · 4 outils</summary>
+              <ul>
+                {SCOUT_TOOLS.map((t) => (
+                  <li key={t}>
+                    <code>{t}</code>
+                  </li>
+                ))}
+              </ul>
+              <p>
+                Audience dédiée, autorisation serveur, révocation et quotas à
+                vérifier avant toute connexion. Cette liste décrit une règle,
+                pas une connexion active.
+              </p>
+            </details>
+            <p>
+              Vous pouvez conserver une proposition Grok manuellement : capturez
+              sa source réelle puis validez vous-même la sauvegarde. Cela ne
+              constitue pas un test Grok → MCP.
+            </p>
+            <h3>Application Sites existante</h3>
+            <p>
+              Elle reste indépendante et inchangée. Aucune migration ni
+              publication effectuée.
+            </p>
+            {error && (
+              <p className="form-error" role="alert">
+                {error}
+              </p>
+            )}
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
 }
-function Empty({icon,title,children}:{icon:ReactNode;title:string;children:ReactNode}){return <div className="empty"><span className="empty-icon">{icon}</span><h3>{title}</h3><p>{children}</p></div>}
-function Field({label,children}:{label:string;children:ReactNode}){return <label className="field"><span>{label}</span>{children}</label>}
-
-export function App(){
- const [repository]=useState(()=>new WorkspaceRepository(localStorage));
- const [initial]=useState(()=>{try{return {data:repository.read(),error:''}}catch(e){return {data:emptyWorkspace(),error:errorLabel(e)}}});
- const [data,setData]=useState(initial.data);
- const [fatal,setFatal]=useState(initial.error);
- const [route,setRoute]=useState<Route>(routeFromHash);
- const [modal,setModal]=useState<'capture'|'project'|'signal'|'settings'|null>(null);
- const [notice,setNotice]=useState('');
- const [error,setError]=useState('');
- const [query,setQuery]=useState('');
- const [projectId,setProjectId]=useState<string|null>(null);
- const [archive,setArchive]=useState(false);
- const [expanded,setExpanded]=useState<string|null>(null);
- const [pendingImport,setPendingImport]=useState<Workspace|null>(null);
- useEffect(()=>{const change=()=>setRoute(routeFromHash());window.addEventListener('hashchange',change);return()=>window.removeEventListener('hashchange',change)},[]);
- useEffect(()=>{const change=(event:StorageEvent)=>{if(event.key===STORAGE_KEY){try{setData(repository.read());setFatal('');setNotice('Espace actualisé depuis un autre onglet.')}catch(e){setFatal(errorLabel(e))}}};window.addEventListener('storage',change);return()=>window.removeEventListener('storage',change)},[repository]);
- function commit(next:Workspace,success:string){if(fatal){setError('Lecture impossible. Exportez les données brutes avant toute récupération.');return false}try{setData(repository.commit(next));setError('');setNotice(success);return true}catch(e){setError(errorLabel(e));return false}}
- function navigate(next:Route){location.hash='/'+next;setRoute(next);setQuery('');setProjectId(null);setExpanded(null)}
- function act(task:Task,action:'accept'|'archive'|'restore'){try{const updated=transitionTask(task,action,true);commit({...data,tasks:data.tasks.map(t=>t.id===task.id?updated:t)},action==='accept'?'Action acceptée. Elle est maintenant dans NOW.':action==='restore'?'Suggestion restaurée dans LATER.':'Action écartée, conservée dans les archives.')}catch(e){setError(errorLabel(e))}}
- const project=data.projects.find(p=>p.id===projectId);
- const now=activeTasks(data);
- const refs=rediscover(data).filter(r=>(r.title+' '+r.content+' '+(r.url||'')).toLocaleLowerCase().includes(query.toLocaleLowerCase()));
- const projects=data.projects.filter(p=>p.title.toLocaleLowerCase().includes(query.toLocaleLowerCase()));
- const signals=data.signals.filter(s=>(s.brand+' '+s.observedFact).toLocaleLowerCase().includes(query.toLocaleLowerCase()));
- const selected=routes.find(([key])=>key===route)!;
- return <div className="app-frame"><div className="workspace">
-  <header className="topbar"><a className="brand" href="#/accueil" onClick={()=>navigate('accueil')} aria-label="A.D — Accueil">A.D<span className="brand-line"/><span className="brand-caption">DIRECTION<br/>CRÉATIVE</span></a>
-   <nav aria-label="Navigation principale">{routes.map(([key,label,Icon])=><a key={key} href={'#/'+key} aria-current={route===key?'page':undefined} onClick={()=>navigate(key)}><Icon size={17}/><span>{label}</span></a>)}</nav>
-   <div className="top-actions"><button className="capture-button" onClick={()=>{setError('');setModal('capture')}} disabled={!!fatal}><Plus size={17}/><span>Capturer</span></button><button className="icon-button" aria-label="Réglages et sauvegarde" onClick={()=>setModal('settings')}><Settings size={19}/></button></div>
-  </header>
-  <main id="main-content" key={route}>
-   <div className="section-meta"><span>ESPACE PERSONNEL <span className="meta-divider">/</span> {selected[1].toUpperCase()}</span><span className="local-state"><span/> Local · Sites non connecté</span></div>
-   {fatal?<div role="alert" className="recovery"><h1>Vos données restent protégées.</h1><p>Le contenu local ne peut pas être lu. Aucune donnée n’a été remplacée.</p><p>{fatal}</p><button onClick={()=>download(localStorage.getItem(STORAGE_KEY)||'','ad-recovery-raw.json')}>Exporter le contenu brut <Download size={16}/></button></div>:<>
-   {route==='accueil'&&<div className="home-layout"><section className="home-focus"><p className="eyebrow">L’ESPACE POUR FAIRE ÉMERGER L’ESSENTIEL</p><h1>{now.length?<>{now[0].title}</>:<>Sur quoi veux-tu<br/><em>avancer ?</em></>}</h1><p className="intro">{now.length?'Une direction choisie par vous. Le reste peut attendre.':'Rassembler les idées. Choisir une direction.\nFaire de la place à ce qui compte.'}</p><button className="primary" onClick={()=>{navigate('projets');if(now.length)setProjectId(now[0].projectId)}}>{now.length?'Continuer le projet':'Choisir un projet'}<ArrowUpRight size={18}/></button><div className="home-note"><span className="small-cross">✳</span><p>{data.tasks.filter(t=>t.lane==='LATER').length?`${data.tasks.filter(t=>t.lane==='LATER').length} suggestion(s) à examiner dans Projets.`:'Aucune priorité imposée. Vous gardez la main.'}</p></div></section>
-    <aside className="home-rail"><section><div className="section-label"><h2>Dossiers récents</h2><button aria-label="Voir les projets" onClick={()=>navigate('projets')}><ArrowUpRight size={19}/></button></div>{data.projects.length?data.projects.slice().sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)).slice(0,3).map((p,i)=><button className="project-row" key={p.id} onClick={()=>{navigate('projets');setProjectId(p.id)}}><span className="row-index">0{i+1}</span><span>{p.title}<small>{dateLabel(p.updatedAt)}</small></span><ArrowUpRight size={17}/></button>):<div className="rail-empty"><Folder size={24} strokeWidth={1}/><h3>Votre prochain chapitre.</h3><p>Créez un premier dossier pour donner un cadre à vos idées.</p><button className="text-button" onClick={()=>setModal('project')}>Créer un projet <Plus size={15}/></button></div>}</section>
-     <section><div className="section-label"><h2>Dans votre bibliothèque</h2><span>{rediscover(data).length.toString().padStart(2,'0')}</span></div>{rediscover(data).length?rediscover(data).slice(-2).reverse().map(r=><button key={r.id} className="reference-row" onClick={()=>{navigate('saver');setExpanded(r.id)}}><Link size={18}/><span>{r.title}<small>{r.origin==='grok'?'Grok · source validée':'Capture personnelle'}</small></span><ArrowUpRight size={17}/></button>):<p className="rail-copy">Un lien, une phrase, une intuition.<br/>Gardez ce qui mérite de rester.</p>}</section>
-    </aside><div className="home-bottom"><span>01 — L’INTENTION AVANT L’ACTION</span><span>UN ESPACE À VOUS.</span></div></div>}
-   {route!=='accueil'&&<div className="content-page"><header className="page-heading"><div><p className="eyebrow">{route==='saver'?'VOTRE MÉMOIRE CRÉATIVE':route==='explorer'?'OBSERVER AVANT D’INTERPRÉTER':'DONNER UNE FORME AUX IDÉES'}</p><h1>{project&&route==='projets'?project.title:selected[1]}<span className="title-dot">.</span></h1><p>{route==='saver'?'Les références que vous avez choisi de garder.':route==='explorer'?'Des faits sourcés, des pistes à examiner.':'Des directions choisies, à votre rythme.'}</p></div><button className="primary" onClick={()=>{setError('');setModal(route==='saver'?'capture':route==='explorer'?'signal':'project')}}><Plus size={17}/>{route==='saver'?'Capturer':route==='explorer'?'Ajouter un signal':'Nouveau projet'}</button></header>
-    <div className="collection-toolbar">{project&&route==='projets'?<button className="text-button" onClick={()=>setProjectId(null)}><ChevronLeft size={18}/>Tous les projets</button>:<label className="search"><Search size={17}/><input aria-label="Rechercher" value={query} onChange={e=>setQuery(e.target.value)} placeholder={route==='saver'?'Retrouver une référence…':'Rechercher…'}/></label>}<span>{route==='saver'?refs.length:route==='explorer'?signals.length:projects.length} {route==='saver'?'référence(s)':route==='explorer'?'signal(aux)':'dossier(s)'}</span></div>
-    <div className="collection-scroll" tabIndex={0} aria-label={'Contenu '+selected[1]}>
-    {route==='saver'&&(refs.length?<div className="reference-grid">{refs.slice().reverse().map(r=><article className="reference-card" key={r.id}><div className="card-meta"><span>{r.origin==='grok'?'GROK · VALIDÉ PAR VOUS':'CAPTURE PERSONNELLE'}</span><Bookmark size={17}/></div><h2><button onClick={()=>setExpanded(expanded===r.id?null:r.id)} aria-expanded={expanded===r.id}>{r.title}</button></h2><p className="excerpt">{r.content||'Lien enregistré. Aucune analyse automatique.'}</p>{r.url&&<a className="source-link" href={r.url} target="_blank" rel="noreferrer">{new URL(r.url).hostname}<ArrowUpRight size={16}/></a>}<div className="card-bottom"><time>{dateLabel(r.capturedAt)}</time><button className="text-button" onClick={()=>setExpanded(expanded===r.id?null:r.id)}>{expanded===r.id?'Réduire':'Reçu de sauvegarde'}<ArrowRight size={14}/></button></div>{expanded===r.id&&<div className="receipt"><Check size={15}/><strong>Sauvegarde locale relue</strong><code>{r.id}</code><span>Révision {r.revision} · {r.projectId?data.projects.find(p=>p.id===r.projectId)?.title:'Sans projet associé'}</span><span>Analyse Taste non connectée.</span></div>}</article>)}</div>:<Empty icon={<Bookmark size={30} strokeWidth={1}/>} title={query?'Aucune correspondance.':'Ce qui vous inspire commence ici.'}>{query?'Essayez un autre mot.':'Capturez une référence ou une pensée. Aucun classement obligatoire.'}</Empty>)}
-    {route==='explorer'&&(signals.length?<div className="signal-list">{signals.slice().reverse().map(s=><article className="signal-card" key={s.id}><span className="eyebrow">SOURCE AJOUTÉE PAR VOUS</span><h2>{s.brand}</h2><p>{s.observedFact}</p><dl><div><dt>Date du fait</dt><dd>{dateLabel(s.occurredAt)}</dd></div><div><dt>Collecté le</dt><dd>{dateLabel(s.collectedAt)}</dd></div></dl>{s.inference&&<div className="interpretation"><strong>Interprétation · à examiner</strong><p>{s.inference}</p></div>}<a className="source-link" href={s.sourceUrl} target="_blank" rel="noreferrer">Voir la source <ArrowUpRight size={16}/></a></article>)}</div>:<Empty icon={<Compass size={30} strokeWidth={1}/>} title={query?'Aucune correspondance.':'Votre radar, sans bruit inventé.'}>Ajoutez un fait et sa source pour commencer. Aucune veille automatique n’est connectée.</Empty>)}
-    {route==='projets'&&(project?<><div className="project-controls"><h2>{archive?'Actions écartées':'Actions du projet'}</h2><button className="text-button" onClick={()=>setArchive(!archive)}>{archive?'Voir les actions':'Archives'} ({data.tasks.filter(t=>t.projectId===project.id&&t.lane==='KILL').length})</button></div>{!archive&&<TaskForm add={title=>commit({...data,tasks:[...data.tasks,newTask(project.id,title)],projects:data.projects.map(p=>p.id===project.id?{...p,updatedAt:new Date().toISOString()}:p)},'Suggestion conservée dans LATER. Aucune priorité créée.')}/>}
-      <div className="task-list">{data.tasks.filter(t=>t.projectId===project.id&&(archive?t.lane==='KILL':t.lane!=='KILL')).map(t=><article className="task-row" key={t.id}><div><span className="task-lane">{t.lane==='NOW'?'NOW · ACCEPTÉ':t.lane==='LATER'?'LATER · À EXAMINER':'KILL · ÉCARTÉ'}</span><h3>{t.title}</h3></div><div className="task-actions">{t.lane==='LATER'&&<button className="small-primary" onClick={()=>act(t,'accept')}>Accepter dans NOW</button>}{t.lane!=='KILL'?<button className="text-button" onClick={()=>act(t,'archive')}>Écarter</button>:<button className="text-button" onClick={()=>act(t,'restore')}>Restaurer dans LATER</button>}</div></article>)}</div><h2 className="linked-heading">Références associées</h2>{data.references.filter(r=>r.projectId===project.id&&!r.isInternalQA).map(r=><button key={r.id} className="reference-row" onClick={()=>{navigate('saver');setExpanded(r.id)}}><Bookmark size={17}/><span>{r.title}</span><ArrowUpRight size={16}/></button>)}{!data.references.some(r=>r.projectId===project.id)&&<p className="muted">Associez une référence à ce dossier lors de sa capture.</p>}</>:projects.length?<div className="project-grid">{projects.map((p,i)=><button className="project-card" key={p.id} onClick={()=>{setProjectId(p.id);setArchive(false)}}><div><span className="row-index">DOSSIER / {(i+1).toString().padStart(2,'0')}</span><ArrowUpRight size={21}/></div><h2>{p.title}</h2><p>{data.tasks.filter(t=>t.projectId===p.id&&t.lane==='NOW').length} action(s) acceptée(s) · {data.tasks.filter(t=>t.projectId===p.id&&t.lane==='LATER').length} à examiner</p><time>{dateLabel(p.updatedAt)}</time></button>)}</div>:<Empty icon={<Folder size={30} strokeWidth={1}/>} title={query?'Aucune correspondance.':'Une direction commence par un dossier.'}>Créez un projet. Les idées resteront à examiner jusqu’à votre décision.</Empty>)}
-    </div></div>}
-   </>}
-  </main>
-  <footer className="statusbar"><span>A.D / ATELIER PERSONNEL</span><button onClick={()=>setModal('settings')}><ShieldCheck size={13}/> Données dans ce navigateur <ArrowUpRight size={12}/></button></footer>
- </div>
- {notice&&<div className="toast" role="status"><Check size={17}/><span>{notice}</span><button className="icon-button" aria-label="Masquer le message" onClick={()=>setNotice('')}><X size={16}/></button></div>}
- {error&&!modal&&<div className="error-toast" role="alert">{error}<button onClick={()=>setError('')}>Fermer</button></div>}
- {modal==='capture'&&<Modal title="Garder une idée." close={()=>setModal(null)}><CaptureForm data={data} error={error} save={input=>{try{const reference=makeReference(input,true);if(commit({...data,references:[...data.references,reference]},`Référence sauvegardée et relue localement · ${reference.id}`)){setModal(null);navigate('saver');setExpanded(reference.id);return true}}catch(e){setError(errorLabel(e))}return false}}/></Modal>}
- {modal==='project'&&<Modal title="Une nouvelle direction." close={()=>setModal(null)}><ProjectForm error={error} save={title=>{const p={id:crypto.randomUUID(),title,updatedAt:new Date().toISOString()};if(commit({...data,projects:[...data.projects,p]},'Projet sauvegardé localement.')){setModal(null);navigate('projets');setProjectId(p.id);return true}return false}}/></Modal>}
- {modal==='signal'&&<Modal title="Un fait, une source." close={()=>setModal(null)}><SignalForm error={error} save={signal=>{if(commit({...data,signals:[...data.signals,signal]},'Signal sourcé sauvegardé localement.')){setModal(null);return true}return false}}/></Modal>}
- {modal==='settings'&&<Modal title="Votre espace, vos données." close={()=>{setModal(null);setPendingImport(null)}}><div className="settings-content"><p className="local-info">Cette reconstruction fonctionne localement. Aucun compte, aucune donnée Sites, aucune API xAI et aucune synchronisation ne sont connectés.</p><h3>Sauvegarde personnelle</h3><p>Les données restent dans ce navigateur, sans chiffrement applicatif. Exportez une copie avant de changer d’appareil ou d’effacer les données du navigateur. Utilisez un appareil de confiance.</p><div className="backup-actions"><button onClick={()=>download(fatal?localStorage.getItem(STORAGE_KEY)||'':exportBackup(data),'ad-local-backup.json')}><Download size={16}/>Exporter mes données</button><label className="file-button"><Upload size={16}/>Importer une sauvegarde<input type="file" accept="application/json,.json" onChange={async e=>{const file=e.target.files?.[0];if(!file)return;try{if(file.size>20_000_000)throw new Error('20 Mo maximum.');setPendingImport(parseBackup(await file.text()));setError('')}catch(err){setError(errorLabel(err))}e.target.value=''}}/></label></div>{pendingImport&&<div className="import-confirm"><p>{pendingImport.projects.length} projet(s), {pendingImport.references.length} référence(s), {pendingImport.tasks.length} action(s). Cette importation remplacera l’espace local. Exportez-le d’abord.</p><button className="primary" disabled={!!fatal} onClick={()=>{if(commit(pendingImport,'Sauvegarde importée et relue.'))setPendingImport(null)}}>Confirmer le remplacement</button><button onClick={()=>setPendingImport(null)}>Annuler</button></div>}
- <h3>Grok Scout <span className="connection-badge">Non connecté</span></h3><p>Le code et l’authentification de la passerelle Sites ne sont pas récupérés. Aucun jeton propriétaire n’est demandé ni réutilisé. La connexion distante reste désactivée.</p><details><summary>Surface Saver prévue · 4 outils</summary><ul>{SCOUT_TOOLS.map(t=><li key={t}><code>{t}</code></li>)}</ul><p>Audience dédiée, autorisation serveur, révocation et quotas à vérifier avant toute connexion. Cette liste décrit une règle, pas une connexion active.</p></details><p>Vous pouvez conserver une proposition Grok manuellement : capturez sa source réelle puis validez vous-même la sauvegarde. Cela ne constitue pas un test Grok → MCP.</p><h3>Application Sites existante</h3><p>Elle reste indépendante et inchangée. Aucune migration ni publication effectuée.</p>{error&&<p className="form-error" role="alert">{error}</p>}</div></Modal>}
- </div>;
-}
-
-function CaptureForm({data,error,save}:{data:Workspace;error:string;save:(input:{title:string;content:string;url?:string;origin:'human'|'grok';projectId?:string})=>boolean}){
- const [title,setTitle]=useDraft('ad.draft.title');const [content,setContent]=useDraft('ad.draft.content');const [url,setUrl]=useDraft('ad.draft.url');const [origin,setOrigin]=useDraft('ad.draft.origin');const [projectId,setProjectId]=useDraft('ad.draft.project');const [localError,setLocalError]=useState('');
- function submit(e:FormEvent){e.preventDefault();if(url&&!safeUrl.safeParse(url.trim()).success){setLocalError('Utilisez un lien HTTP(S) sans identifiants.');return}if(!title.trim()&&!content.trim()&&!url.trim()){setLocalError('Ajoutez un lien ou une pensée.');return}if(save({title:title.trim()||content.trim().slice(0,90)||new URL(url).hostname,content:content.trim(),url:url.trim()||undefined,origin:origin==='grok'?'grok':'human',projectId:projectId||undefined})){setTitle('');setContent('');setUrl('');setOrigin('');setProjectId('')}}
- return <form onSubmit={submit}><p className="form-intro">Un lien ou quelques mots. Aucun classement imposé.</p><Field label="Lien source (facultatif)"><input type="url" value={url} maxLength={4096} onChange={e=>setUrl(e.target.value)} placeholder="https://…" autoFocus/></Field><Field label="Titre (facultatif)"><input value={title} maxLength={200} onChange={e=>setTitle(e.target.value)} placeholder="Ce que vous souhaitez retenir"/></Field><Field label="Votre pensée ou votre note"><textarea value={content} maxLength={10000} onChange={e=>setContent(e.target.value)} rows={4} placeholder="Une idée à garder…"/></Field><details><summary>Provenance et projet</summary><Field label="Provenance"><select value={origin||'human'} onChange={e=>setOrigin(e.target.value)}><option value="human">Capture personnelle</option><option value="grok">Proposition Grok · ajout manuel</option></select></Field><Field label="Associer à un projet"><select value={projectId} onChange={e=>setProjectId(e.target.value)}><option value="">Sans projet</option>{data.projects.map(p=><option value={p.id} key={p.id}>{p.title}</option>)}</select></Field></details>{origin==='grok'&&<label className="check-field"><input type="checkbox" required/>J’ai vérifié la source et j’autorise cette sauvegarde locale. Aucune tâche ne sera créée.</label>}{(error||localError)&&<p role="alert" className="form-error">{error||localError}</p>}<div className="form-footer"><span>Sauvegarde locale, sans analyse automatique.</span><button className="primary" type="submit">{origin==='grok'?'Valider et sauvegarder':'Sauvegarder'}<ArrowUpRight size={17}/></button></div></form>;
-}
-function ProjectForm({error,save}:{error:string;save:(title:string)=>boolean}){const [title,setTitle]=useDraft('ad.draft.projectTitle');return <form onSubmit={e=>{e.preventDefault();if(save(title.trim()))setTitle('')}}><Field label="Nom du projet"><input autoFocus required maxLength={200} value={title} onChange={e=>setTitle(e.target.value)} placeholder="Une direction à explorer" pattern=".*\S.*"/></Field><p className="muted">Un dossier vide, sans tâche ni priorité créée automatiquement.</p>{error&&<p role="alert" className="form-error">{error}</p>}<button className="primary" type="submit">Créer le projet<Plus size={17}/></button></form>}
-function TaskForm({add}:{add:(title:string)=>boolean}){const [title,setTitle]=useState('');return <form className="task-form" onSubmit={e=>{e.preventDefault();if(title.trim()&&add(title.trim()))setTitle('')}}><input aria-label="Nouvelle suggestion" required maxLength={200} value={title} onChange={e=>setTitle(e.target.value)} placeholder="Une idée à examiner…"/><button type="submit"><Plus size={17}/>Ajouter à LATER</button></form>}
-function SignalForm({error,save}:{error:string;save:(s:Workspace['signals'][number])=>boolean}){const [brand,setBrand]=useDraft('ad.signal.brand');const [fact,setFact]=useDraft('ad.signal.fact');const [url,setUrl]=useDraft('ad.signal.url');const [date,setDate]=useDraft('ad.signal.date');const [inference,setInference]=useDraft('ad.signal.inference');const [localError,setLocalError]=useState('');return <form onSubmit={e=>{e.preventDefault();if(!safeUrl.safeParse(url).success){setLocalError('La source doit être un lien HTTP(S) sans identifiants.');return}if(save({id:crypto.randomUUID(),brand:brand.trim(),observedFact:fact.trim(),sourceUrl:url,occurredAt:date,collectedAt:new Date().toISOString(),inference:inference.trim()})){setBrand('');setFact('');setUrl('');setDate('');setInference('')}}}><Field label="Marque ou sujet"><input autoFocus required maxLength={200} value={brand} onChange={e=>setBrand(e.target.value)}/></Field><Field label="Fait observé"><textarea required maxLength={10000} value={fact} onChange={e=>setFact(e.target.value)} rows={3}/></Field><Field label="Lien de la source"><input type="url" required maxLength={4096} value={url} onChange={e=>setUrl(e.target.value)}/></Field><Field label="Date du fait"><input type="date" required value={date} onChange={e=>setDate(e.target.value)}/></Field><Field label="Interprétation (facultative, distincte du fait)"><textarea rows={2} maxLength={10000} value={inference} onChange={e=>setInference(e.target.value)}/></Field>{(error||localError)&&<p className="form-error" role="alert">{error||localError}</p>}<button type="submit" className="primary">Conserver ce signal<Plus size={17}/></button></form>}
