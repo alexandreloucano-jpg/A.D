@@ -456,7 +456,7 @@ async function xRouteInternal(r: Request, s: Store, c: Config) {
         username: profile.data.username,
         encryptedTokens: seal(tokens, "x-token:" + c.owner),
         expiresAt: Date.now() + tokens.expires_in * 1000,
-        enabled: false,
+        enabled: true,
         revision: 1,
         lastSyncAt: null,
         retryAt: 0,
@@ -466,19 +466,27 @@ async function xRouteInternal(r: Request, s: Store, c: Config) {
       };
       await s.put("x-account", c.owner, a);
       await s.audit(c.owner, "owner", "x_connect", "verified");
-      return new Response(null, {
-        status: 303,
-        headers: {
-          location: c.app + "/#/saver?x=connected",
-          "cache-control": "no-store",
-          "referrer-policy": "no-referrer",
-          "set-cookie":
-            "__Host-ad_x_state=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax",
-        },
-      });
     } finally {
       await release();
     }
+    try {
+      await syncBookmarks(s, c);
+    } catch (e) {
+      await s.put("x-error", c.owner, {
+        code: e instanceof ServiceError ? e.code : "x_temporarily_unavailable",
+        at: new Date().toISOString(),
+      });
+    }
+    return new Response(null, {
+      status: 303,
+      headers: {
+        location: c.app + "/#/saver?x=connected",
+        "cache-control": "no-store",
+        "referrer-policy": "no-referrer",
+        "set-cookie":
+          "__Host-ad_x_state=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax",
+      },
+    });
   }
   if (path === "/api/x/sync" && r.method === "POST") {
     await s.quota("x-sync:" + c.owner, 4, 900);

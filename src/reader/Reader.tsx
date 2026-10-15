@@ -623,8 +623,8 @@ export function Reader({
             />
             {!aiAvailable && (
               <p role="status">
-                Questions IA indisponibles : aucun fournisseur IA autorisé n’est
-                configuré. La lecture et les annotations restent indépendantes.
+                L’assistant de lecture n’est pas encore disponible. Vous pouvez
+                lire et annoter librement.
               </p>
             )}
             <button

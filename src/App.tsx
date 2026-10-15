@@ -1,3 +1,4 @@
+import { AccountSettings } from "./AccountSettings";
 import { parseSharedCapture } from "./share";
 import { useRemoteSaver, RemoteSaverSettings } from "./remote-saver";
 import { useWorkspaceNavigation } from "./hooks/useWorkspaceNavigation";
@@ -119,12 +120,46 @@ export function App() {
     setExpanded,
     setFilter,
   } = useWorkspaceNavigation();
+  const adminMode =
+    new URLSearchParams(location.hash.split("?")[1] || "").get("admin") === "1";
+  const [autoSyncError, setAutoSyncError] = useState("");
+  const autoMigration = useRef(false);
+  useEffect(() => {
+    if (!remote.connected || autoMigration.current) return;
+    const saved = new Set(remote.references.map((row) => row.id));
+    const pending = data.references.filter(
+      (row) => !row.isInternalQA && !saved.has(row.id),
+    );
+    if (!pending.length) {
+      setAutoSyncError("");
+      return;
+    }
+    autoMigration.current = true;
+    void remote
+      .migrate(pending)
+      .then(() => setAutoSyncError(""))
+      .catch(() =>
+        setAutoSyncError(
+          "Certaines références ne sont pas encore synchronisées. Elles restent sur cet appareil ; la sauvegarde sera réessayée automatiquement.",
+        ),
+      )
+      .finally(() => {
+        autoMigration.current = false;
+      });
+  }, [remote.connected, remote.references, data.references]);
   const grokSetup =
     new URLSearchParams(location.hash.split("?")[1] || "").get("connect") ===
     "grok";
   const [modal, setModal] = useState<
     "capture" | "project" | "signal" | "settings" | null
-  >(() => (grokSetup ? "settings" : null));
+  >(() =>
+    grokSetup ||
+    (adminMode &&
+      new URLSearchParams(location.hash.split("?")[1] || "").get("settings") ===
+        "1")
+      ? "settings"
+      : null,
+  );
   const [captureContext, setCaptureContext] = useState<{
     url: string;
     title: string;
@@ -503,6 +538,7 @@ export function App() {
                   >
                     {route === "saver" && (
                       <SaverView
+                        adminMode={adminMode}
                         refs={refs}
                         expanded={expanded}
                         setExpanded={setExpanded}
@@ -734,116 +770,134 @@ export function App() {
           }}
         >
           <div className="settings-content">
-            <RemoteSaverSettings
-              grokSetup={grokSetup}
-              remote={remote}
-              localReferences={data.references}
-              backup={() =>
-                download(exportBackup(data), "ad-before-server-migration.json")
-              }
-            />
-            <p className="local-info">
-              Les projets et les signaux restent locaux. Le Saver privé est
-              accessible uniquement après connexion propriétaire. Les données
-              historiques Sites et l’API xAI restent indépendantes.
-            </p>
-            <h3>Sauvegarde personnelle</h3>
-            <p>
-              Les projets et signaux restent dans ce navigateur. Les références
-              serveur sont privées et accessibles après connexion. Exportez une
-              copie avant de changer d’appareil ; utilisez un appareil de
-              confiance.
-            </p>
-            <div className="backup-actions">
-              <button
-                onClick={() =>
+            {adminMode ? (
+              <RemoteSaverSettings
+                grokSetup={true}
+                remote={remote}
+                localReferences={data.references}
+                backup={() =>
                   download(
-                    fatal
-                      ? localStorage.getItem(STORAGE_KEY) || ""
-                      : exportBackup(displayData),
-                    "ad-workspace-backup.json",
+                    exportBackup(data),
+                    "ad-before-server-migration.json",
                   )
                 }
-              >
-                <Download size={16} />
-                Exporter mes données
-              </button>
-              <label className="file-button">
-                <Upload size={16} />
-                Importer une sauvegarde
-                <input
-                  type="file"
-                  accept="application/json,.json"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    try {
-                      if (file.size > 20_000_000)
-                        throw new Error("20 Mo maximum.");
-                      setPendingImport(parseBackup(await file.text()));
-                      setError("");
-                    } catch (err) {
-                      setError(errorLabel(err));
-                    }
-                    e.target.value = "";
-                  }}
-                />
-              </label>
-            </div>
-            {pendingImport && (
-              <div className="import-confirm">
-                <p>
-                  {pendingImport.projects.length} projet(s),{" "}
-                  {pendingImport.references.length} référence(s),{" "}
-                  {pendingImport.tasks.length} action(s). Cette importation
-                  remplacera l’espace local. Exportez-le d’abord.
-                </p>
-                <button
-                  className="primary"
-                  disabled={!!fatal}
-                  onClick={() => {
-                    if (commit(pendingImport, "Sauvegarde importée et relue."))
-                      setPendingImport(null);
-                  }}
-                >
-                  Confirmer le remplacement
-                </button>
-                <button onClick={() => setPendingImport(null)}>Annuler</button>
-              </div>
+              />
+            ) : (
+              <AccountSettings remote={remote} syncError={autoSyncError} />
             )}
-            <h3>
-              Grok Scout <span className="connection-badge">Non connecté</span>
-            </h3>
-            <p>
-              La passerelle dédiée dispose uniquement des quatre outils Saver.
-              Sa présence ne prouve pas une connexion dans Grok. Utilisez le
-              panneau ci-dessus pour créer ou révoquer un client dédié.
-            </p>
-            <details>
-              <summary>Surface Saver prévue · 4 outils</summary>
-              <ul>
-                {SCOUT_TOOLS.map((t) => (
-                  <li key={t}>
-                    <code>{t}</code>
-                  </li>
-                ))}
-              </ul>
-              <p>
-                Audience dédiée, autorisation serveur, révocation et quotas
-                persistants. La connexion Grok doit encore être vérifiée par une
-                sauvegarde avec UUID relu.
+            {adminMode && (
+              <p className="local-info">
+                Les projets et les signaux restent locaux. Le Saver privé est
+                accessible uniquement après connexion propriétaire. Les données
+                historiques Sites et l’API xAI restent indépendantes.
               </p>
+            )}
+            <details className="settings-backup">
+              <summary>Sauvegarde et restauration</summary>
+              <p>
+                Les projets et signaux restent dans ce navigateur. Les
+                références serveur sont privées et accessibles après connexion.
+                Exportez une copie avant de changer d’appareil ; utilisez un
+                appareil de confiance.
+              </p>
+              <div className="backup-actions">
+                <button
+                  onClick={() =>
+                    download(
+                      fatal
+                        ? localStorage.getItem(STORAGE_KEY) || ""
+                        : exportBackup(displayData),
+                      "ad-workspace-backup.json",
+                    )
+                  }
+                >
+                  <Download size={16} />
+                  Exporter mes données
+                </button>
+                <label className="file-button">
+                  <Upload size={16} />
+                  Importer une sauvegarde
+                  <input
+                    type="file"
+                    accept="application/json,.json"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      try {
+                        if (file.size > 20_000_000)
+                          throw new Error("20 Mo maximum.");
+                        setPendingImport(parseBackup(await file.text()));
+                        setError("");
+                      } catch (err) {
+                        setError(errorLabel(err));
+                      }
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+              </div>
+              {pendingImport && (
+                <div className="import-confirm">
+                  <p>
+                    {pendingImport.projects.length} projet(s),{" "}
+                    {pendingImport.references.length} référence(s),{" "}
+                    {pendingImport.tasks.length} action(s). Cette importation
+                    remplacera l’espace local. Exportez-le d’abord.
+                  </p>
+                  <button
+                    className="primary"
+                    disabled={!!fatal}
+                    onClick={() => {
+                      if (
+                        commit(pendingImport, "Sauvegarde importée et relue.")
+                      )
+                        setPendingImport(null);
+                    }}
+                  >
+                    Confirmer le remplacement
+                  </button>
+                  <button onClick={() => setPendingImport(null)}>
+                    Annuler
+                  </button>
+                </div>
+              )}
             </details>
-            <p>
-              Vous pouvez conserver une proposition Grok manuellement : capturez
-              sa source réelle puis validez vous-même la sauvegarde. Cela ne
-              constitue pas un test Grok → MCP.
-            </p>
-            <h3>Application Sites existante</h3>
-            <p>
-              Elle reste indépendante et inchangée. Aucune référence historique
-              Sites n’est importée par cette migration locale.
-            </p>
+            {adminMode && (
+              <>
+                <h3>Administration Grok Scout</h3>
+                <p>
+                  La passerelle dédiée dispose uniquement des quatre outils
+                  Saver. Sa présence ne prouve pas une connexion dans Grok.
+                  Utilisez le panneau ci-dessus pour créer ou révoquer un client
+                  dédié.
+                </p>
+                <details>
+                  <summary>Surface Saver prévue · 4 outils</summary>
+                  <ul>
+                    {SCOUT_TOOLS.map((t) => (
+                      <li key={t}>
+                        <code>{t}</code>
+                      </li>
+                    ))}
+                  </ul>
+                  <p>
+                    Audience dédiée, autorisation serveur, révocation et quotas
+                    persistants. La connexion Grok doit encore être vérifiée par
+                    une sauvegarde avec UUID relu.
+                  </p>
+                </details>
+                <p>
+                  Vous pouvez conserver une proposition Grok manuellement :
+                  capturez sa source réelle puis validez vous-même la
+                  sauvegarde. Cela ne constitue pas un test Grok → MCP.
+                </p>
+                <h3>Application Sites existante</h3>
+                <p>
+                  Elle reste indépendante et inchangée. Aucune référence
+                  historique Sites n’est importée par cette migration locale.
+                </p>
+              </>
+            )}
             {error && (
               <p className="form-error" role="alert">
                 {error}

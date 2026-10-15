@@ -6,6 +6,8 @@ Application React/TypeScript existante : Accueil, Explorer, Saver et Projets. La
 
 Évolution authentification et comptes connectés : [configuration Google/Instagram et preuves de validation](docs/AUTH_CONNECTED_ACCOUNTS.md). Le correctif CSRF conserve les protections ; Google exige une première liaison par le propriétaire GitHub et des secrets fournisseur configurés.
 
+Automatisation des connexions et séparation du back-office : [docs/PRODUCT_AUTOMATION.md](docs/PRODUCT_AUTOMATION.md). Les paramètres OAuth et les outils de dépannage ne font plus partie de l’interface quotidienne.
+
 ## Développer
 
 Node.js 24 (vérifié), npm 11.

@@ -151,6 +151,7 @@ test("import/export validé et remplacement avec consentement", async ({
   await page.goto("/");
   await project(page, "Sauvegarde de test");
   await page.getByRole("button", { name: "Réglages et sauvegarde" }).click();
+  await page.getByText("Sauvegarde et restauration", { exact: true }).click();
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "Exporter mes données" }).click();
   const backup = await download;

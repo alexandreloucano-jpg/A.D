@@ -165,6 +165,26 @@ export function useRemoteSaver() {
     void refresh();
   }, [refresh]);
   useEffect(() => {
+    if (!connected || !csrf.current) return;
+    let running = false;
+    const sync = async () => {
+      if (running || document.visibilityState !== "visible") return;
+      running = true;
+      try {
+        await fetch("/api/connections/sync", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "x-ad-csrf": csrf.current },
+        });
+      } finally {
+        running = false;
+      }
+    };
+    void sync();
+    const timer = setInterval(() => void sync(), 30 * 60000);
+    return () => clearInterval(timer);
+  }, [connected]);
+  useEffect(() => {
     if (!connected) return;
     const update = () => {
       if (document.visibilityState === "visible") void refresh();
@@ -364,6 +384,7 @@ export function RemoteSaverSettings({
         </a>
       )}
       {!remote.connected && <GoogleAccount remote={remote} loginOnly />}
+      {remote.connected && <GoogleAccount remote={remote} />}
       <button onClick={() => void remote.refresh()}>
         Réessayer la connexion / actualiser
       </button>

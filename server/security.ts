@@ -47,6 +47,12 @@ export interface Session {
   googleBinding?: string;
 }
 export interface Client {
+  owner?: string;
+  resource?: string;
+  registration?: "dynamic";
+  authMethod?: "none" | "client_secret_post" | "client_secret_basic";
+  refreshAllowed?: boolean;
+  defaultScope?: string;
   id: string;
   name: string;
   secretHash: string;

@@ -134,7 +134,17 @@ it("exchanges a real-shaped code only after browser binding and stores encrypted
                 token_type: "bearer",
                 expires_in: 7200,
               }
-            : { data: { id: "123", username: "fixture" } },
+            : url.includes("/bookmarks")
+              ? {
+                  data: [
+                    {
+                      id: "777",
+                      text: "Signet de test importé après consentement",
+                    },
+                  ],
+                  meta: {},
+                }
+              : { data: { id: "123", username: "fixture" } },
         ),
         { headers: { "content-type": "application/json" } },
       );
@@ -150,8 +160,11 @@ it("exchanges a real-shaped code only after browser binding and stores encrypted
     c,
   );
   expect(result.status).toBe(303);
-  expect(calls).toBe(2);
+  expect(calls).toBe(3);
+  expect((await s.list(c.owner)).length).toBe(1);
   const stored = await s.get<any>("x-account", c.owner);
+  expect(stored.enabled).toBe(true);
+  expect(stored.lastSyncAt).toBeTruthy();
   expect(JSON.stringify(stored)).not.toContain("private-fixture");
   expect(
     unseal<any>(stored.encryptedTokens, "x-token:" + c.owner).access_token,

@@ -1,0 +1,42 @@
+name: Sync connected Saver accounts
+on:
+  schedule:
+    - cron: '17,47 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [codex/ad-rebuild]
+    paths:
+      - '.github/workflows/connections.yml'
+permissions:
+  id-token: write
+concurrency:
+  group: ad-connected-accounts
+  cancel-in-progress: false
+jobs:
+  connections:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Authenticate the fixed maintenance job with GitHub OIDC
+        run: |
+          node --input-type=module <<'JS'
+          const origin = 'https://ad-saver-scout-gateway-alexandreloucano-3399.vercel.app';
+          if (!process.env.ACTIONS_ID_TOKEN_REQUEST_URL || !process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN) throw Error('Job identity unavailable.');
+          const issuer = new URL(process.env.ACTIONS_ID_TOKEN_REQUEST_URL);
+          if (issuer.protocol !== 'https:' || !issuer.hostname.endsWith('.actions.githubusercontent.com')) throw Error('Invalid identity provider.');
+          issuer.searchParams.set('audience', origin + '/jobs/connections');
+          const identity = await fetch(issuer, {headers: {authorization: 'Bearer ' + process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN}, redirect: 'error'});
+          if (!identity.ok) throw Error('Job identity HTTP ' + identity.status);
+          const {value} = await identity.json();
+          if (typeof value !== 'string') throw Error('Job identity missing.');
+          const response = await fetch(origin + '/jobs/connections', {
+            method: 'POST',
+            redirect: 'error',
+            headers: {authorization: 'Bearer ' + value},
+            signal: AbortSignal.timeout(65000),
+          });
+          if (!response.ok) throw Error('Connection maintenance HTTP ' + response.status);
+          const result = await response.json();
+          if (!result.completed && !result.pending) throw Error('Connection maintenance was not confirmed.');
+          console.log(JSON.stringify({completed: result.completed, pending: !!result.pending}));
+          JS

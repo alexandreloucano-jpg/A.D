@@ -10,6 +10,8 @@ type Account = {
   expiresAt: number;
   connectedAt: string;
   permissions: string[];
+  longLived?: boolean;
+  refreshedAt?: string;
 };
 type Pending = {
   browser: string;
@@ -207,7 +209,7 @@ export async function instagramRoute(
           : token.permissions;
       if (!permissions?.includes(SCOPE))
         throw new ServiceError(403, "instagram_permission_or_token_rejected");
-      // Short-lived token only: no promise of background import or refresh.
+      // Persist the initial token, then upgrade and maintain it server-side.
       const account: Account = {
         id: String(profile.user_id),
         username: profile.username,
@@ -225,6 +227,7 @@ export async function instagramRoute(
       if (!(await s.get<Account>("instagram-account", session.owner)))
         throw new ServiceError(503, "instagram_connection_unverified");
       await s.audit(session.owner, "owner", "instagram_connect", "verified");
+      await maintainInstagram(s, c).catch(() => {});
     } catch (e) {
       await s.put("instagram-error", session.owner, {
         code: e instanceof ServiceError ? e.code : "instagram_unavailable",
@@ -278,4 +281,86 @@ export async function instagramRoute(
     return json({ disconnected: true, revoked, referencesPreserved: true });
   }
   throw new ServiceError(404, "not_found");
+}
+
+export async function maintainInstagram(s: Store, c: Config): Promise<string> {
+  const account = await s.get<Account>("instagram-account", c.owner);
+  if (!account) return "not_connected";
+  if (account.expiresAt <= Date.now()) {
+    await s.put("instagram-error", c.owner, {
+      code: "instagram_reauthorization_required",
+      at: new Date().toISOString(),
+    });
+    return "reauthorization_required";
+  }
+  if (
+    account.longLived &&
+    Date.now() - Date.parse(account.refreshedAt || account.connectedAt) <
+      7 * 86400000
+  )
+    return "not_due";
+  const cfg = config(c),
+    { accessToken } = unseal<{ accessToken: string }>(
+      account.encryptedToken,
+      "instagram-account:" + c.owner,
+    );
+  try {
+    // Meta documents these as GET endpoints. Never log the URL or provider body.
+    const url = new URL(
+      account.longLived
+        ? "https://graph.instagram.com/refresh_access_token"
+        : "https://graph.instagram.com/access_token",
+    );
+    url.search = new URLSearchParams(
+      account.longLived
+        ? { grant_type: "ig_refresh_token", access_token: accessToken }
+        : {
+            grant_type: "ig_exchange_token",
+            client_secret: cfg.secret,
+            access_token: accessToken,
+          },
+    ).toString();
+    const result = (await provider(url.href, { method: "GET" })) as {
+      access_token?: string;
+      expires_in?: number;
+    };
+    if (
+      typeof result.access_token !== "string" ||
+      !result.access_token ||
+      !Number.isFinite(result.expires_in) ||
+      result.expires_in! < 60 ||
+      result.expires_in! > 61 * 86400
+    )
+      throw new ServiceError(502, "instagram_refresh_invalid");
+    const updated: Account = {
+      ...account,
+      longLived: true,
+      refreshedAt: new Date().toISOString(),
+      expiresAt: Date.now() + result.expires_in! * 1000,
+      encryptedToken: seal(
+        { accessToken: result.access_token },
+        "instagram-account:" + c.owner,
+      ),
+    };
+    const rows = await s.query(
+      "UPDATE ad_records SET data=$1::jsonb WHERE namespace='instagram-account' AND key=$2 AND data->>'encryptedToken'=$3 RETURNING key",
+      [JSON.stringify(updated), c.owner, account.encryptedToken],
+    );
+    if (!rows.length) return "connection_changed";
+    await s.remove("instagram-error", c.owner);
+    await s.audit(c.owner, "system", "instagram_refresh", "verified");
+    return "verified";
+  } catch (e) {
+    const current = await s.get<Account>("instagram-account", c.owner);
+    if (!current || current.encryptedToken !== account.encryptedToken)
+      return "connection_changed";
+    await s.put("instagram-error", c.owner, {
+      code:
+        e instanceof ServiceError
+          ? e.code
+          : "instagram_temporarily_unavailable",
+      at: new Date().toISOString(),
+    });
+    throw e;
+  }
 }

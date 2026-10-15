@@ -1,124 +1,237 @@
 import { useEffect, useState } from "react";
 import type { RemoteSaver } from "../remote-saver";
-import { GoogleAccount } from "./GoogleAccount";
-import { XConnection } from "./XConnection";
-type InstagramStatus = {
+type Social = {
   configured: boolean;
   connected: boolean;
-  username: string;
-  accountType: string;
-  permissions: string[];
-  lastImportAt: null;
-  error: string | null;
-  blocker: string | null;
+  username?: string;
+  lastSyncAt?: string | null;
+  enabled?: boolean;
+  error?: string | null;
 };
 export function ConnectedAccounts({ remote }: { remote: RemoteSaver }) {
-  const [status, setStatus] = useState<InstagramStatus | null>(null),
-    [error, setError] = useState(""),
-    [message, setMessage] = useState(""),
-    [busy, setBusy] = useState(false);
+  const [x, setX] = useState<Social | null>(null),
+    [instagram, setInstagram] = useState<Social | null>(null),
+    [grok, setGrok] = useState<{ connected: boolean } | null>(null),
+    [busy, setBusy] = useState(""),
+    [message, setMessage] = useState("");
   async function load() {
     if (!remote.connected) {
-      setStatus(null);
+      setX(null);
+      setInstagram(null);
+      setGrok(null);
       return;
     }
-    try {
-      setStatus(await remote.reader<InstagramStatus>("/api/instagram/status"));
-    } catch {
-      setError("État Instagram indisponible. Aucun import annoncé.");
-    }
+    const result = await Promise.allSettled([
+      remote.reader<Social>("/api/x/status"),
+      remote.reader<Social>("/api/instagram/status"),
+      remote.reader<{ connected: boolean }>("/api/connections/grok"),
+    ]);
+    if (result[0].status === "fulfilled") setX(result[0].value);
+    if (result[1].status === "fulfilled") setInstagram(result[1].value);
+    if (result[2].status === "fulfilled") setGrok(result[2].value);
   }
   useEffect(() => {
     void load();
+    const timer = setInterval(() => void load(), 30000);
+    return () => clearInterval(timer);
   }, [remote.connected]);
-  async function action(path: string) {
-    setBusy(true);
-    setError("");
+  async function action(service: "x" | "instagram", disconnect = false) {
+    setBusy(service);
+    setMessage("");
     try {
       const result = await remote.reader<{ url?: string; revoked?: boolean }>(
-        path,
+        `/api/${service}/${disconnect ? "disconnect" : "connect"}`,
         "POST",
         {},
       );
       if (result.url) {
         const url = new URL(result.url);
-        if (
-          url.origin !== "https://www.instagram.com" ||
-          url.pathname !== "/oauth/authorize"
-        )
-          throw Error("Adresse Instagram refusée.");
+        const allowed =
+          service === "x" ? "https://x.com" : "https://www.instagram.com";
+        if (url.origin !== allowed) throw Error("Connexion refusée.");
         location.assign(url.href);
       } else {
         setMessage(
           result.revoked
-            ? "Autorisation Instagram révoquée ; références conservées."
-            : "Connexion supprimée de Saver. Révoquez aussi A.D dans Instagram : la révocation distante n’a pas été confirmée.",
+            ? "Compte déconnecté. Vos références sont conservées."
+            : "Compte déconnecté dans Saver. La révocation auprès du service n’a pas été confirmée.",
         );
         await load();
       }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Connexion non confirmée.");
+    } catch {
+      setMessage(
+        "La connexion n’a pas abouti. Vos références sont conservées ; réessayez plus tard.",
+      );
     } finally {
-      setBusy(false);
+      setBusy("");
+    }
+  }
+  async function openGrok() {
+    setMessage("");
+    try {
+      await navigator.clipboard.writeText(
+        "https://ad-saver-scout-gateway-alexandreloucano-3399.vercel.app/mcp",
+      );
+      setMessage(
+        "Adresse de connexion copiée. Dans Grok, choisissez votre connecteur A.D ou ajoutez-le dans les connecteurs personnalisés. Les autorisations seront gérées automatiquement.",
+      );
+    } catch {
+      setMessage(
+        "La copie a été refusée par le navigateur. Utilisez le lien de connexion affiché dans Grok.",
+      );
     }
   }
   return (
     <details className="connected-accounts">
-      <summary>Comptes connectés</summary>
-      <GoogleAccount remote={remote} />
-      <XConnection remote={remote} />
-      <section aria-label="Compte Instagram">
-        <h4>
-          Instagram ·{" "}
-          {status?.connected
-            ? "connecté · @" + status.username
-            : "non connecté"}
-        </h4>
+      <summary>Mes connexions</summary>
+      {!remote.connected ? (
         <p>
-          Instagram Login est réservé aux comptes professionnels Creator ou
-          Business. L’API ne permet pas d’importer vos publications
-          enregistrées. Le partage iPhone vers Saver reste disponible.
+          <a className="primary" href="/api/auth/google/login">
+            Se connecter avec Google
+          </a>
+        </p>
+      ) : (
+        <p>
+          Votre compte A.D est connecté. Vos références sont sauvegardées
+          automatiquement.
+        </p>
+      )}
+      <section aria-label="Connexion X">
+        <h4>X · {x?.connected ? "connecté" : "non connecté"}</h4>
+        <p>
+          Retrouvez automatiquement vos signets dans Saver après la connexion.
         </p>
         {!remote.connected ? (
-          <p>Connectez votre Saver privé pour gérer Instagram.</p>
-        ) : (
+          <p>Connectez-vous à A.D pour relier votre compte.</p>
+        ) : !x ? (
+          <p>Vérification en cours…</p>
+        ) : !x.configured ? (
+          <p>La connexion X n’est pas encore disponible.</p>
+        ) : x.connected ? (
           <>
+            {!x.enabled && <p>La synchronisation est en pause.</p>}
             <p>
-              Permissions accordées :{" "}
-              {status?.permissions.join(", ") || "aucune"}. Dernier import :
-              aucun — import des enregistrements non disponible.
+              {x.lastSyncAt
+                ? "Dernière synchronisation : " +
+                  new Date(x.lastSyncAt).toLocaleString("fr-FR")
+                : "Première synchronisation en cours."}
             </p>
-            {status?.blocker && <p role="status">{status.blocker}</p>}
-            {status?.error && (
-              <p role="alert">Dernière erreur Instagram : {status.error}</p>
+            {x.error && (
+              <p>
+                La synchronisation sera réessayée automatiquement. Une nouvelle
+                autorisation peut être nécessaire.
+              </p>
             )}
-            {status?.configured && !status.connected && (
-              <button
-                disabled={busy}
-                onClick={() => void action("/api/instagram/connect")}
-              >
-                Connecter mon compte Instagram professionnel
-              </button>
-            )}
-            {(status?.connected ||
-              status?.error === "instagram_reauthorization_required") && (
-              <button
-                disabled={busy}
-                onClick={() => void action("/api/instagram/disconnect")}
-              >
-                Déconnecter Instagram sans supprimer mes références
-              </button>
-            )}
+            <button
+              disabled={!!busy}
+              onClick={async () => {
+                setBusy("x");
+                try {
+                  await remote.reader("/api/x/automatic", "PUT", {
+                    enabled: !x.enabled,
+                  });
+                  await remote.reader("/api/connections/sync", "POST", {});
+                  await load();
+                } catch {
+                  setMessage(
+                    "La modification n’a pas été confirmée. Réessayez.",
+                  );
+                } finally {
+                  setBusy("");
+                }
+              }}
+            >
+              {x.enabled
+                ? "Mettre la synchronisation en pause"
+                : "Reprendre la synchronisation"}
+            </button>
+            <button disabled={!!busy} onClick={() => void action("x", true)}>
+              Déconnecter X
+            </button>
           </>
+        ) : (
+          <button disabled={!!busy} onClick={() => void action("x")}>
+            Connecter X
+          </button>
         )}
-        {message && <p role="status">{message}</p>}
-        {error && (
-          <p role="alert">
-            {error}
-            <button onClick={() => void load()}>Réessayer Instagram</button>
+      </section>
+      <section aria-label="Connexion Instagram">
+        <h4>
+          Instagram · {instagram?.connected ? "connecté" : "non connecté"}
+        </h4>
+        <p>
+          Partagez une publication vers Saver depuis votre iPhone. L’import des
+          publications enregistrées n’est pas disponible sur Instagram.
+        </p>
+        {remote.connected &&
+          instagram?.configured &&
+          (instagram.connected ? (
+            <button
+              disabled={!!busy}
+              onClick={() => void action("instagram", true)}
+            >
+              Déconnecter Instagram
+            </button>
+          ) : (
+            <>
+              <p>
+                La connexion Instagram est réservée aux comptes Creator ou
+                Business.
+              </p>
+              <button
+                disabled={!!busy}
+                onClick={() => void action("instagram")}
+              >
+                Connecter Instagram
+              </button>
+            </>
+          ))}
+        {remote.connected && instagram && !instagram.configured && (
+          <p>
+            La connexion Instagram n’est pas encore disponible. Le partage
+            iPhone reste utilisable.
           </p>
         )}
       </section>
+      <section aria-label="Connexion Grok">
+        <h4>Grok · {grok?.connected ? "connecté" : "non connecté"}</h4>
+        <p>
+          Autorisez Grok à consulter et enregistrer des références Saver. Les
+          groupes suggérés restent soumis à votre validation.
+        </p>
+        {remote.connected && (
+          <>
+            {grok?.connected ? (
+              <button
+                onClick={async () => {
+                  try {
+                    await remote.reader("/api/connections/grok", "DELETE", {});
+                    await load();
+                    setMessage(
+                      "Grok déconnecté. Vos références sont conservées.",
+                    );
+                  } catch {
+                    setMessage("Déconnexion non confirmée. Réessayez.");
+                  }
+                }}
+              >
+                Déconnecter Grok
+              </button>
+            ) : (
+              <a
+                className="primary"
+                href="https://grok.com/connectors"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => void openGrok()}
+              >
+                Connecter Grok
+              </a>
+            )}
+          </>
+        )}
+      </section>
+      {message && <p role="status">{message}</p>}
     </details>
   );
 }

@@ -1,3 +1,7 @@
+import { relayConnections } from "./job-relay.js";
+import { automationRoute } from "./automation.js";
+import { grokConnection } from "./connections.js";
+import { registerClient } from "./registration.js";
 import { instagramRoute } from "./instagram.js";
 import { googleRoute } from "./google.js";
 import { scoutCheckRoute } from "./scout-check.js";
@@ -175,6 +179,17 @@ async function route(
     });
   }
   if (c.role === "app") {
+    if (path === "/api/admin/automation") {
+      method(r, "GET");
+      const session = await owner(r, s, c);
+      return json({
+        lastJob: await s.get("connection-job", session.owner),
+        automaticRegistration: true,
+      });
+    }
+    if (path === "/api/jobs/connections" || path === "/api/connections/sync")
+      return automationRoute(r, s, c);
+    if (path === "/api/connections/grok") return grokConnection(r, s, c);
     if (path.startsWith("/api/instagram/")) return instagramRoute(r, s, c);
     if (path.startsWith("/api/auth/google/")) return googleRoute(r, s, c);
     if (path.startsWith("/api/scout/check/")) return scoutCheckRoute(r, s, c);
@@ -497,16 +512,20 @@ async function route(
       authorization_endpoint: c.app + "/api/oauth/authorize",
       token_endpoint: c.gateway + "/token",
       revocation_endpoint: c.gateway + "/revoke",
+      registration_endpoint: c.gateway + "/register",
       response_types_supported: ["code"],
-      grant_types_supported: ["authorization_code"],
+      grant_types_supported: ["authorization_code", "refresh_token"],
       code_challenge_methods_supported: ["S256"],
       token_endpoint_auth_methods_supported: [
         "client_secret_post",
         "client_secret_basic",
+        "none",
       ],
       scopes_supported: ["saver:read", "saver:write"],
     });
   }
+  if (path === "/jobs/connections") return relayConnections(r, s, c);
+  if (path === "/register") return registerClient(r, s, c);
   if (path === "/token") return token(r, s, c);
   if (path === "/revoke") return revoke(r, s, c);
   if (path === "/mcp") return mcp(r, s, c);
@@ -576,8 +595,12 @@ async function authorize(r: Request, s: Store, c: Config) {
       throw new ServiceError(400, "invalid_client_or_redirect");
     if (
       p.get("response_type") !== "code" ||
-      p.get("resource") !== resource(c) ||
-      p.get("scope") !== "saver:read saver:write" ||
+      (p.get("resource") ||
+        (client.registration === "dynamic" ? client.resource : "")) !==
+        resource(c) ||
+      (p.get("scope") ||
+        (client.registration === "dynamic" ? client.defaultScope : "")) !==
+        "saver:read saver:write" ||
       p.get("code_challenge_method") !== "S256" ||
       !/^[A-Za-z0-9_-]{43}$/.test(p.get("code_challenge") || "")
     )
@@ -624,27 +647,65 @@ async function clientAuthentication(r: Request, p: URLSearchParams, s: Store) {
     secret = decodeURIComponent(raw.slice(colon + 1));
   }
   const client = await s.get<Client>("client", clientId);
-  if (!client || client.revoked || !equal(client.secretHash, digest(secret)))
+  if (!client || client.revoked) throw new ServiceError(401, "invalid_client");
+  if (client.authMethod === "none") {
+    if (client.registration !== "dynamic" || secret || basic)
+      throw new ServiceError(401, "invalid_client");
+  } else if (!secret || !equal(client.secretHash, digest(secret))) {
     throw new ServiceError(401, "invalid_client");
+  }
   return client;
+}
+async function issueTokens(s: Store, c: Config, client: Client, grant: Grant) {
+  const access = opaque(),
+    refresh = client.refreshAllowed ? opaque() : "";
+  await s.put("token", digest(access), grant, 3600);
+  if (refresh) await s.put("refresh", digest(refresh), grant, 30 * 86400);
+  return json({
+    access_token: access,
+    token_type: "Bearer",
+    expires_in: 3600,
+    scope: grant.scope,
+    ...(refresh ? { refresh_token: refresh } : {}),
+  });
 }
 async function token(r: Request, s: Store, c: Config) {
   method(r, "POST");
   const p = await form(r),
     client = await clientAuthentication(r, p, s);
   await s.quota("token:" + client.id, 30);
-  if (
-    p.get("grant_type") !== "authorization_code" ||
-    p.get("resource") !== resource(c)
-  )
+  // RFC 8707 indicators are optional on exchange when the stored grant is
+  // already bound to the one dedicated audience. A different indicator is refused.
+  if (p.has("resource") && p.get("resource") !== resource(c))
     throw new ServiceError(400, "invalid_target");
-  const code = await s.take<Code>("code", digest(p.get("code") || ""));
-  const verifier = p.get("code_verifier") || "";
+  if (p.get("grant_type") === "refresh_token") {
+    if (!client.refreshAllowed) throw new ServiceError(400, "invalid_grant");
+    const grant = await s.take<Grant>(
+      "refresh",
+      digest(p.get("refresh_token") || ""),
+    );
+    if (
+      !grant ||
+      grant.owner !== c.owner ||
+      grant.clientId !== client.id ||
+      grant.resource !== resource(c) ||
+      grant.scope !== "saver:read saver:write"
+    )
+      throw new ServiceError(400, "invalid_grant");
+    const result = await issueTokens(s, c, client, grant);
+    await s.audit(c.owner, client.id, "token_refresh", "rotated");
+    return result;
+  }
+  if (p.get("grant_type") !== "authorization_code")
+    throw new ServiceError(400, "invalid_target");
+  const code = await s.take<Code>("code", digest(p.get("code") || "")),
+    verifier = p.get("code_verifier") || "";
   if (
     !code ||
     code.owner !== c.owner ||
     code.clientId !== client.id ||
     code.resource !== resource(c) ||
+    code.scope !== "saver:read saver:write" ||
     code.redirect !== p.get("redirect_uri") ||
     !client.redirects.includes(code.redirect) ||
     !/^[A-Za-z0-9._~-]{43,128}$/.test(verifier) ||
@@ -654,33 +715,36 @@ async function token(r: Request, s: Store, c: Config) {
     )
   )
     throw new ServiceError(400, "invalid_grant");
-  const access = opaque();
-  await s.put(
-    "token",
-    digest(access),
-    {
-      owner: code.owner,
-      clientId: code.clientId,
-      resource: code.resource,
-      scope: code.scope,
-    },
-    3600,
-  );
-  await s.audit(c.owner, client.id, "token_issue", "issued");
-  return json({
-    access_token: access,
-    token_type: "Bearer",
-    expires_in: 3600,
+  const result = await issueTokens(s, c, client, {
+    owner: code.owner,
+    clientId: code.clientId,
+    resource: code.resource,
     scope: code.scope,
   });
+  await s.audit(c.owner, client.id, "token_issue", "issued");
+  return result;
 }
+
 async function revoke(r: Request, s: Store, c: Config) {
   method(r, "POST");
   const p = await form(r),
     client = await clientAuthentication(r, p, s);
   const key = digest(p.get("token") || ""),
-    grant = await s.get<Grant>("token", key);
-  if (grant?.clientId === client.id) await s.remove("token", key);
+    grant =
+      (await s.get<Grant>("token", key)) ||
+      (await s.get<Grant>("refresh", key));
+  if (
+    grant?.clientId === client.id &&
+    grant.owner === c.owner &&
+    grant.resource === resource(c)
+  ) {
+    if (await s.get("refresh", key))
+      await s.query(
+        "DELETE FROM ad_records WHERE namespace IN ('token','refresh') AND data->>'clientId'=$1 AND data->>'owner'=$2 AND data->>'resource'=$3",
+        [client.id, c.owner, resource(c)],
+      );
+    else await s.remove("token", key);
+  }
   await s.audit(c.owner, client.id, "token_revoke", "revoked");
   return new Response(null, { status: 200, headers });
 }

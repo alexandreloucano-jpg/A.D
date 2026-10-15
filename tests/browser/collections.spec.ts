@@ -47,6 +47,8 @@ for (const width of [390, 1440])
       () =>
         JSON.parse(localStorage.getItem("ad.workspace.v1")!).references[0].id,
     );
+    // The JSON recovery/import path is an administrator tool, not everyday Saver UI.
+    await page.goto("/#/saver?admin=1");
     await page.getByRole("button", { name: "Groupes avec Grok" }).click();
     await page
       .getByLabel("Propositions JSON de Grok")

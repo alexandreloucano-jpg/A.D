@@ -86,25 +86,34 @@ for (const width of [390, 1440])
       }),
     );
     await page.goto("/#/saver");
-    await page.getByText("Comptes connectés", { exact: true }).click();
+    await page.getByText("Mes connexions", { exact: true }).click();
     await expect(
-      page.getByRole("heading", { name: "Google · non lié" }),
+      page.getByRole("heading", { name: "X · non connecté" }),
     ).toBeVisible();
-    await page.getByText("X · non connecté", { exact: true }).click();
-    await expect(page.getByText(/Absence d’accès développeur X/)).toBeVisible();
     await expect(
-      page.getByRole("button", {
-        name: "Autoriser la lecture de mes signets X",
-      }),
-    ).toHaveCount(0);
+      page.getByText("La connexion X n’est pas encore disponible."),
+    ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Instagram · non connecté" }),
     ).toBeVisible();
     await expect(
       page.getByText(
-        /L’API ne permet pas d’importer vos publications enregistrées/,
+        /L’import des publications enregistrées n’est pas disponible/,
       ),
     ).toBeVisible();
+    await expect(
+      page.getByText("Vérifier la passerelle MCP", { exact: true }),
+    ).toHaveCount(0);
+    await page.getByRole("button", { name: "Réglages et sauvegarde" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Mon compte", exact: true }),
+    ).toBeVisible();
+    await expect(page.getByLabel("Client secret", { exact: true })).toHaveCount(
+      0,
+    );
+    await expect(
+      page.getByLabel("URL de retour vérifiée", { exact: true }),
+    ).toHaveCount(0);
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
@@ -113,14 +122,18 @@ for (const width of [390, 1440])
     await page.screenshot({
       path: `artifacts/connected-accounts-${width}.png`,
     });
+    // Account-link recovery is preserved only in the back office.
+    await page.goto("/#/saver?admin=1&settings=1");
+    await expect(
+      page.getByRole("heading", { name: "Google · non lié" }),
+    ).toBeVisible();
     await page
       .getByRole("button", { name: "Lier Google à mon propriétaire GitHub" })
       .click();
     await page.waitForURL("https://accounts.google.com/**");
     expect(linkRequests).toBe(1);
     linked = true;
-    await page.goto("/#/saver");
-    await page.getByText("Comptes connectés", { exact: true }).click();
+    await page.goto("/#/saver?admin=1&settings=1");
     await expect(
       page.getByRole("heading", { name: "Google · lié au propriétaire" }),
     ).toBeVisible();
