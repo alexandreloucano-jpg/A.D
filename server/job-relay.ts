@@ -53,10 +53,17 @@ export async function relayConnections(r: Request, s: Store, c: Config) {
       !/^\d{1,20}$/.test(String(payload.run_id)) ||
       !/^\d{1,4}$/.test(String(payload.run_attempt))
     )
-      throw Error("claims");
+      throw new ServiceError(401, "job_workload_claims_rejected");
     run = String(payload.run_id) + ":" + String(payload.run_attempt);
-  } catch {
-    throw new ServiceError(401, "job_identity_rejected");
+  } catch (error) {
+    if (error instanceof ServiceError) throw error;
+    // Return only a bounded failure category, never a JWT or claim value.
+    const code = error && typeof error === "object" && "code" in error ? String(error.code) : "";
+    const category = code === "ERR_JWKS_TIMEOUT" ? "job_identity_provider_timeout"
+      : code === "ERR_JWT_CLAIM_VALIDATION_FAILED" ? "job_identity_claim_rejected"
+      : code === "ERR_JWS_SIGNATURE_VERIFICATION_FAILED" ? "job_identity_signature_rejected"
+      : "job_identity_rejected";
+    throw new ServiceError(401, category);
   }
   await s.quota("job-relay-hour:" + c.owner, 8, 3600);
   await s.quota("job-relay-run:" + run, 1, 86400);
