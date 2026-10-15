@@ -8,8 +8,28 @@ export const collectionSchema = z
       .max(2000)
       .refine((ids) => new Set(ids).size === ids.length),
     createdAt: z.string().datetime(),
-    origin: z.enum(["human", "grok-approved"]).optional(),
+    origin: z.enum(["human", "grok-approved", "ai-approved"]).optional(),
     approvedAt: z.string().datetime().optional(),
+    aiProvenance: z
+      .object({
+        provider: z.string().max(80),
+        model: z.string().max(200),
+        generatedAt: z.string().datetime(),
+      })
+      .strict()
+      .optional(),
+    rationale: z.string().max(2000).optional(),
+    sources: z
+      .array(
+        z
+          .object({
+            referenceId: z.string().uuid(),
+            quote: z.string().min(1).max(1500),
+          })
+          .strict(),
+      )
+      .max(40)
+      .optional(),
   })
   .strict();
 export const collectionsSchema = z
@@ -34,7 +54,14 @@ export const COLLECTIONS_KEY = "ad.saver.collections.v1";
 export const proposalsSchema = z
   .object({
     groups: z
-      .array(collectionSchema.pick({ name: true, referenceIds: true }))
+      .array(
+        collectionSchema.pick({
+          name: true,
+          referenceIds: true,
+          rationale: true,
+          sources: true,
+        }),
+      )
       .min(1)
       .max(20),
   })
@@ -43,6 +70,7 @@ export function validateProposals(
   input: unknown,
   knownIds: Set<string>,
   existingNames: string[],
+  sourceTexts?: Map<string, string>,
 ) {
   const parsed = proposalsSchema.parse(input);
   const names = new Set(existingNames.map((n) => n.toLocaleLowerCase()));
@@ -50,6 +78,16 @@ export function validateProposals(
     if (names.has(group.name.toLocaleLowerCase()))
       throw Error("Un groupe de ce nom existe déjà. Renommez la proposition.");
     names.add(group.name.toLocaleLowerCase());
+    if (
+      group.sources?.some(
+        (source) =>
+          !group.referenceIds.includes(source.referenceId) ||
+          !sourceTexts?.get(source.referenceId)?.includes(source.quote),
+      )
+    )
+      throw Error(
+        "Une citation du groupe ne correspond pas aux sources disponibles.",
+      );
     if (group.referenceIds.some((id) => !knownIds.has(id)))
       throw Error(
         "La proposition contient une référence inconnue ou non accessible.",

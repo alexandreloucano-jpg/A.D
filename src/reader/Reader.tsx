@@ -18,6 +18,12 @@ type Answer = {
   inferences: string;
   unknowns: string;
   citations: { paragraphId: string; quote: string }[];
+  provenance?: {
+    provider: string;
+    model: string;
+    generatedAt: string;
+    contentVersion: string;
+  };
 };
 export function Reader({
   reference,
@@ -55,6 +61,14 @@ export function Reader({
     [editing, setEditing] = useState<Annotation | null>(null),
     [aiAvailable, setAiAvailable] = useState(false),
     [mediaError, setMediaError] = useState(false);
+  const [versions, setVersions] = useState<
+    { version: string; updatedAt: string; provenance: string }[]
+  >([]);
+  const [hasOriginal, setHasOriginal] = useState(false);
+  const [taste, setTaste] = useState<{
+    humanAnnotations: unknown[];
+    aiInterpretations: unknown[];
+  } | null>(null);
   const availableText = doc?.text ?? reference.content;
   const version = doc?.version;
   const image = directImageUrl(reference.url),
@@ -67,6 +81,8 @@ export function Reader({
         document: unknown;
         annotations: unknown[];
         aiAvailable: boolean;
+        hasOriginal?: boolean;
+        versions?: typeof versions;
       }>("/api/reader/" + reference.id);
       const document = documentSchema.parse(data.document);
       setDoc(document);
@@ -75,6 +91,8 @@ export function Reader({
         data.annotations.map((row) => annotationSchema.parse(row)),
       );
       setAiAvailable(data.aiAvailable);
+      setHasOriginal(!!data.hasOriginal);
+      setVersions(data.versions || []);
     } catch (e) {
       setError(
         e instanceof Error
@@ -225,6 +243,81 @@ export function Reader({
             <a href={reference.url} target="_blank" rel="noreferrer">
               Ouvrir la source originale ↗
             </a>
+          )}
+          {remote.connected && persisted && doc && reference.url && !image && (
+            <button
+              disabled={busy}
+              onClick={() =>
+                void run(async () => {
+                  const result = await remote.reader<{
+                    document: unknown;
+                    verified: boolean;
+                    originalPreserved: boolean;
+                  }>("/api/reader/" + reference.id + "/extract", "POST", {
+                    expectedVersion: doc.version,
+                  });
+                  if (!result.verified || !result.originalPreserved)
+                    throw Error("Extraction non confirmée.");
+                  setDoc(documentSchema.parse(result.document));
+                  setSelection(null);
+                  setAnswer(null);
+                  setNotice(
+                    "Texte extrait ; original et versions précédentes conservés.",
+                  );
+                  await load();
+                })
+              }
+            >
+              Extraire le texte de la source autorisée
+            </button>
+          )}
+          {doc && (hasOriginal || doc.provenance === "extraction") && (
+            <p>
+              Texte extrait depuis la source.{" "}
+              <a
+                href={
+                  "/api/reader/" +
+                  reference.id +
+                  "/original?version=" +
+                  doc.version
+                }
+              >
+                Télécharger l’original conservé
+              </a>
+            </p>
+          )}
+          {versions.length > 1 && doc && (
+            <label>
+              Version du texte
+              <select
+                aria-label="Version du texte"
+                value={doc.version}
+                disabled={busy}
+                onChange={(e) => {
+                  const selected = e.target.value;
+                  void run(async () => {
+                    const result = await remote.reader<{
+                      document: unknown;
+                      hasOriginal: boolean;
+                    }>("/api/reader/" + reference.id + "/version/" + selected);
+                    setDoc(documentSchema.parse(result.document));
+                    setHasOriginal(result.hasOriginal);
+                    setSelection(null);
+                    setAnswer(null);
+                    setNotice(
+                      "Version conservée ouverte. Rechargez la lecture serveur pour revenir à la version courante.",
+                    );
+                  });
+                }}
+              >
+                {versions.map((v) => (
+                  <option key={v.version} value={v.version}>
+                    {new Date(v.updatedAt).toLocaleString("fr-FR")} ·{" "}
+                    {v.provenance} · {v.version.slice(0, 8)}
+                  </option>
+                ))}
+              </select>
+            </label>
           )}
           <button onClick={close}>Retour à la bibliothèque</button>
         </header>
@@ -552,6 +645,14 @@ export function Reader({
             {answer && (
               <section>
                 <h4>Interprétation IA</h4>
+                {answer.provenance && (
+                  <p>
+                    {answer.provenance.provider} · {answer.provenance.model} ·{" "}
+                    {new Date(answer.provenance.generatedAt).toLocaleString(
+                      "fr-FR",
+                    )}
+                  </p>
+                )}
                 <p>Explicite : {answer.explicit}</p>
                 <p>Déductions : {answer.inferences}</p>
                 <p>La source ne permet pas de savoir : {answer.unknowns}</p>
@@ -577,6 +678,36 @@ export function Reader({
             )}
           </aside>
         </div>
+        {remote.connected && persisted && !reference.isInternalQA && (
+          <details>
+            <summary>Mémoire Taste de cette référence</summary>
+            <p>
+              Source, annotations humaines et interprétations IA restent
+              distinctes. Aucune préférence confirmée n’est modifiée.
+            </p>
+            <button
+              disabled={busy}
+              onClick={() =>
+                void run(async () =>
+                  setTaste(
+                    await remote.reader(
+                      "/api/taste/context?reference=" + reference.id,
+                    ),
+                  ),
+                )
+              }
+            >
+              Relire le contexte Taste
+            </button>
+            {taste && (
+              <p>
+                {taste.humanAnnotations.length} annotation(s) humaine(s),{" "}
+                {taste.aiInterpretations.length} interprétation(s) IA
+                conservée(s).
+              </p>
+            )}
+          </details>
+        )}
         {notice && <p role="status">{notice}</p>}
       </div>
     </Modal>

@@ -1,3 +1,4 @@
+import { aiAvailable, answerQuestion } from "./ai.js";
 import { z } from "zod";
 import { type Store, ServiceError, digest } from "./store.js";
 import { owner, type Config } from "./security.js";
@@ -40,7 +41,23 @@ export class ReaderStore {
       "SELECT d.document FROM ad_reader_heads h JOIN ad_reader_documents d ON d.owner_id=h.owner_id AND d.reference_id=h.reference_id AND d.version=h.version WHERE h.owner_id=$1 AND h.reference_id=$2",
       [ownerId, reference.id],
     );
-    return row ? documentSchema.parse(row.document) : documentFrom(reference);
+    if (row) return documentSchema.parse(row.document);
+    const [origin] = await this.store.query(
+      "SELECT data FROM ad_records WHERE namespace='x-origin' AND key LIKE $1 AND data->>'referenceId'=$2 LIMIT 1",
+      [ownerId + ":%", reference.id],
+    );
+    const source = origin?.data as
+      | { sourceText?: string; publishedAt?: string; importedAt?: string }
+      | undefined;
+    if (source?.sourceText) {
+      const doc = documentFrom({ ...reference, content: source.sourceText });
+      return {
+        ...doc,
+        publishedAt: source.publishedAt || null,
+        updatedAt: source.importedAt || reference.capturedAt,
+      };
+    }
+    return documentFrom(reference);
   }
   async annotations(ownerId: string, referenceId: string) {
     return (
@@ -55,17 +72,26 @@ export class ReaderStore {
     reference: Reference,
     text: string,
     expected: string,
+    options?: {
+      provenance: "extraction";
+      publishedAt: string | null;
+      kind: "text" | "pdf";
+    },
   ) {
     const previous = await this.current(ownerId, reference);
     if (previous.version !== expected)
       throw new ServiceError(409, "content_version_changed");
+    await this.store.query(
+      "INSERT INTO ad_reader_documents(owner_id,reference_id,version,document,is_current) VALUES($1,$2,$3,$4::jsonb,false) ON CONFLICT(owner_id,reference_id,version) DO NOTHING",
+      [ownerId, reference.id, previous.version, JSON.stringify(previous)],
+    );
     const next: ReaderDocument = {
       referenceId: reference.id,
-      version: digest("text\n" + text),
-      kind: "text",
+      version: digest((options?.kind || "text") + "\n" + text),
+      kind: options?.kind || "text",
       text,
-      provenance: "manual",
-      publishedAt: previous.publishedAt,
+      provenance: options?.provenance || "manual",
+      publishedAt: options?.publishedAt ?? previous.publishedAt,
       updatedAt: new Date().toISOString(),
     };
     // The head CAS is atomic even across concurrent server instances. Snapshots are immutable.
@@ -87,6 +113,10 @@ export class ReaderStore {
       !anchorMatches(doc.text, valid.anchor)
     )
       throw new ServiceError(409, "anchor_or_version_changed");
+    await this.store.query(
+      "INSERT INTO ad_reader_documents(owner_id,reference_id,version,document,is_current) VALUES($1,$2,$3,$4::jsonb,false) ON CONFLICT(owner_id,reference_id,version) DO NOTHING",
+      [ownerId, reference.id, doc.version, JSON.stringify(doc)],
+    );
     const now = new Date().toISOString();
     const annotation: Annotation = {
       ...valid,
@@ -159,7 +189,7 @@ export class ReaderStore {
   async search(ownerId: string, q: string) {
     const needle = "%" + q.replace(/[\\%_]/g, "\\$&") + "%";
     return await this.store.query(
-      `SELECT DISTINCT r.id AS "referenceId", a.id AS "annotationId", a.annotation->'anchor'->>'exact' AS quote, a.annotation->>'note' AS note FROM ad_saver r LEFT JOIN ad_reader_heads h ON h.owner_id=r.owner_id AND h.reference_id=r.id LEFT JOIN ad_reader_documents d ON d.owner_id=h.owner_id AND d.reference_id=h.reference_id AND d.version=h.version LEFT JOIN ad_reader_annotations a ON a.owner_id=r.owner_id AND a.reference_id=r.id WHERE r.owner_id=$1 AND COALESCE((r.reference->>'isInternalQA')::boolean,false)=false AND (r.reference->>'title' ILIKE $2 OR r.reference->>'content' ILIKE $2 OR d.document->>'text' ILIKE $2 OR a.annotation->>'note' ILIKE $2 OR a.annotation->'anchor'->>'exact' ILIKE $2) LIMIT 100`,
+      `SELECT DISTINCT r.id AS "referenceId", a.id AS "annotationId", a.annotation->'anchor'->>'exact' AS quote, a.annotation->>'note' AS note FROM ad_saver r LEFT JOIN ad_reader_heads h ON h.owner_id=r.owner_id AND h.reference_id=r.id LEFT JOIN ad_reader_documents d ON d.owner_id=h.owner_id AND d.reference_id=h.reference_id AND d.version=h.version LEFT JOIN ad_reader_annotations a ON a.owner_id=r.owner_id AND a.reference_id=r.id LEFT JOIN ad_records xo ON xo.namespace='x-origin' AND xo.key LIKE r.owner_id||':%' AND xo.data->>'referenceId'=r.id::text WHERE r.owner_id=$1 AND COALESCE((r.reference->>'isInternalQA')::boolean,false)=false AND (r.reference->>'title' ILIKE $2 OR r.reference->>'content' ILIKE $2 OR d.document->>'text' ILIKE $2 OR xo.data->>'sourceText' ILIKE $2 OR a.annotation->>'note' ILIKE $2 OR a.annotation->'anchor'->>'exact' ILIKE $2) LIMIT 100`,
       [ownerId, needle],
     );
   }
@@ -198,12 +228,37 @@ export async function readerRoute(
   const referenceId = z.string().uuid().parse(match[1]),
     reference = await s.read(session.owner, referenceId);
   if (!reference) throw new ServiceError(404, "reference_not_found");
-  if (r.method === "GET" && !match[2])
+  if (r.method === "GET" && !match[2]) {
+    const current = await db.current(session.owner, reference);
+    const snapshots = await s.query(
+      "SELECT document FROM ad_reader_documents WHERE owner_id=$1 AND reference_id=$2 ORDER BY version",
+      [session.owner, reference.id],
+    );
+    const versions = [
+      current,
+      ...snapshots.map((row) => documentSchema.parse(row.document)),
+    ]
+      .filter(
+        (doc, index, all) =>
+          all.findIndex((other) => other.version === doc.version) === index,
+      )
+      .map((doc) => ({
+        version: doc.version,
+        updatedAt: doc.updatedAt,
+        provenance: doc.provenance,
+        kind: doc.kind,
+      }));
     return json({
-      document: await db.current(session.owner, reference),
+      document: current,
       annotations: await db.annotations(session.owner, reference.id),
-      aiAvailable: false,
+      aiAvailable: aiAvailable(),
+      hasOriginal: !!(await s.get(
+        "reader-extraction",
+        session.owner + ":" + reference.id + ":" + current.version,
+      )),
+      versions,
     });
+  }
   const raw = await r.text();
   if (Buffer.byteLength(raw) > 220000)
     throw new ServiceError(413, "request_too_large");
@@ -282,8 +337,9 @@ export async function readerRoute(
     const doc = await db.current(session.owner, reference);
     if (doc.version !== valid.contentVersion)
       throw new ServiceError(409, "content_version_changed");
-    // No authorized AI provider exists in this repository/environment. Never add a fallback model or fabricated answer.
-    throw new ServiceError(503, "authorized_ai_provider_unavailable");
+    return json({
+      answer: await answerQuestion(s, session.owner, reference, doc, valid),
+    });
   }
   throw new ServiceError(405, "method_not_allowed");
 }

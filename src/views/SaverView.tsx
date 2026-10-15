@@ -1,3 +1,4 @@
+import { XConnection } from "../social/XConnection";
 import { validateProposals } from "../collections/model";
 import { useEffect, useState } from "react";
 import { Reader } from "../reader/Reader";
@@ -40,6 +41,21 @@ export function SaverView({
 }) {
   const collections = useCollections(remote);
   const [groupId, setGroupId] = useState("");
+  const [scoutCheck, setScoutCheck] = useState<{
+    verified: boolean;
+    referenceCount?: number;
+    globalToolDenied?: boolean;
+    error?: string;
+    sampleUuid?: string | null;
+  } | null>(null);
+  const [scoutCheckBusy, setScoutCheckBusy] = useState(false);
+  useEffect(() => {
+    if (remote.connected)
+      void remote
+        .reader<{ check: typeof scoutCheck }>("/api/scout/check/status")
+        .then((r) => setScoutCheck(r.check))
+        .catch(() => {});
+  }, [remote.connected]);
   const [groupName, setGroupName] = useState("");
   const [managing, setManaging] = useState<string | null>(null);
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
@@ -49,9 +65,34 @@ export function SaverView({
   const [proposalText, setProposalText] = useState("");
   const [proposalError, setProposalError] = useState("");
   const [proposals, setProposals] = useState<
-    { name: string; referenceIds: string[] }[]
+    {
+      name: string;
+      referenceIds: string[];
+      rationale?: string;
+      sources?: { referenceId: string; quote: string }[];
+    }[]
   >([]);
   const [proposalApproved, setProposalApproved] = useState(false);
+  const [verifiedProposalSources, setVerifiedProposalSources] = useState<
+    { referenceId: string; text: string }[]
+  >([]);
+  const [aiStatus, setAiStatus] = useState<{
+    available: boolean;
+    provider: string | null;
+  } | null>(null);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiProvenance, setAiProvenance] = useState<
+    { provider: string; model: string; generatedAt: string } | undefined
+  >();
+  useEffect(() => {
+    if (suggestionHelp && remote.connected)
+      void remote
+        .reader<{ available: boolean; provider: string | null }>(
+          "/api/scout/classify",
+        )
+        .then(setAiStatus)
+        .catch(() => setAiStatus(null));
+  }, [suggestionHelp, remote.connected]);
   const [groupNotice, setGroupNotice] = useState("");
   const [reading, setReading] = useState<string | null>(() => {
     const p = new URLSearchParams(location.hash.split("?")[1] || "");
@@ -103,6 +144,56 @@ export function SaverView({
   );
   return (
     <>
+      <XConnection remote={remote} />
+      {remote.connected && (
+        <details className="scout-check">
+          <summary>Vérifier la passerelle MCP</summary>
+          <p>
+            Ce test ouvre une autorisation OAuth de diagnostic, lit Saver et
+            vérifie le refus des outils globaux. Il ne crée aucune référence ni
+            tâche. Le client temporaire est révoqué après le test ; ce n’est pas
+            une connexion à un compte Grok.
+          </p>
+          <button
+            disabled={scoutCheckBusy}
+            onClick={async () => {
+              setScoutCheckBusy(true);
+              try {
+                const result = await remote.reader<{ url: string }>(
+                  "/api/scout/check/start",
+                  "POST",
+                  {},
+                );
+                const url = new URL(result.url);
+                if (
+                  url.origin !== location.origin ||
+                  url.pathname !== "/api/oauth/authorize"
+                )
+                  throw Error("Adresse de diagnostic refusée.");
+                location.assign(url.href);
+              } catch {
+                setScoutCheck({
+                  verified: false,
+                  error:
+                    "Diagnostic indisponible. Vérifiez votre session et la configuration MCP.",
+                });
+                setScoutCheckBusy(false);
+              }
+            }}
+          >
+            Autoriser un test réel de lecture MCP
+          </button>
+          {scoutCheck && (
+            <p role="status">
+              {scoutCheck.verified
+                ? "Lecture OAuth authentifiée vérifiée · " +
+                  scoutCheck.referenceCount +
+                  " référence(s) · outils globaux refusés."
+                : "Test non confirmé : " + scoutCheck.error}
+            </p>
+          )}
+        </details>
+      )}
       <div className="saver-groups">
         <label>
           Collection
@@ -184,6 +275,60 @@ export function SaverView({
           title="Groupes proposés par Grok"
           close={() => setSuggestionHelp(false)}
         >
+          {remote.connected && (
+            <>
+              <p>
+                {aiStatus?.available
+                  ? "Fournisseur configuré : " + aiStatus.provider
+                  : "Classification automatique indisponible : aucun fournisseur IA configuré et activé."}
+              </p>
+              {aiStatus?.available && (
+                <button
+                  disabled={aiBusy || !refs.some((r) => serverIds.has(r.id))}
+                  onClick={async () => {
+                    setAiBusy(true);
+                    setProposalError("");
+                    try {
+                      const result = await remote.reader<{
+                        groups: typeof proposals;
+                        provenance: {
+                          provider: string;
+                          model: string;
+                          generatedAt: string;
+                        };
+                        requiresApproval: boolean;
+                        verifiedSourceTexts: {
+                          referenceId: string;
+                          text: string;
+                        }[];
+                      }>("/api/scout/classify", "POST", {
+                        referenceIds: refs
+                          .filter((r) => serverIds.has(r.id))
+                          .slice(0, 20)
+                          .map((r) => r.id),
+                      });
+                      if (!result.requiresApproval)
+                        throw Error("Validation humaine non confirmée.");
+                      setProposals(result.groups);
+                      setVerifiedProposalSources(result.verifiedSourceTexts);
+                      setAiProvenance(result.provenance);
+                      setProposalApproved(false);
+                    } catch (e) {
+                      setProposalError(
+                        e instanceof Error
+                          ? e.message
+                          : "Proposition non confirmée.",
+                      );
+                    } finally {
+                      setAiBusy(false);
+                    }
+                  }}
+                >
+                  Proposer des groupes avec l’IA configurée
+                </button>
+              )}
+            </>
+          )}
           <p>
             Grok peut proposer des groupes à partir des références que vous lui
             transmettez. La connexion automatique reste indisponible ; ce
@@ -223,6 +368,8 @@ export function SaverView({
               value={proposalText}
               onChange={(e) => {
                 setProposalText(e.target.value);
+                setAiProvenance(undefined);
+                setVerifiedProposalSources([]);
                 setProposals([]);
                 setProposalApproved(false);
               }}
@@ -240,6 +387,12 @@ export function SaverView({
                         .map((r) => r.id),
                     ),
                     collections.value.groups.map((g) => g.name),
+                    new Map([
+                      ...refs.map((r) => [r.id, r.content] as const),
+                      ...verifiedProposalSources.map(
+                        (r) => [r.referenceId, r.text] as const,
+                      ),
+                    ]),
                   ),
                 );
                 setProposalError("");
@@ -258,6 +411,20 @@ export function SaverView({
                 {proposals.map((g) => (
                   <li key={g.name}>
                     {g.name} · {g.referenceIds.length} référence(s)
+                    {g.rationale && <p>Justification IA : {g.rationale}</p>}
+                    {g.sources?.map((source, i) => (
+                      <p key={i}>
+                        <a
+                          href={
+                            "#/saver?reader=1&reference=" + source.referenceId
+                          }
+                          onClick={() => setSuggestionHelp(false)}
+                        >
+                          Source {source.referenceId.slice(0, 8)}
+                        </a>{" "}
+                        : « {source.quote} »
+                      </p>
+                    ))}
                   </li>
                 ))}
               </ul>
@@ -286,6 +453,12 @@ export function SaverView({
                           .map((r) => r.id),
                       ),
                       collections.value.groups.map((g) => g.name),
+                      new Map([
+                        ...refs.map((r) => [r.id, r.content] as const),
+                        ...verifiedProposalSources.map(
+                          (r) => [r.referenceId, r.text] as const,
+                        ),
+                      ]),
                     );
                     const now = new Date().toISOString();
                     const ok = await collections.save([
@@ -294,8 +467,12 @@ export function SaverView({
                         ...g,
                         id: crypto.randomUUID(),
                         createdAt: now,
-                        origin: "grok-approved" as const,
+                        origin:
+                          aiProvenance && aiProvenance.provider !== "xai"
+                            ? ("ai-approved" as const)
+                            : ("grok-approved" as const),
                         approvedAt: now,
+                        ...(aiProvenance ? { aiProvenance } : {}),
                       })),
                     ]);
                     if (ok) {

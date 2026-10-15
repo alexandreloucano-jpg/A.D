@@ -1,3 +1,8 @@
+import { scoutCheckRoute } from "./scout-check.js";
+import { classificationRoute } from "./ai.js";
+import { tasteRoute } from "./taste.js";
+import { extractRoute, originalRoute } from "./extraction.js";
+import { xRoute } from "./x.js";
 import { collectionsRoute } from "./collections.js";
 import { readerRoute } from "./reader.js";
 import { z } from "zod";
@@ -150,7 +155,52 @@ async function route(
     });
   }
   if (c.role === "app") {
+    if (path.startsWith("/api/scout/check/")) return scoutCheckRoute(r, s, c);
+    if (path === "/api/taste/context") return tasteRoute(r, s, c);
+    if (path === "/api/scout/classify") return classificationRoute(r, s, c);
+    if (path.startsWith("/api/x/")) return xRoute(r, s, c);
     if (path === "/api/collections") return collectionsRoute(r, s, c);
+    const versionMatch =
+      /^\/api\/reader\/([a-f0-9-]+)\/version\/([a-f0-9]{64})$/.exec(path);
+    if (versionMatch) {
+      method(r, "GET");
+      const session = await owner(r, s, c);
+      const referenceId = z.string().uuid().parse(versionMatch[1]);
+      if (!(await s.read(session.owner, referenceId)))
+        throw new ServiceError(404, "reference_not_found");
+      const [row] = await s.query(
+        "SELECT document FROM ad_reader_documents WHERE owner_id=$1 AND reference_id=$2 AND version=$3",
+        [session.owner, referenceId, versionMatch[2]],
+      );
+      if (!row) throw new ServiceError(404, "document_version_not_found");
+      return json({
+        document: row.document,
+        hasOriginal: !!(await s.get(
+          "reader-extraction",
+          session.owner + ":" + referenceId + ":" + versionMatch[2],
+        )),
+      });
+    }
+    const originalMatch = /^\/api\/reader\/([a-f0-9-]+)\/original$/.exec(path);
+    if (originalMatch) {
+      const session = await owner(r, s, c);
+      const reference = await s.read(
+        session.owner,
+        z.string().uuid().parse(originalMatch[1]),
+      );
+      if (!reference) throw new ServiceError(404, "reference_not_found");
+      return originalRoute(r, s, c, reference);
+    }
+    const extractMatch = /^\/api\/reader\/([a-f0-9-]+)\/extract$/.exec(path);
+    if (extractMatch) {
+      const session = await owner(r, s, c, true);
+      const reference = await s.read(
+        session.owner,
+        z.string().uuid().parse(extractMatch[1]),
+      );
+      if (!reference) throw new ServiceError(404, "reference_not_found");
+      return extractRoute(r, s, c, reference);
+    }
     if (path.startsWith("/api/reader/")) return readerRoute(r, s, c);
     if (path === "/api/auth/login") {
       method(r, "GET");
@@ -323,9 +373,20 @@ async function route(
       );
       return json({ results, localDataPreserved: true });
     }
+    if (path === "/api/scout/status") {
+      method(r, "GET");
+      await owner(r, s, c);
+      return json({
+        configured: c.gateway !== c.app,
+        resource: c.gateway !== c.app ? resource(c) : null,
+        callbackAllowlistConfigured: !!c.redirects.length,
+      });
+    }
     if (path === "/api/scout/clients") {
       method(r, "POST");
       const session = await owner(r, s, c, true);
+      if (c.gateway === c.app)
+        throw new ServiceError(503, "dedicated_gateway_not_configured");
       const input = z
         .object({
           name: z.string().min(1).max(100),
@@ -339,6 +400,8 @@ async function route(
         secret = opaque();
       await s.put("client", clientId, {
         id: clientId,
+        owner: session.owner,
+        resource: resource(c),
         name: input.name,
         secretHash: digest(secret),
         redirects: input.redirects,
@@ -711,13 +774,13 @@ async function mcp(r: Request, s: Store, c: Config) {
         .parse(call.arguments || {});
       const all = await s.list(grant.owner, args.query, args.after || "", 100);
       output = {
-        references: all.filter((row) => !row.isInternalQA),
+        references: all.filter((row) => !row.isInternalQA && !row.projectId),
         next: all.length === 100 ? all.at(-1)!.id : null,
       };
     } else if (call.name === "get_saver_capture") {
       const args = z.object({ id }).strict().parse(call.arguments);
       const reference = await s.read(grant.owner, args.id);
-      if (!reference || reference.isInternalQA)
+      if (!reference || reference.isInternalQA || reference.projectId)
         throw new ServiceError(404, "reference_not_found");
       output = { reference };
     } else {

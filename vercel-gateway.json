@@ -1,10 +1,17 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "buildCommand": "mkdir -p gateway-dist",
+  "buildCommand": "node scripts/build-scout.mjs",
   "outputDirectory": "gateway-dist",
-  "functions": { "api/index.ts": { "maxDuration": 30 } },
+  "functions": {
+    "api/index.ts": {
+      "maxDuration": 30
+    }
+  },
   "rewrites": [
-    { "source": "/:path*", "destination": "/api/index?route=:path*" }
+    {
+      "source": "/:path*",
+      "destination": "/api/index?route=:path*"
+    }
   ]
 }

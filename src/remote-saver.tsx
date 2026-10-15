@@ -6,6 +6,59 @@ async function response<T>(r: Response): Promise<T> {
       "Service Saver indisponible. Les données locales restent intactes.",
     );
   const body = await r.json();
+  const messages: Record<string, string> = {
+    x_developer_credentials_required:
+      "Accès développeur X manquant. Aucun signet ne peut être importé avant configuration et autorisation.",
+    x_reconnect_required:
+      "L’autorisation X doit être renouvelée. Reconnectez X ; les références restent conservées.",
+    x_api_budget_required:
+      "X exige un accès API ou des crédits disponibles. Aucun abonnement ni paiement n’a été modifié.",
+    x_permission_denied:
+      "X refuse la lecture. Vérifiez les droits bookmark.read, tweet.read et users.read de votre application.",
+    x_rate_limited:
+      "Quota X atteint. La reprise est conservée ; consultez l’état de connexion avant de réessayer.",
+    x_sync_busy:
+      "Une synchronisation X est déjà en cours. Les références restent intactes.",
+    x_partial_page_not_advanced:
+      "X a renvoyé une page incomplète. La pagination n’a pas été avancée ; réessayez plus tard.",
+    source_access_denied:
+      "La source refuse la lecture ou exige une connexion. Le lien reste sauvegardé ; vous pouvez ajouter du texte manuellement.",
+    source_article_unreadable:
+      "Aucun article lisible n’a pu être extrait. La source et les annotations sont conservées.",
+    source_pdf_has_no_text_layer:
+      "Ce PDF ne contient pas de texte extractible. Aucun texte n’a été inventé ; ajoutez-en manuellement.",
+    source_pdf_unreadable_or_protected:
+      "Le PDF est illisible ou protégé. Aucun accès n’a été contourné.",
+    source_private_address_rejected:
+      "Cette adresse résout vers un réseau privé ; téléchargement refusé.",
+    source_url_not_allowed:
+      "Seules les sources HTTPS publiques sans identifiants sont autorisées.",
+    source_too_large:
+      "La source dépasse la limite de 5 Mo ; original et annotations précédents sont conservés.",
+    source_pdf_page_limit:
+      "Le PDF dépasse la limite de 50 pages pour cette extraction.",
+    source_timeout:
+      "La source n’a pas répondu dans le délai autorisé. Votre référence est conservée.",
+    source_dns_timeout:
+      "La résolution de la source a dépassé le délai autorisé.",
+    source_type_unsupported:
+      "Ce type de source ne peut pas être extrait comme un article ou un PDF.",
+    authorized_ai_provider_unavailable:
+      "Aucun fournisseur IA n’est configuré et activé. La lecture et les annotations restent disponibles.",
+    ai_citation_unverified:
+      "Réponse IA refusée : une citation ne correspond pas aux passages disponibles.",
+    ai_group_source_unverified:
+      "Proposition de groupe refusée : une source ne correspond pas au contenu disponible.",
+    ai_provider_refused:
+      "Le fournisseur IA a refusé la requête. Aucune réponse de démonstration n’est utilisée.",
+    content_version_changed:
+      "Le contenu a changé. Rechargez le document avant de modifier ses annotations.",
+    redirect_not_allowlisted:
+      "L’adresse de retour OAuth de ce client doit être autorisée dans la configuration serveur.",
+    dedicated_gateway_not_configured:
+      "La passerelle MCP dédiée n’est pas encore configurée.",
+  };
+  if (!r.ok && messages[body.error]) throw Error(messages[body.error]);
   if (!r.ok)
     throw Error(
       r.status === 401

@@ -1,6 +1,8 @@
 # A.D — Atelier personnel
 
-Reconstruction React/TypeScript indépendante, **pas un export Sites V66**. Quatre vues fonctionnelles : Accueil, Explorer, Saver et Projets. Backend Sites et données historiques indépendants. Un Saver serveur privé et une passerelle MCP dédiée sont implémentés, mais ne sont pas annoncés comme déployés ou connectés à Grok. Voir docs/VERCEL_SAVER_SCOUT.md.
+Application React/TypeScript existante : Accueil, Explorer, Saver et Projets. La bêta privée Vercel utilise GitHub pour l’identité propriétaire et la base Neon existante pour Saver. Les données historiques Sites restent indépendantes et intactes. Le service MCP dédié est limité à Saver par OAuth et par un rôle PostgreSQL restreint. Aucun compte Grok connecté ni signet X réel importé n’est revendiqué.
+
+État et vérifications de l’intégration X/Scout/lecteur : [docs/SAVER_X_SCOUT_READER.md](docs/SAVER_X_SCOUT_READER.md). L’accès développeur X manque et aucun fournisseur IA n’est configuré dans la bêta ; les états indisponibles sont explicites.
 
 ## Développer
 
@@ -28,9 +30,9 @@ Les tests navigateur utilisent Chromium installé dans `/usr/bin/chromium` (ou `
 - Explorer : faits sourcés saisis par l’utilisateur, date du fait distincte de la collecte, interprétation séparée.
 - Export/import de sauvegarde locale validée avec confirmation de remplacement. Aucun fixture de test dans l’application.
 
-Les données sont propres au navigateur et à l’origine, sans chiffrement applicatif. Exportez régulièrement et utilisez un appareil de confiance. Pas d’extraction web, analyse Taste, upload d’images ou synchronisation automatique. Les états d’intégration indisponibles sont explicites. Ne pas déployer cette version comme remplacement du backend privé.
+Le mode local reste propre au navigateur. Le mode connecté utilise le Saver privé : annotations versionnées, collections, contexte de référence Taste et extraction explicite de sources autorisées. Les jetons X sont chiffrés côté serveur. Aucun import historique ni profil de préférence confirmé n’est déduit de ces opérations. Les fonctions dépendant de X/IA restent bloquées sans configuration et consentement réels.
 
-Voir [l’inventaire de reprise](docs/RECOVERY_INVENTORY.md). Le code Grok contient seulement une spécification de politique testée ; aucune passerelle sécurisée ou connexion n’est revendiquée. OAuth dédié, quotas, révocation et test réel UUID sont des prérequis futurs.
+L’[inventaire de reprise](docs/RECOVERY_INVENTORY.md) décrit l’état historique du 14 octobre. Le service actuel implémente OAuth dédié, quotas, révocation et isolation SQL ; sa connexion à un consommateur Grok reste une vérification distincte qui exige le vrai callback et le consentement de ce consommateur.
 
 ## Voir et vérifier le frontend
 

@@ -6,7 +6,7 @@ export const documentSchema = z
     version: versionSchema,
     text: z.string().max(200000),
     kind: z.enum(["text", "image", "pdf", "unavailable"]),
-    provenance: z.enum(["capture", "manual"]),
+    provenance: z.enum(["capture", "manual", "extraction"]),
     publishedAt: z.string().datetime().nullable(),
     updatedAt: z.string().datetime(),
   })

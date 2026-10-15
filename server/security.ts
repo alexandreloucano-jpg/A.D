@@ -34,9 +34,10 @@ export function configuration(): Config {
     owner: "340639438",
     githubClient: process.env.GITHUB_OAUTH_CLIENT_ID || "",
     githubSecret: process.env.GITHUB_OAUTH_CLIENT_SECRET || "",
-    redirects: (process.env.SCOUT_REDIRECT_URIS || "")
-      .split(",")
-      .filter(Boolean),
+    redirects: [
+      origin("APP_ORIGIN") + "/api/scout/check/callback",
+      ...(process.env.SCOUT_REDIRECT_URIS || "").split(",").filter(Boolean),
+    ],
   };
 }
 export interface Session {
