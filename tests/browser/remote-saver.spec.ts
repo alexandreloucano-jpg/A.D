@@ -10,6 +10,10 @@ for (const width of [390, 1440])
     await page.route("**/api/**", async (route) => {
       const request = route.request(),
         url = new URL(request.url());
+      if (url.pathname === "/api/collections")
+        return route.fulfill({
+          json: { collections: { version: 1, revision: 0, groups: [] } },
+        });
       if (url.pathname === "/api/session")
         return route.fulfill({
           json: {

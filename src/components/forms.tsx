@@ -31,7 +31,12 @@ export function CaptureForm({
   remote?: boolean;
   data: Workspace;
   defaultProjectId?: string;
-  sourceContext?: { url: string; title: string } | null;
+  sourceContext?: {
+    url: string;
+    title: string;
+    content?: string;
+    shared?: boolean;
+  } | null;
   error: string;
   save: (input: {
     title: string;
@@ -41,12 +46,25 @@ export function CaptureForm({
     projectId?: string;
   }) => boolean | Promise<boolean>;
 }) {
-  const [title, setTitle] = useDraft("ad.draft.title", sourceContext?.title);
-  const [content, setContent] = useDraft("ad.draft.content");
-  const [url, setUrl] = useDraft("ad.draft.url", sourceContext?.url);
-  const [origin, setOrigin] = useDraft("ad.draft.origin");
+  const draftPrefix = sourceContext?.shared
+    ? "ad.shared." +
+      encodeURIComponent(
+        (sourceContext.url + sourceContext.content).slice(0, 10000),
+      ) +
+      "."
+    : "ad.draft.";
+  const [title, setTitle] = useDraft(
+    draftPrefix + "title",
+    sourceContext?.title,
+  );
+  const [content, setContent] = useDraft(
+    draftPrefix + "content",
+    sourceContext?.content,
+  );
+  const [url, setUrl] = useDraft(draftPrefix + "url", sourceContext?.url);
+  const [origin, setOrigin] = useDraft(draftPrefix + "origin");
   const [projectId, setProjectId] = useDraft(
-    "ad.draft.project",
+    draftPrefix + "project",
     defaultProjectId,
   );
   const [localError, setLocalError] = useState("");
@@ -93,7 +111,14 @@ export function CaptureForm({
       <p className="form-intro">
         Un lien ou quelques mots. Aucun classement imposé.
       </p>
-      {sourceContext && (
+      {sourceContext?.shared && (
+        <p className="source-context">
+          Partage reçu. Vérifiez le lien et le texte avant de sauvegarder. Le
+          lien seul ne donne pas accès aux contenus privés X ou Instagram. Aucun
+          groupe ni tâche n’est créé automatiquement.
+        </p>
+      )}
+      {sourceContext && !sourceContext.shared && (
         <p className="source-context">
           Piste à examiner pour « {sourceContext.title} ». Aucun NOW ne sera
           créé. Un éventuel brouillon existant est conservé.

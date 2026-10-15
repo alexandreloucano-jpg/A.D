@@ -1,3 +1,4 @@
+import { parseSharedCapture } from "./share";
 import { useRemoteSaver, RemoteSaverSettings } from "./remote-saver";
 import { useWorkspaceNavigation } from "./hooks/useWorkspaceNavigation";
 import {
@@ -124,6 +125,8 @@ export function App() {
   const [captureContext, setCaptureContext] = useState<{
     url: string;
     title: string;
+    content?: string;
+    shared?: boolean;
   } | null>(null);
   useEffect(() => {
     let active = true;
@@ -149,6 +152,53 @@ export function App() {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [pendingImport, setPendingImport] = useState<Workspace | null>(null);
+  useEffect(() => {
+    const receive = (restore = false) => {
+      try {
+        let incoming = parseSharedCapture(location.hash);
+        if (!incoming && restore) {
+          try {
+            const pending = sessionStorage.getItem("ad.pending-share.v1");
+            if (pending) {
+              const value = JSON.parse(pending);
+              incoming = parseSharedCapture(
+                "#/saver?" +
+                  new URLSearchParams({
+                    share: "1",
+                    url: value.url || "",
+                    title: value.title || "",
+                    text: value.content || "",
+                  }),
+              );
+            }
+          } catch {
+            /* Invalid incoming drafts never replace existing captures. */
+          }
+        }
+        if (incoming) {
+          try {
+            sessionStorage.setItem(
+              "ad.pending-share.v1",
+              JSON.stringify(incoming),
+            );
+          } catch {
+            /* Current form remains available. */
+          }
+        }
+        if (!incoming) return;
+        setCaptureContext(incoming);
+        setModal("capture");
+        setError("");
+      } catch (e) {
+        setError(errorLabel(e));
+      }
+    };
+    receive(true);
+    const change = () => receive();
+    window.addEventListener("hashchange", change);
+    return () => window.removeEventListener("hashchange", change);
+  }, []);
+
   useEffect(() => {
     const change = (event: StorageEvent) => {
       if (event.key === STORAGE_KEY) {
@@ -531,6 +581,11 @@ export function App() {
       {modal === "capture" && (
         <Modal title="Garder une idée." close={() => setModal(null)}>
           <CaptureForm
+            key={
+              captureContext?.shared
+                ? captureContext.url + captureContext.content
+                : "manual-capture"
+            }
             sourceContext={captureContext}
             defaultProjectId={
               route === "projets" ? projectId || undefined : undefined
@@ -586,6 +641,13 @@ export function App() {
                   setNotice(
                     `Référence sauvegardée et relue sur le serveur · ${saved.id}`,
                   );
+                  if (captureContext?.shared) {
+                    try {
+                      sessionStorage.removeItem("ad.pending-share.v1");
+                    } catch {
+                      /* Saved reference is verified. */
+                    }
+                  }
                   setModal(null);
                   openReference(saved.id);
                   return true;
@@ -596,6 +658,13 @@ export function App() {
                     `Référence sauvegardée et relue localement · ${reference.id}`,
                   )
                 ) {
+                  if (captureContext?.shared) {
+                    try {
+                      sessionStorage.removeItem("ad.pending-share.v1");
+                    } catch {
+                      /* Saved reference is verified. */
+                    }
+                  }
                   setModal(null);
                   openReference(reference.id);
                   return true;

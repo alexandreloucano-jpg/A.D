@@ -33,6 +33,10 @@ for (const width of [390, 1440])
     await page.route("**/api/**", async (route) => {
       const r = route.request(),
         p = new URL(r.url()).pathname;
+      if (p === "/api/collections")
+        return route.fulfill({
+          json: { collections: { version: 1, revision: 0, groups: [] } },
+        });
       if (p === "/api/session")
         return route.fulfill({
           json: { authenticated: true, csrf: "fixture", ownerId: "340639438" },

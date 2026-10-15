@@ -1,3 +1,4 @@
+import { collectionsRoute } from "./collections.js";
 import { readerRoute } from "./reader.js";
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
@@ -149,6 +150,7 @@ async function route(
     });
   }
   if (c.role === "app") {
+    if (path === "/api/collections") return collectionsRoute(r, s, c);
     if (path.startsWith("/api/reader/")) return readerRoute(r, s, c);
     if (path === "/api/auth/login") {
       method(r, "GET");
