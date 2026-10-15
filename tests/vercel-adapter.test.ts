@@ -286,7 +286,10 @@ it("submits the actual OAuth form in Chromium through the Vercel Node adapter wi
       /^[A-Za-z0-9_-]{43}$/,
     );
     expect(new URL(final).searchParams.get("state")).toBe("consumer-state");
-    vi.stubEnv("GOOGLE_OAUTH_CLIENT_ID", "google-fixture");
+    vi.stubEnv(
+      "GOOGLE_OAUTH_CLIENT_ID",
+      "1234567890-fixture.apps.googleusercontent.com",
+    );
     vi.stubEnv("GOOGLE_OAUTH_CLIENT_SECRET", "google-secret-fixture");
     vi.stubEnv(
       "AD_TOKEN_ENCRYPTION_KEY",

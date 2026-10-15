@@ -35,10 +35,12 @@ type Pending = {
   sessionHash: string;
 };
 function credentials(c: Config) {
-  const client = process.env.GOOGLE_OAUTH_CLIENT_ID || "",
-    secret = process.env.GOOGLE_OAUTH_CLIENT_SECRET || "";
+  const client = (process.env.GOOGLE_OAUTH_CLIENT_ID || "").trim(),
+    secret = (process.env.GOOGLE_OAUTH_CLIENT_SECRET || "").trim();
   if (!client || !secret || !encryptionAvailable())
     throw new ServiceError(503, "google_oauth_not_configured");
+  if (!/^\d+-[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/.test(client))
+    throw new ServiceError(503, "google_client_id_invalid");
   return { client, secret, callback: c.app + "/api/auth/google/callback" };
 }
 const keys = createRemoteJWKSet(
@@ -91,11 +93,16 @@ export async function googleRoute(
   const path = new URL(r.url).pathname;
   if (path === "/api/auth/google/status") {
     if (r.method !== "GET") throw new ServiceError(405, "method_not_allowed");
-    let configured = true;
+    let configured = true,
+      configurationError: string | null = null;
     try {
       credentials(c);
-    } catch {
+    } catch (error) {
       configured = false;
+      configurationError =
+        error instanceof ServiceError
+          ? error.code
+          : "google_oauth_not_configured";
     }
     // Public login capability only. Binding status requires the owner session.
     let linked = false,
@@ -114,6 +121,7 @@ export async function googleRoute(
     }
     return json({
       configured,
+      configurationError,
       linked,
       canLink,
       authMethod,

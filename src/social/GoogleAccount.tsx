@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { RemoteSaver } from "../remote-saver";
 type Status = {
+  configurationError?: string | null;
   configured: boolean;
   linked: boolean;
   canLink: boolean;
@@ -65,8 +66,9 @@ export function GoogleAccount({
       {!status && !error && <p>Vérification de la configuration Google…</p>}
       {status && !status.configured && (
         <p>
-          Google non configuré. GitHub reste disponible pour la connexion
-          propriétaire.
+          {status.configurationError === "google_client_id_invalid"
+            ? "Le Client ID Google configuré sur le serveur n’a pas le format OAuth attendu. Corrigez la variable Preview ; GitHub reste disponible."
+            : "Google non configuré. GitHub reste disponible pour la connexion propriétaire."}
         </p>
       )}
       {!remote.connected && status && !status.configured && (

@@ -49,7 +49,10 @@ beforeAll(async () => {
 }, 30000);
 beforeEach(async () => {
   await pg.exec("TRUNCATE ad_records,ad_saver,ad_quota,ad_audit");
-  vi.stubEnv("GOOGLE_OAUTH_CLIENT_ID", "google-client");
+  vi.stubEnv(
+    "GOOGLE_OAUTH_CLIENT_ID",
+    "1234567890-fixture.apps.googleusercontent.com",
+  );
   vi.stubEnv("GOOGLE_OAUTH_CLIENT_SECRET", "google-secret");
   vi.stubEnv("AD_TOKEN_ENCRYPTION_KEY", Buffer.alloc(32, 7).toString("base64"));
   await s.put(
@@ -72,7 +75,7 @@ async function signed(
   return new SignJWT({ sub, nonce, ...claims })
     .setProtectedHeader({ alg: "RS256", kid: "fixture-key" })
     .setIssuer("https://accounts.google.com")
-    .setAudience("google-client")
+    .setAudience("1234567890-fixture.apps.googleusercontent.com")
     .setIssuedAt()
     .setExpirationTime("5m")
     .sign(key);
@@ -266,7 +269,7 @@ it("requires owner + exact CSRF to link, rejects Google sessions for linking, an
   ).toBe(c.app + "/api/auth/google/setup");
   const binding = {
     sub: "owner-google",
-    client: "google-client",
+    client: "1234567890-fixture.apps.googleusercontent.com",
     linkedAt: "fixture",
   };
   await s.put("google-owner", c.owner, binding);
@@ -337,34 +340,50 @@ it("validates signatures, issuer, audience, expiry and nonce against the actual 
     vi.fn(async () => Response.json({ keys: [jwk] })),
   );
   const valid = await signed("owner-google", "nonce");
-  expect(await verifyGoogleIdToken(valid, "google-client", "nonce")).toBe(
-    "owner-google",
-  );
+  expect(
+    await verifyGoogleIdToken(
+      valid,
+      "1234567890-fixture.apps.googleusercontent.com",
+      "nonce",
+    ),
+  ).toBe("owner-google");
   await expect(
     verifyGoogleIdToken(valid, "another-client", "nonce"),
   ).rejects.toMatchObject({ code: "google_id_token_rejected" });
   await expect(
-    verifyGoogleIdToken(valid, "google-client", "wrong"),
+    verifyGoogleIdToken(
+      valid,
+      "1234567890-fixture.apps.googleusercontent.com",
+      "wrong",
+    ),
   ).rejects.toMatchObject({ code: "google_id_token_rejected" });
   const forged = await new SignJWT({ sub: "owner-google", nonce: "nonce" })
     .setProtectedHeader({ alg: "RS256", kid: "fixture-key" })
     .setIssuer("https://evil.example")
-    .setAudience("google-client")
+    .setAudience("1234567890-fixture.apps.googleusercontent.com")
     .setIssuedAt()
     .setExpirationTime("5m")
     .sign(key);
   await expect(
-    verifyGoogleIdToken(forged, "google-client", "nonce"),
+    verifyGoogleIdToken(
+      forged,
+      "1234567890-fixture.apps.googleusercontent.com",
+      "nonce",
+    ),
   ).rejects.toMatchObject({ code: "google_id_token_rejected" });
   const expired = await new SignJWT({ sub: "owner-google", nonce: "nonce" })
     .setProtectedHeader({ alg: "RS256", kid: "fixture-key" })
     .setIssuer("https://accounts.google.com")
-    .setAudience("google-client")
+    .setAudience("1234567890-fixture.apps.googleusercontent.com")
     .setIssuedAt(Math.floor(Date.now() / 1000) - 1000)
     .setExpirationTime(Math.floor(Date.now() / 1000) - 100)
     .sign(key);
   await expect(
-    verifyGoogleIdToken(expired, "google-client", "nonce"),
+    verifyGoogleIdToken(
+      expired,
+      "1234567890-fixture.apps.googleusercontent.com",
+      "nonce",
+    ),
   ).rejects.toMatchObject({ code: "google_id_token_rejected" });
   const other = await generateKeyPair("RS256");
   const badSignature = await new SignJWT({
@@ -373,12 +392,16 @@ it("validates signatures, issuer, audience, expiry and nonce against the actual 
   })
     .setProtectedHeader({ alg: "RS256", kid: "fixture-key" })
     .setIssuer("https://accounts.google.com")
-    .setAudience("google-client")
+    .setAudience("1234567890-fixture.apps.googleusercontent.com")
     .setIssuedAt()
     .setExpirationTime("5m")
     .sign(other.privateKey);
   await expect(
-    verifyGoogleIdToken(badSignature, "google-client", "nonce"),
+    verifyGoogleIdToken(
+      badSignature,
+      "1234567890-fixture.apps.googleusercontent.com",
+      "nonce",
+    ),
   ).rejects.toMatchObject({ code: "google_id_token_rejected" });
 });
 it("unlink preserves the library, revokes Google sessions and prevents another login", async () => {
@@ -447,4 +470,35 @@ it("routes first-time Google login through verified GitHub and an explicit same-
     "https://accounts.google.com",
   );
   expect(await s.get("google-owner", c.owner)).toBeNull();
+});
+it("rejects a malformed or swapped client ID before Google and normalizes surrounding whitespace", async () => {
+  vi.stubEnv("GOOGLE_OAUTH_CLIENT_ID", "GOCSPX-not-a-client-id");
+  const bad = await handle(
+    new Request(c.app + "/api/auth/google/status"),
+    s,
+    c,
+  );
+  expect(await bad.json()).toMatchObject({
+    configured: false,
+    configurationError: "google_client_id_invalid",
+  });
+  const rejected = await handle(
+    new Request(c.app + "/api/auth/google/link", { method: "POST", headers }),
+    s,
+    c,
+  );
+  expect((await rejected.json()).error).toBe("google_client_id_invalid");
+  vi.stubEnv(
+    "GOOGLE_OAUTH_CLIENT_ID",
+    " 1234567890-fixture.apps.googleusercontent.com\n",
+  );
+  const valid = await handle(
+    new Request(c.app + "/api/auth/google/link", { method: "POST", headers }),
+    s,
+    c,
+  );
+  expect(valid.status).toBe(200);
+  expect(new URL((await valid.json()).url).searchParams.get("client_id")).toBe(
+    "1234567890-fixture.apps.googleusercontent.com",
+  );
 });
