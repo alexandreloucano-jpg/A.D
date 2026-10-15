@@ -29,6 +29,8 @@ export async function relayConnections(r: Request, s: Store, c: Config) {
         "exp",
         "iat",
         "repository",
+        "repository_id",
+        "repository_owner_id",
         "ref",
         "workflow_ref",
         "event_name",
@@ -40,9 +42,11 @@ export async function relayConnections(r: Request, s: Store, c: Config) {
     });
     if (
       payload.repository !== "alexandreloucano-jpg/A.D" ||
+      payload.repository_id !== "1418840826" ||
+      payload.repository_owner_id !== "340639438" ||
       payload.ref !== "refs/heads/codex/ad-rebuild" ||
       payload.sub !==
-        "repo:alexandreloucano-jpg/A.D:ref:refs/heads/codex/ad-rebuild" ||
+        "repo:alexandreloucano-jpg@340639438/A.D@1418840826:ref:refs/heads/codex/ad-rebuild" ||
       payload.workflow_ref !==
         "alexandreloucano-jpg/A.D/.github/workflows/connections.yml@refs/heads/codex/ad-rebuild" ||
       (payload.job_workflow_ref !== undefined &&

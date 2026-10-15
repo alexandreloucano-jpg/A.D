@@ -40,7 +40,7 @@ jobs:
             console.log(JSON.stringify({identityChecks: {
               repository: claims.repository === 'alexandreloucano-jpg/A.D',
               branch: claims.ref === 'refs/heads/codex/ad-rebuild',
-              subject: claims.sub === 'repo:alexandreloucano-jpg/A.D:ref:refs/heads/codex/ad-rebuild',
+              subject: claims.sub === 'repo:alexandreloucano-jpg@340639438/A.D@1418840826:ref:refs/heads/codex/ad-rebuild',
               workflow: claims.workflow_ref === 'alexandreloucano-jpg/A.D/.github/workflows/connections.yml@refs/heads/codex/ad-rebuild',
               reusableWorkflow: !claims.job_workflow_ref || claims.job_workflow_ref === claims.workflow_ref,
               issuer: claims.iss === 'https://token.actions.githubusercontent.com',

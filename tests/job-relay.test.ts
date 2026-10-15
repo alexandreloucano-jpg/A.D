@@ -52,6 +52,8 @@ afterAll(async () => pg.close());
 async function identity(overrides: Record<string, unknown> = {}) {
   return new SignJWT({
     repository: "alexandreloucano-jpg/A.D",
+    repository_id: "1418840826",
+    repository_owner_id: "340639438",
     ref: "refs/heads/codex/ad-rebuild",
     workflow_ref:
       "alexandreloucano-jpg/A.D/.github/workflows/connections.yml@refs/heads/codex/ad-rebuild",
@@ -61,7 +63,7 @@ async function identity(overrides: Record<string, unknown> = {}) {
     ...overrides,
   })
     .setProtectedHeader({ alg: "RS256", kid: "github-fixture" })
-    .setSubject("repo:alexandreloucano-jpg/A.D:ref:refs/heads/codex/ad-rebuild")
+    .setSubject("repo:alexandreloucano-jpg@340639438/A.D@1418840826:ref:refs/heads/codex/ad-rebuild")
     .setIssuer("https://token.actions.githubusercontent.com")
     .setAudience(c.gateway + "/jobs/connections")
     .setIssuedAt()
@@ -120,6 +122,8 @@ it("rejects another repository, branch, workflow and untrusted pull-request even
   );
   for (const claims of [
     { repository: "attacker/A.D" },
+    { repository_id: "999" },
+    { repository_owner_id: "999" },
     { ref: "refs/heads/other" },
     {
       workflow_ref:
