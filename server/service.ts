@@ -1,3 +1,4 @@
+import { readerRoute } from "./reader";
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import { referenceSchema, safeUrl, SCOUT_TOOLS } from "../src/domain";
@@ -148,6 +149,7 @@ async function route(
     });
   }
   if (c.role === "app") {
+    if (path.startsWith("/api/reader/")) return readerRoute(r, s, c);
     if (path === "/api/auth/login") {
       method(r, "GET");
       if (!c.githubClient || !c.githubSecret)

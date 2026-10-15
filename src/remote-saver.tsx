@@ -183,7 +183,30 @@ export function useRemoteSaver() {
       resource: string;
     }>(await write("/api/scout/clients", { name, redirects }));
   }
+  async function reader<T>(
+    path: string,
+    method = "GET",
+    value?: unknown,
+  ): Promise<T> {
+    if (!connected)
+      throw Error(
+        "Connectez votre Saver privé pour enregistrer et relire les annotations serveur.",
+      );
+    return response<T>(
+      await fetch(path, {
+        method,
+        credentials: "same-origin",
+        cache: "no-store",
+        headers: {
+          "content-type": "application/json",
+          "x-ad-csrf": csrf.current,
+        },
+        body: value === undefined ? undefined : JSON.stringify(value),
+      }),
+    );
+  }
   return {
+    reader,
     references,
     connected,
     available,

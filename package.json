@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test",
     "preview:export": "npm run build && node scripts/export-preview.mjs",
-    "db:migrate": "node scripts/migrate-server.mjs"
+    "db:migrate": "node scripts/migrate-server.mjs",
+    "db:migrate:reader:beta": "node scripts/migrate-reader-beta.mjs"
   },
   "dependencies": {
     "@fontsource/bodoni-moda": "^5.2.0",

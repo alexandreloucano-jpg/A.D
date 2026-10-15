@@ -1,3 +1,6 @@
+import { useEffect, useState } from "react";
+import { Reader } from "../reader/Reader";
+import type { RemoteSaver } from "../remote-saver";
 import { ReferenceMedia } from "../components/ReferenceMedia";
 import { directImageUrl } from "../media";
 import { ArrowRight, ArrowUpRight, Bookmark, Check } from "lucide-react";
@@ -13,8 +16,17 @@ export function SaverView({
   filter,
   setFilter,
   serverIds = new Set<string>(),
+  remote,
+  readerMatches = [],
 }: {
   serverIds?: Set<string>;
+  remote: RemoteSaver;
+  readerMatches?: {
+    referenceId: string;
+    annotationId: string | null;
+    quote?: string;
+    note?: string;
+  }[];
   refs: Workspace["references"];
   expanded: string | null;
   setExpanded: (id: string | null) => void;
@@ -23,11 +35,65 @@ export function SaverView({
   filter: "all" | "links" | "notes";
   setFilter: (filter: "all" | "links" | "notes") => void;
 }) {
+  const [reading, setReading] = useState<string | null>(() => {
+    const p = new URLSearchParams(location.hash.split("?")[1] || "");
+    return p.get("reader") === "1" ? p.get("reference") : null;
+  });
+  useEffect(() => {
+    const change = () => {
+      const p = new URLSearchParams(location.hash.split("?")[1] || "");
+      setReading(p.get("reader") === "1" ? p.get("reference") : null);
+    };
+    window.addEventListener("popstate", change);
+    window.addEventListener("hashchange", change);
+    return () => {
+      window.removeEventListener("popstate", change);
+      window.removeEventListener("hashchange", change);
+    };
+  }, []);
+  function openReader(id: string) {
+    setExpanded(id);
+    setReading(id);
+    const p = new URLSearchParams(location.hash.split("?")[1] || "");
+    p.set("reference", id);
+    p.set("reader", "1");
+    const match = readerMatches.find(
+      (row) => row.referenceId === id && row.annotationId,
+    );
+    if (match?.annotationId) p.set("annotation", match.annotationId);
+    window.history.replaceState(null, "", "#/saver?" + p.toString());
+  }
+  function closeReader() {
+    setReading(null);
+    const p = new URLSearchParams(location.hash.split("?")[1] || "");
+    p.delete("reader");
+    p.delete("annotation");
+    window.history.replaceState(
+      null,
+      "",
+      "#/saver" + (p.size ? "?" + p.toString() : ""),
+    );
+  }
+  const readingReference = refs.find((row) => row.id === reading);
   const visible = refs.filter(
     (r) => filter === "all" || (filter === "links" ? !!r.url : !r.url),
   );
   return (
     <>
+      {readingReference && (
+        <Reader
+          key={readingReference.id}
+          reference={readingReference}
+          remote={remote}
+          persisted={serverIds.has(readingReference.id)}
+          close={closeReader}
+          annotationId={
+            new URLSearchParams(location.hash.split("?")[1] || "").get(
+              "annotation",
+            ) || undefined
+          }
+        />
+      )}
       <div
         className="library-filters"
         role="group"
@@ -88,14 +154,20 @@ export function SaverView({
                   </div>
                   <h2>
                     <button
-                      onClick={() =>
-                        setExpanded(expanded === r.id ? null : r.id)
-                      }
-                      aria-expanded={expanded === r.id}
+                      onClick={() => openReader(r.id)}
+                      aria-haspopup="dialog"
                     >
                       {r.title}
                     </button>
                   </h2>
+                  {readerMatches
+                    .filter((hit) => hit.referenceId === r.id && hit.note)
+                    .slice(0, 2)
+                    .map((hit, i) => (
+                      <p className="reader-search-hit" key={i}>
+                        Note : {hit.note}
+                      </p>
+                    ))}
                   <p className="excerpt">
                     {r.content ||
                       "Lien enregistré. Aucune analyse automatique."}

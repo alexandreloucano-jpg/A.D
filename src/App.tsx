@@ -76,6 +76,14 @@ export function App() {
   const [data, setData] = useState(initial.data);
   const [fatal, setFatal] = useState(initial.error);
   const remote = useRemoteSaver();
+  const [readerMatches, setReaderMatches] = useState<
+    {
+      referenceId: string;
+      annotationId: string | null;
+      quote?: string;
+      note?: string;
+    }[]
+  >([]);
   const pendingRemoteCapture = useRef<ReturnType<typeof makeReference> | null>(
     null,
   );
@@ -117,6 +125,27 @@ export function App() {
     url: string;
     title: string;
   } | null>(null);
+  useEffect(() => {
+    let active = true;
+    setReaderMatches([]);
+    if (!remote.connected || route !== "saver" || !query.trim()) return;
+    const timer = setTimeout(() => {
+      void remote
+        .reader<{ matches: typeof readerMatches }>(
+          "/api/reader/search?q=" + encodeURIComponent(query.trim()),
+        )
+        .then((result) => {
+          if (active) setReaderMatches(result.matches);
+        })
+        .catch(() => {
+          if (active) setReaderMatches([]);
+        });
+    }, 300);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [remote.connected, query, route]);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [pendingImport, setPendingImport] = useState<Workspace | null>(null);
@@ -172,10 +201,12 @@ export function App() {
   }
   const project = data.projects.find((p) => p.id === projectId);
   const now = activeTasks(data);
-  const refs = rediscover(displayData).filter((r) =>
-    (r.title + " " + r.content + " " + (r.url || ""))
-      .toLocaleLowerCase()
-      .includes(query.toLocaleLowerCase()),
+  const refs = rediscover(displayData).filter(
+    (r) =>
+      (r.title + " " + r.content + " " + (r.url || ""))
+        .toLocaleLowerCase()
+        .includes(query.toLocaleLowerCase()) ||
+      readerMatches.some((hit) => hit.referenceId === r.id),
   );
   const projects = data.projects.filter((p) =>
     p.title.toLocaleLowerCase().includes(query.toLocaleLowerCase()),
@@ -425,6 +456,8 @@ export function App() {
                         query={query}
                         data={displayData}
                         serverIds={remoteIds}
+                        remote={remote}
+                        readerMatches={readerMatches}
                         filter={filter}
                         setFilter={setFilter}
                       />
