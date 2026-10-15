@@ -1,4 +1,4 @@
-import { XConnection } from "../social/XConnection";
+import { ConnectedAccounts } from "../social/ConnectedAccounts";
 import { validateProposals } from "../collections/model";
 import { useEffect, useState } from "react";
 import { Reader } from "../reader/Reader";
@@ -144,7 +144,7 @@ export function SaverView({
   );
   return (
     <>
-      <XConnection remote={remote} />
+      <ConnectedAccounts remote={remote} />
       {remote.connected && (
         <details className="scout-check">
           <summary>Vérifier la passerelle MCP</summary>

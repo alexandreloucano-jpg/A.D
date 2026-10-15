@@ -37,6 +37,9 @@ export function xPostId(value?: string) {
   }
 }
 export type XStatus = {
+  permissions?: string[];
+  requestedPermissions?: string[];
+  error?: string | null;
   configured: boolean;
   connected: boolean;
   username: string;

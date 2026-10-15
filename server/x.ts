@@ -315,7 +315,7 @@ export async function syncBookmarks(store: Store, c: Config) {
     await release();
   }
 }
-export async function xRoute(r: Request, s: Store, c: Config) {
+async function xRouteInternal(r: Request, s: Store, c: Config) {
   const path = new URL(r.url).pathname;
   const session = await owner(r, s, c, r.method !== "GET");
   if (path === "/api/x/status" && r.method === "GET") {
@@ -326,6 +326,13 @@ export async function xRoute(r: Request, s: Store, c: Config) {
       encryptionAvailable();
     return json({
       configured,
+      permissions: a
+        ? unseal<Tokens>(a.encryptedTokens, "x-token:" + c.owner)
+            .scope.split(/\s+/)
+            .filter(Boolean)
+        : [],
+      requestedPermissions: [...X_SCOPES],
+      error: (await s.get<{ code: string }>("x-error", c.owner))?.code || null,
       connected: !!a,
       username: a?.username || "",
       enabled: a?.enabled || false,
@@ -475,7 +482,9 @@ export async function xRoute(r: Request, s: Store, c: Config) {
   }
   if (path === "/api/x/sync" && r.method === "POST") {
     await s.quota("x-sync:" + c.owner, 4, 900);
-    return json(await syncBookmarks(s, c));
+    const result = await syncBookmarks(s, c);
+    await s.remove("x-error", c.owner);
+    return json(result);
   }
   if (path === "/api/x/automatic" && r.method === "PUT") {
     const { enabled } = z
@@ -522,6 +531,7 @@ export async function xRoute(r: Request, s: Store, c: Config) {
           /* Local access is removed even if remote revocation fails. */
         }
         await s.remove("x-account", c.owner);
+        await s.remove("x-error", c.owner);
       }
       return json({
         disconnected: !(await account(s, c.owner)),
@@ -533,4 +543,28 @@ export async function xRoute(r: Request, s: Store, c: Config) {
     }
   }
   throw new ServiceError(405, "method_not_allowed");
+}
+
+export async function xRoute(r: Request, s: Store, c: Config) {
+  try {
+    return await xRouteInternal(r, s, c);
+  } catch (e) {
+    // Only known provider failures, never raw provider bodies or credentials.
+    if (
+      e instanceof ServiceError &&
+      /^(x_|rate_limited)/.test(e.code) &&
+      new URL(r.url).pathname !== "/api/x/status"
+    ) {
+      try {
+        const session = await owner(r, s, c);
+        await s.put("x-error", session.owner, {
+          code: e.code,
+          at: new Date().toISOString(),
+        });
+      } catch {
+        /* original failure remains */
+      }
+    }
+    throw e;
+  }
 }

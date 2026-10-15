@@ -9,7 +9,15 @@ export default async function handler(
   try {
     const c = configuration();
     const roleOrigin = c.role === "app" ? c.app : c.gateway;
-    const url = new URL(req.url || "/", roleOrigin);
+    // Vercel supplies Host. Never fabricate a canonical host for an alias POST,
+    // or trust an arbitrary x-forwarded-host header from a request.
+    const host = req.headers.host;
+    if (host && (Array.isArray(host) || !/^[A-Za-z0-9.:-]+$/.test(host)))
+      throw new ServiceError(400, "invalid_request_host");
+    const target = req.url || "/";
+    if (!target.startsWith("/") || target.startsWith("//"))
+      throw new ServiceError(400, "invalid_request_target");
+    const url = new URL(target, host ? "https://" + host : roleOrigin);
     const route = url.searchParams.get("route");
     if (route !== null) {
       url.pathname = "/" + route;

@@ -1,3 +1,4 @@
+import { GoogleAccount } from "./social/GoogleAccount";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { referenceSchema, type Reference } from "./domain";
 async function response<T>(r: Response): Promise<T> {
@@ -7,6 +8,28 @@ async function response<T>(r: Response): Promise<T> {
     );
   const body = await r.json();
   const messages: Record<string, string> = {
+    form_domain_mismatch:
+      "Le formulaire a été soumis sur un autre domaine. Rouvrez A.D à son adresse canonique et recommencez.",
+    csrf_origin_missing:
+      "Origine HTTP absente. Rouvrez le formulaire depuis A.D avant de réessayer.",
+    csrf_origin_opaque:
+      "Le navigateur masque l’origine de ce formulaire. Rechargez A.D puis recommencez le consentement.",
+    csrf_origin_mismatch:
+      "L’origine HTTP ne correspond pas à A.D. Soumission refusée.",
+    csrf_token_missing:
+      "Jeton de protection du formulaire absent. Actualisez la connexion avant de réessayer.",
+    csrf_token_invalid:
+      "Le jeton du formulaire ne correspond plus à la session. Actualisez la connexion puis recommencez.",
+    owner_session_expired:
+      "Votre session propriétaire a expiré. Reconnectez-vous ; vos données restent conservées.",
+    google_oauth_not_configured:
+      "Google n’est pas encore configuré sur le serveur. GitHub reste disponible.",
+    google_owner_not_linked:
+      "Connectez-vous d’abord avec GitHub puis liez Google dans Comptes connectés.",
+    github_session_required_for_link:
+      "Une session GitHub propriétaire est nécessaire pour gérer la liaison Google.",
+    instagram_professional_configuration_required:
+      "L’application Meta Instagram Login n’est pas configurée. Le partage iPhone reste disponible.",
     x_developer_credentials_required:
       "Accès développeur X manquant. Aucun signet ne peut être importé avant configuration et autorisation.",
     x_reconnect_required:
@@ -311,9 +334,10 @@ export function RemoteSaverSettings({
       </p>
       {remote.available && !remote.connected && (
         <a className="primary" href="/api/auth/login">
-          Connecter mon Saver privé
+          Continuer avec GitHub
         </a>
       )}
+      {!remote.connected && <GoogleAccount remote={remote} loginOnly />}
       <button onClick={() => void remote.refresh()}>
         Réessayer la connexion / actualiser
       </button>

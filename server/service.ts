@@ -1,3 +1,5 @@
+import { instagramRoute } from "./instagram.js";
+import { googleRoute } from "./google.js";
 import { scoutCheckRoute } from "./scout-check.js";
 import { classificationRoute } from "./ai.js";
 import { tasteRoute } from "./taste.js";
@@ -10,6 +12,8 @@ import { randomUUID } from "node:crypto";
 import { referenceSchema, safeUrl, SCOUT_TOOLS } from "../src/domain.js";
 import { Store, ServiceError, digest } from "./store.js";
 import {
+  requireSameOrigin,
+  requireCsrf,
   configuration,
   resource,
   opaque,
@@ -61,14 +65,14 @@ const htmlEscape = (s: string) =>
         v
       ]!,
   );
-function html(s: string, status = 200) {
+function html(s: string, status = 200, callbackOrigin = "") {
   return new Response(s, {
     status,
     headers: {
       ...headers,
       "content-type": "text/html; charset=utf-8",
-      "content-security-policy":
-        "default-src 'none'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
+      "referrer-policy": "same-origin",
+      "content-security-policy": `default-src 'none'; form-action 'self'${callbackOrigin ? " " + callbackOrigin : ""}; frame-ancestors 'none'; base-uri 'none'`,
       "x-frame-options": "DENY",
     },
   });
@@ -98,7 +102,11 @@ function sessionCookie(name: string, value: string, age: number) {
 function canonicalRequest(request: Request, c: Config, path: string) {
   const expected = c.role === "app" ? c.app : c.gateway;
   const u = new URL(request.url);
-  if (u.origin !== expected) throw new ServiceError(400, "wrong_origin");
+  if (u.origin !== expected) {
+    if (request.method === "GET" || request.method === "HEAD")
+      return redirect(expected + u.pathname + u.search);
+    throw new ServiceError(403, "form_domain_mismatch");
+  }
   if (path.startsWith("/api/scout") && c.role !== "app")
     throw new ServiceError(404, "not_found");
 }
@@ -128,11 +136,22 @@ export async function handle(
       extra["www-authenticate"] =
         `Bearer resource_metadata="${c.gateway}/.well-known/oauth-protected-resource", scope="saver:read saver:write"`;
     if (status === 429) extra["retry-after"] = "60";
+    const requestId = randomUUID();
+    // Deliberately exclude query strings, origins, cookies, bodies and credentials.
+    console.warn(
+      JSON.stringify({
+        requestId,
+        service: c.role,
+        method: request.method,
+        status,
+        error,
+      }),
+    );
     return json(
       {
         error,
         retryable: status === 503 || status === 429,
-        requestId: randomUUID(),
+        requestId,
       },
       status,
       extra,
@@ -145,7 +164,8 @@ async function route(
   c: Config,
   path: string,
 ): Promise<Response> {
-  canonicalRequest(r, c, path);
+  const canonical = canonicalRequest(r, c, path);
+  if (canonical) return canonical;
   if (path === "/api/status") {
     method(r, "GET");
     return json({
@@ -155,6 +175,8 @@ async function route(
     });
   }
   if (c.role === "app") {
+    if (path.startsWith("/api/instagram/")) return instagramRoute(r, s, c);
+    if (path.startsWith("/api/auth/google/")) return googleRoute(r, s, c);
     if (path.startsWith("/api/scout/check/")) return scoutCheckRoute(r, s, c);
     if (path === "/api/taste/context") return tasteRoute(r, s, c);
     if (path === "/api/scout/classify") return classificationRoute(r, s, c);
@@ -214,6 +236,7 @@ async function route(
         digest(state),
         {
           browser: digest(browser),
+          googleSetup: new URL(r.url).searchParams.get("return") === "google",
           pending: /^[A-Za-z0-9_-]{43}$/.test(pending) ? pending : "",
         },
         600,
@@ -234,10 +257,11 @@ async function route(
       const p = new URL(r.url).searchParams,
         state = p.get("state") || "",
         code = p.get("code") || "";
-      const login = await s.take<{ browser: string; pending: string }>(
-        "login",
-        digest(state),
-      );
+      const login = await s.take<{
+        browser: string;
+        pending: string;
+        googleSetup?: boolean;
+      }>("login", digest(state));
       if (
         !login ||
         !equal(login.browser, digest(cookie(r, "__Host-ad_login"))) ||
@@ -281,14 +305,16 @@ async function route(
       await s.put(
         "session",
         digest(session),
-        { owner: c.owner, csrf: opaque() },
+        { owner: c.owner, csrf: opaque(), authMethod: "github" },
         43200,
       );
       return redirect(
         c.app +
           (login.pending
             ? "/api/oauth/authorize?pending=" + login.pending
-            : "/#/saver"),
+            : login.googleSetup
+              ? "/api/auth/google/setup"
+              : "/#/saver"),
         { "set-cookie": sessionCookie("__Host-ad_session", session, 43200) },
       );
     }
@@ -321,6 +347,17 @@ async function route(
           after,
           100,
         );
+        if (session.authMethod === "google" && !after) {
+          await s.put("saver-read-proof", session.owner, {
+            owner: session.owner,
+            authMethod: "google",
+            verified: true,
+            checkedAt: new Date().toISOString(),
+            referenceCount: rows.length,
+            sampleUuid: rows[0]?.id || null,
+            paginated: rows.length === 100,
+          });
+        }
         return json({
           references: rows,
           next: rows.length === 100 ? rows.at(-1)!.id : null,
@@ -482,8 +519,7 @@ async function authorize(r: Request, s: Store, c: Config) {
   if (r.method === "POST") {
     const session = await ownerConsent(r, s, c);
     const formData = await form(r);
-    if (!equal(formData.get("csrf") || "", session.csrf))
-      throw new ServiceError(403, "csrf_rejected");
+    requireCsrf(formData.get("csrf") || "", session);
     const pending = await s.take<Authorization>(
       "authorization",
       formData.get("pending") || "",
@@ -563,11 +599,12 @@ async function authorize(r: Request, s: Store, c: Config) {
   if (!client || client.revoked) throw new ServiceError(400, "invalid_client");
   return html(
     `<!doctype html><html lang="fr"><meta name="viewport" content="width=device-width"><title>Autoriser Grok Scout</title><h1>A.D — Autoriser ${htmlEscape(client.name)}</h1><p>Lire et enregistrer des références Saver uniquement. Aucun accès aux projets, tâches ou MCP global.</p><p>Une sauvegarde proposée par Grok exige votre approbation dans la conversation.</p><form method="post" action="/api/oauth/authorize"><input type="hidden" name="pending" value="${ticket}"><input type="hidden" name="csrf" value="${session.csrf}"><button name="decision" value="approve">Autoriser Saver</button><button name="decision" value="deny">Refuser</button></form></html>`,
+    200,
+    new URL(pending.redirect).origin,
   );
 }
 async function ownerConsent(r: Request, s: Store, c: Config) {
-  if (r.headers.get("origin") !== c.app)
-    throw new ServiceError(403, "csrf_rejected");
+  requireSameOrigin(r, c);
   return owner(r, s, c);
 }
 async function clientAuthentication(r: Request, p: URLSearchParams, s: Store) {

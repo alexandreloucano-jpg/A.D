@@ -70,7 +70,8 @@ export function XConnection({ remote }: { remote: RemoteSaver }) {
   return (
     <details className="x-connection">
       <summary>
-        Mes signets X{status?.connected ? " · @" + status.username : ""}
+        X ·{" "}
+        {status?.connected ? "connecté · @" + status.username : "non connecté"}
       </summary>
       <p>
         Connexion officielle en lecture seule. Vos signets ne deviennent ni des
@@ -82,6 +83,20 @@ export function XConnection({ remote }: { remote: RemoteSaver }) {
         <button onClick={() => void load()}>Vérifier la connexion X</button>
       ) : (
         <>
+          <p>
+            Permissions accordées : {status.permissions?.join(", ") || "aucune"}
+            .
+          </p>
+          <p>
+            Dernier import :{" "}
+            {status.lastSyncAt
+              ? new Date(status.lastSyncAt).toLocaleString("fr-FR")
+              : "aucun"}
+            .
+          </p>
+          {status.error && (
+            <p role="alert">Dernière erreur X : {status.error}</p>
+          )}
           {!status.configured && (
             <p role="status">
               {status.blocker} Aucune connexion X ni import réel n’est

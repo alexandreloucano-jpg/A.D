@@ -43,6 +43,8 @@ export function configuration(): Config {
 export interface Session {
   owner: string;
   csrf: string;
+  authMethod?: "github" | "google";
+  googleBinding?: string;
 }
 export interface Client {
   id: string;
@@ -89,14 +91,45 @@ export async function owner(
     ? await store.get<Session>("session", digest(token))
     : null;
   if (!session || session.owner !== c.owner)
-    throw new ServiceError(401, "owner_session_required");
-  if (
-    csrf &&
-    (request.headers.get("origin") !== c.app ||
-      !equal(request.headers.get("x-ad-csrf") || "", session.csrf))
-  )
-    throw new ServiceError(403, "csrf_rejected");
+    throw new ServiceError(
+      401,
+      token ? "owner_session_expired" : "owner_session_required",
+    );
+  if (session.authMethod === "google") {
+    const binding = await store.get<{
+      sub: string;
+      client: string;
+      linkedAt: string;
+    }>("google-owner", c.owner);
+    if (
+      !binding ||
+      !session.googleBinding ||
+      !equal(
+        session.googleBinding,
+        digest(JSON.stringify([binding.sub, binding.client, binding.linkedAt])),
+      )
+    )
+      throw new ServiceError(401, "owner_session_expired");
+  }
+  if (csrf) {
+    requireSameOrigin(request, c);
+    requireCsrf(request.headers.get("x-ad-csrf") || "", session);
+  }
   return session;
+}
+// Exact origin checks also apply to HTML forms; never accept Origin: null.
+export function requireSameOrigin(request: Request, c: Config) {
+  if (new URL(request.url).origin !== c.app)
+    throw new ServiceError(403, "form_domain_mismatch");
+  const origin = request.headers.get("origin");
+  if (!origin) throw new ServiceError(403, "csrf_origin_missing");
+  if (origin === "null") throw new ServiceError(403, "csrf_origin_opaque");
+  if (origin !== c.app) throw new ServiceError(403, "csrf_origin_mismatch");
+}
+export function requireCsrf(value: string, session: Session) {
+  if (!value) throw new ServiceError(403, "csrf_token_missing");
+  if (!equal(value, session.csrf))
+    throw new ServiceError(403, "csrf_token_invalid");
 }
 export async function scout(request: Request, store: Store, c: Config) {
   if (c.role !== "gateway") throw new ServiceError(401, "wrong_resource");

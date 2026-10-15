@@ -4,6 +4,8 @@ Application React/TypeScript existante : Accueil, Explorer, Saver et Projets. La
 
 État et vérifications de l’intégration X/Scout/lecteur : [docs/SAVER_X_SCOUT_READER.md](docs/SAVER_X_SCOUT_READER.md). L’accès développeur X manque et aucun fournisseur IA n’est configuré dans la bêta ; les états indisponibles sont explicites.
 
+Évolution authentification et comptes connectés : [configuration Google/Instagram et preuves de validation](docs/AUTH_CONNECTED_ACCOUNTS.md). Le correctif CSRF conserve les protections ; Google exige une première liaison par le propriétaire GitHub et des secrets fournisseur configurés.
+
 ## Développer
 
 Node.js 24 (vérifié), npm 11.

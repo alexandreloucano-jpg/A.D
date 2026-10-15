@@ -20,7 +20,7 @@ it("enforces the dedicated Scout boundary in PostgreSQL, independently of applic
         [owner, id, JSON.stringify(ref), "fixture"],
       );
     await pg.query(
-      "INSERT INTO ad_records(namespace,key,data) VALUES('session','private','{}'),('x-account','private','{}'),('collections','private','{}'),('reader-answer','private','{}'),('client','dedicated','{\"owner\":\"340639438\",\"resource\":\"https://ad-saver-scout-gateway-alexandreloucano-3399.vercel.app/mcp\"}')",
+      "INSERT INTO ad_records(namespace,key,data) VALUES('session','private','{}'),('x-account','private','{}'),('collections','private','{}'),('reader-answer','private','{}'),('google-owner','private','{}'),('google-login','private','{}'),('instagram-account','private','{}'),('instagram-login','private','{}'),('client','dedicated','{\"owner\":\"340639438\",\"resource\":\"https://ad-saver-scout-gateway-alexandreloucano-3399.vercel.app/mcp\"}')",
     );
     await pg.exec(await readFile("sql/003-scout-least-privilege.sql", "utf8"));
     await pg.exec("SET ROLE ad_scout_gateway");
@@ -63,7 +63,7 @@ it("enforces the dedicated Scout boundary in PostgreSQL, independently of applic
     expect((await pg.query("SELECT id FROM ad_saver")).rows).toHaveLength(3);
     expect(
       (await pg.query("SELECT namespace FROM ad_records")).rows,
-    ).toHaveLength(5);
+    ).toHaveLength(9);
   } finally {
     await pg.close();
   }
