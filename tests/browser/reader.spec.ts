@@ -91,7 +91,9 @@ for (const width of [390, 1440])
       text.slice(0, 19),
     );
     await expect(
-      page.getByText("Aucun fournisseur IA autorisé", { exact: false }),
+      page.getByText("L’assistant de lecture n’est pas encore disponible", {
+        exact: false,
+      }),
     ).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Retour à la bibliothèque" }),
