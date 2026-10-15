@@ -35,7 +35,20 @@ jobs:
             headers: {authorization: 'Bearer ' + value},
             signal: AbortSignal.timeout(65000),
           });
-          if (!response.ok) throw Error('Connection maintenance HTTP ' + response.status);
+          if (!response.ok) {
+            const claims = JSON.parse(Buffer.from(value.split('.')[1], 'base64url'));
+            console.log(JSON.stringify({identityChecks: {
+              repository: claims.repository === 'alexandreloucano-jpg/A.D',
+              branch: claims.ref === 'refs/heads/codex/ad-rebuild',
+              subject: claims.sub === 'repo:alexandreloucano-jpg/A.D:ref:refs/heads/codex/ad-rebuild',
+              workflow: claims.workflow_ref === 'alexandreloucano-jpg/A.D/.github/workflows/connections.yml@refs/heads/codex/ad-rebuild',
+              reusableWorkflow: !claims.job_workflow_ref || claims.job_workflow_ref === claims.workflow_ref,
+              issuer: claims.iss === 'https://token.actions.githubusercontent.com',
+              audience: claims.aud === origin + '/jobs/connections',
+            }}));
+            const error = await response.json().catch(() => ({}));
+            throw Error('Connection maintenance HTTP ' + response.status + ' ' + (/^[a-z_]+$/.test(error.error || '') ? error.error : 'unconfirmed'));
+          }
           const result = await response.json();
           if (!result.completed && !result.pending) throw Error('Connection maintenance was not confirmed.');
           console.log(JSON.stringify({completed: result.completed, pending: !!result.pending}));
