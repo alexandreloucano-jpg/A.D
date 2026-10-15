@@ -12,7 +12,9 @@ export function SaverView({
   data,
   filter,
   setFilter,
+  serverIds = new Set<string>(),
 }: {
+  serverIds?: Set<string>;
   refs: Workspace["references"];
   expanded: string | null;
   setExpanded: (id: string | null) => void;
@@ -124,7 +126,11 @@ export function SaverView({
                   {expanded === r.id && (
                     <div className="receipt">
                       <Check size={15} />
-                      <strong>Sauvegarde locale relue</strong>
+                      <strong>
+                        {serverIds.has(r.id)
+                          ? "Sauvegarde serveur relue"
+                          : "Sauvegarde locale relue"}
+                      </strong>
                       <code>{r.id}</code>
                       <span>
                         Révision {r.revision} ·{" "}

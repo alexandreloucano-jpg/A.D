@@ -8,3 +8,5 @@ test-results/
 *.local
 
 artifacts/
+.vercel/
+gateway-dist/

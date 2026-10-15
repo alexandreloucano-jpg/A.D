@@ -1,3 +1,4 @@
+import { useRemoteSaver, RemoteSaverSettings } from "./remote-saver";
 import { useWorkspaceNavigation } from "./hooks/useWorkspaceNavigation";
 import {
   ArrowUpRight,
@@ -15,13 +16,14 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CaptureForm, ProjectForm, SignalForm } from "./components/forms";
 import { Modal } from "./components/ui";
 import {
   activeTasks,
   emptyWorkspace,
   makeReference,
+  referenceSchema,
   rediscover,
   SCOUT_TOOLS,
   transitionTask,
@@ -73,6 +75,26 @@ export function App() {
   });
   const [data, setData] = useState(initial.data);
   const [fatal, setFatal] = useState(initial.error);
+  const remote = useRemoteSaver();
+  const pendingRemoteCapture = useRef<ReturnType<typeof makeReference> | null>(
+    null,
+  );
+  const remoteIds = new Set(remote.references.map((row) => row.id));
+  const localProjects = new Set(data.projects.map((row) => row.id));
+  const displayData = {
+    ...data,
+    references: [
+      ...data.references.filter((row) => !remoteIds.has(row.id)),
+      ...remote.references.map((row) =>
+        row.projectId && !localProjects.has(row.projectId)
+          ? { ...row, projectId: undefined }
+          : row,
+      ),
+    ].sort(
+      (a, b) =>
+        a.capturedAt.localeCompare(b.capturedAt) || a.id.localeCompare(b.id),
+    ),
+  };
   const {
     route,
     query,
@@ -150,7 +172,7 @@ export function App() {
   }
   const project = data.projects.find((p) => p.id === projectId);
   const now = activeTasks(data);
-  const refs = rediscover(data).filter((r) =>
+  const refs = rediscover(displayData).filter((r) =>
     (r.title + " " + r.content + " " + (r.url || ""))
       .toLocaleLowerCase()
       .includes(query.toLocaleLowerCase()),
@@ -247,7 +269,10 @@ export function App() {
               {selected[1].toUpperCase()}
             </span>
             <span className="local-state">
-              <span /> Local · Sites non connecté
+              <span />{" "}
+              {remote.connected
+                ? "Saver privé connecté"
+                : "Local · Sites non connecté"}
             </span>
           </div>
           {fatal ? (
@@ -273,7 +298,7 @@ export function App() {
             <>
               {route === "accueil" && (
                 <HomeView
-                  data={data}
+                  data={displayData}
                   now={now}
                   navigate={navigate}
                   setProjectId={setProjectId}
@@ -398,7 +423,8 @@ export function App() {
                         expanded={expanded}
                         setExpanded={setExpanded}
                         query={query}
-                        data={data}
+                        data={displayData}
+                        serverIds={remoteIds}
                         filter={filter}
                         setFilter={setFilter}
                       />
@@ -420,8 +446,13 @@ export function App() {
                         archive={archive}
                         setArchive={setArchive}
                         setProjectId={setProjectId}
-                        data={data}
-                        commit={commit}
+                        data={displayData}
+                        commit={(next, message) =>
+                          commit(
+                            { ...next, references: data.references },
+                            message,
+                          )
+                        }
                         act={act}
                         projects={projects}
                         query={query}
@@ -437,7 +468,10 @@ export function App() {
         <footer className="statusbar">
           <span>A.D / ATELIER PERSONNEL</span>
           <button onClick={() => setModal("settings")}>
-            <ShieldCheck size={13} /> Données dans ce navigateur{" "}
+            <ShieldCheck size={13} />{" "}
+            {remote.connected
+              ? "Saver privé · autres données locales"
+              : "Données dans ce navigateur"}{" "}
             <ArrowUpRight size={12} />
           </button>
         </footer>
@@ -470,9 +504,59 @@ export function App() {
             }
             data={data}
             error={error}
-            save={(input) => {
+            remote={remote.connected}
+            save={async (input) => {
               try {
-                const reference = makeReference(input, true);
+                let reference = makeReference(input, true);
+                if (remote.connected) {
+                  if (!pendingRemoteCapture.current) {
+                    try {
+                      const raw = sessionStorage.getItem(
+                        "ad.pending-server-reference.v1",
+                      );
+                      if (raw)
+                        pendingRemoteCapture.current = referenceSchema.parse(
+                          JSON.parse(raw),
+                        );
+                    } catch {
+                      /* A corrupt pending record never replaces a current draft. */
+                    }
+                  }
+                  const previous = pendingRemoteCapture.current;
+                  if (
+                    previous &&
+                    previous.title === reference.title &&
+                    previous.content === reference.content &&
+                    previous.url === reference.url &&
+                    previous.origin === reference.origin &&
+                    previous.projectId === reference.projectId
+                  )
+                    reference = previous;
+                  pendingRemoteCapture.current = reference;
+                  try {
+                    sessionStorage.setItem(
+                      "ad.pending-server-reference.v1",
+                      JSON.stringify(reference),
+                    );
+                  } catch {
+                    throw Error(
+                      "Impossible de protéger le reçu de sauvegarde sur cet appareil. Le brouillon est conservé.",
+                    );
+                  }
+                  const saved = await remote.save(reference);
+                  pendingRemoteCapture.current = null;
+                  try {
+                    sessionStorage.removeItem("ad.pending-server-reference.v1");
+                  } catch {
+                    /* The verified server receipt remains valid. */
+                  }
+                  setNotice(
+                    `Référence sauvegardée et relue sur le serveur · ${saved.id}`,
+                  );
+                  setModal(null);
+                  openReference(saved.id);
+                  return true;
+                }
                 if (
                   commit(
                     { ...data, references: [...data.references, reference] },
@@ -545,16 +629,23 @@ export function App() {
           }}
         >
           <div className="settings-content">
+            <RemoteSaverSettings
+              remote={remote}
+              localReferences={data.references}
+              backup={() =>
+                download(exportBackup(data), "ad-before-server-migration.json")
+              }
+            />
             <p className="local-info">
-              Cette reconstruction fonctionne localement. Aucun compte, aucune
-              donnée Sites, aucune API xAI et aucune synchronisation ne sont
-              connectés.
+              Les projets et les signaux restent locaux. Le Saver privé est
+              accessible uniquement après connexion propriétaire. Les données
+              historiques Sites et l’API xAI restent indépendantes.
             </p>
             <h3>Sauvegarde personnelle</h3>
             <p>
-              Les données restent dans ce navigateur, sans chiffrement
-              applicatif. Exportez une copie avant de changer d’appareil ou
-              d’effacer les données du navigateur. Utilisez un appareil de
+              Les projets et signaux restent dans ce navigateur. Les références
+              serveur sont privées et accessibles après connexion. Exportez une
+              copie avant de changer d’appareil ; utilisez un appareil de
               confiance.
             </p>
             <div className="backup-actions">
@@ -563,8 +654,8 @@ export function App() {
                   download(
                     fatal
                       ? localStorage.getItem(STORAGE_KEY) || ""
-                      : exportBackup(data),
-                    "ad-local-backup.json",
+                      : exportBackup(displayData),
+                    "ad-workspace-backup.json",
                   )
                 }
               >
@@ -618,9 +709,9 @@ export function App() {
               Grok Scout <span className="connection-badge">Non connecté</span>
             </h3>
             <p>
-              Le code et l’authentification de la passerelle Sites ne sont pas
-              récupérés. Aucun jeton propriétaire n’est demandé ni réutilisé. La
-              connexion distante reste désactivée.
+              La passerelle dédiée dispose uniquement des quatre outils Saver.
+              Sa présence ne prouve pas une connexion dans Grok. Utilisez le
+              panneau ci-dessus pour créer ou révoquer un client dédié.
             </p>
             <details>
               <summary>Surface Saver prévue · 4 outils</summary>
@@ -632,9 +723,9 @@ export function App() {
                 ))}
               </ul>
               <p>
-                Audience dédiée, autorisation serveur, révocation et quotas à
-                vérifier avant toute connexion. Cette liste décrit une règle,
-                pas une connexion active.
+                Audience dédiée, autorisation serveur, révocation et quotas
+                persistants. La connexion Grok doit encore être vérifiée par une
+                sauvegarde avec UUID relu.
               </p>
             </details>
             <p>
@@ -644,8 +735,8 @@ export function App() {
             </p>
             <h3>Application Sites existante</h3>
             <p>
-              Elle reste indépendante et inchangée. Aucune migration ni
-              publication effectuée.
+              Elle reste indépendante et inchangée. Aucune référence historique
+              Sites n’est importée par cette migration locale.
             </p>
             {error && (
               <p className="form-error" role="alert">

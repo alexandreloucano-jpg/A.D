@@ -26,7 +26,9 @@ export function CaptureForm({
   sourceContext,
   error,
   save,
+  remote = false,
 }: {
+  remote?: boolean;
   data: Workspace;
   defaultProjectId?: string;
   sourceContext?: { url: string; title: string } | null;
@@ -37,7 +39,7 @@ export function CaptureForm({
     url?: string;
     origin: "human" | "grok";
     projectId?: string;
-  }) => boolean;
+  }) => boolean | Promise<boolean>;
 }) {
   const [title, setTitle] = useDraft("ad.draft.title", sourceContext?.title);
   const [content, setContent] = useDraft("ad.draft.content");
@@ -48,7 +50,8 @@ export function CaptureForm({
     defaultProjectId,
   );
   const [localError, setLocalError] = useState("");
-  function submit(e: FormEvent) {
+  const [busy, setBusy] = useState(false);
+  async function submit(e: FormEvent) {
     e.preventDefault();
     if (url && !safeUrl.safeParse(url.trim()).success) {
       setLocalError("Utilisez un lien HTTP(S) sans identifiants.");
@@ -58,21 +61,31 @@ export function CaptureForm({
       setLocalError("Ajoutez un lien ou une pensée.");
       return;
     }
-    if (
-      save({
-        title:
-          title.trim() || content.trim().slice(0, 90) || new URL(url).hostname,
-        content: content.trim(),
-        url: url.trim() || undefined,
-        origin: origin === "grok" ? "grok" : "human",
-        projectId: projectId || undefined,
-      })
-    ) {
-      setTitle("");
-      setContent("");
-      setUrl("");
-      setOrigin("");
-      setProjectId("");
+    if (busy) return;
+    setBusy(true);
+    try {
+      if (
+        await save({
+          title:
+            title.trim() ||
+            content.trim().slice(0, 90) ||
+            new URL(url).hostname,
+          content: content.trim(),
+          url: url.trim() || undefined,
+          origin: origin === "grok" ? "grok" : "human",
+          projectId: projectId || undefined,
+        })
+      ) {
+        setTitle("");
+        setContent("");
+        setUrl("");
+        setOrigin("");
+        setProjectId("");
+      }
+    } catch {
+      setLocalError("Enregistrement interrompu. Le brouillon est conservé.");
+    } finally {
+      setBusy(false);
     }
   }
   return (
@@ -142,8 +155,8 @@ export function CaptureForm({
       {origin === "grok" && (
         <label className="check-field">
           <input type="checkbox" required />
-          J’ai vérifié la source et j’autorise cette sauvegarde locale. Aucune
-          tâche ne sera créée.
+          J’ai vérifié la source et j’autorise cette sauvegarde. Aucune tâche ne
+          sera créée.
         </label>
       )}
       {(error || localError) && (
@@ -152,8 +165,12 @@ export function CaptureForm({
         </p>
       )}
       <div className="form-footer">
-        <span>Sauvegarde locale, sans analyse automatique.</span>
-        <button className="primary" type="submit">
+        <span>
+          {remote
+            ? "Sauvegarde serveur avec relecture."
+            : "Sauvegarde locale, sans analyse automatique."}
+        </span>
+        <button className="primary" type="submit" disabled={busy}>
           {origin === "grok" ? "Valider et sauvegarder" : "Sauvegarder"}
           <ArrowUpRight size={17} />
         </button>

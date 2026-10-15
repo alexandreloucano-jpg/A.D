@@ -10,17 +10,20 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test",
-    "preview:export": "npm run build && node scripts/export-preview.mjs"
+    "preview:export": "npm run build && node scripts/export-preview.mjs",
+    "db:migrate": "node scripts/migrate-server.mjs"
   },
   "dependencies": {
     "@fontsource/bodoni-moda": "^5.2.0",
     "@fontsource/inter": "^5.2.0",
+    "@neondatabase/serverless": "^1.2.0",
     "lucide-react": "^0.468.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "zod": "^4.1.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.10",
     "@playwright/test": "^1.56.0",
     "@types/node": "^24.0.0",
     "@types/react": "^19.2.0",

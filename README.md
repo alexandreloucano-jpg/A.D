@@ -1,6 +1,6 @@
 # A.D — Atelier personnel
 
-Reconstruction React/TypeScript indépendante, **pas un export Sites V66**. Quatre vues fonctionnelles : Accueil, Explorer, Saver et Projets. Aucun backend Sites ou Grok connecté. Aucune migration ni publication.
+Reconstruction React/TypeScript indépendante, **pas un export Sites V66**. Quatre vues fonctionnelles : Accueil, Explorer, Saver et Projets. Backend Sites et données historiques indépendants. Un Saver serveur privé et une passerelle MCP dédiée sont implémentés, mais ne sont pas annoncés comme déployés ou connectés à Grok. Voir docs/VERCEL_SAVER_SCOUT.md.
 
 ## Développer
 
