@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { type Store, ServiceError, digest } from "./store";
-import { owner, type Config } from "./security";
-import { type Reference } from "../src/domain";
-import { directImageUrl } from "../src/media";
+import { type Store, ServiceError, digest } from "./store.js";
+import { owner, type Config } from "./security.js";
+import { type Reference } from "../src/domain.js";
+import { directImageUrl } from "../src/media.js";
 import {
   documentSchema,
   annotationSchema,
@@ -11,7 +11,7 @@ import {
   anchorMatches,
   type ReaderDocument,
   type Annotation,
-} from "../src/reader/model";
+} from "../src/reader/model.js";
 export function documentFrom(reference: Reference): ReaderDocument {
   const image = directImageUrl(reference.url),
     pdf = reference.url && /\.pdf$/i.test(new URL(reference.url).pathname);

@@ -1,6 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import { createHash, randomUUID } from "node:crypto";
-import { referenceSchema, type Reference } from "../src/domain";
+import { referenceSchema, type Reference } from "../src/domain.js";
 export type Query = (
   sql: string,
   params?: unknown[],

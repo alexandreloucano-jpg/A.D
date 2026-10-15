@@ -1,5 +1,5 @@
 import { randomBytes, timingSafeEqual } from "node:crypto";
-import { Store, ServiceError, digest } from "./store";
+import { Store, ServiceError, digest } from "./store.js";
 export interface Config {
   role: "app" | "gateway";
   app: string;

@@ -1,8 +1,8 @@
-import { readerRoute } from "./reader";
+import { readerRoute } from "./reader.js";
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
-import { referenceSchema, safeUrl, SCOUT_TOOLS } from "../src/domain";
-import { Store, ServiceError, digest } from "./store";
+import { referenceSchema, safeUrl, SCOUT_TOOLS } from "../src/domain.js";
+import { Store, ServiceError, digest } from "./store.js";
 import {
   configuration,
   resource,
@@ -18,7 +18,7 @@ import {
   type Grant,
   type Code,
   type Authorization,
-} from "./security";
+} from "./security.js";
 const id = z.string().uuid();
 const text = z.string().trim().min(1).max(10000);
 const capture = z

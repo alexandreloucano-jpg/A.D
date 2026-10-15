@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { database, ServiceError } from "../server/store";
-import { configuration } from "../server/security";
-import { handle } from "../server/service";
+import { database, ServiceError } from "../server/store.js";
+import { configuration } from "../server/security.js";
+import { handle } from "../server/service.js";
 export default async function handler(
   req: IncomingMessage & { body?: unknown },
   res: ServerResponse,
