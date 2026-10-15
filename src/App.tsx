@@ -119,9 +119,12 @@ export function App() {
     setExpanded,
     setFilter,
   } = useWorkspaceNavigation();
+  const grokSetup =
+    new URLSearchParams(location.hash.split("?")[1] || "").get("connect") ===
+    "grok";
   const [modal, setModal] = useState<
     "capture" | "project" | "signal" | "settings" | null
-  >(null);
+  >(() => (grokSetup ? "settings" : null));
   const [captureContext, setCaptureContext] = useState<{
     url: string;
     title: string;
@@ -732,6 +735,7 @@ export function App() {
         >
           <div className="settings-content">
             <RemoteSaverSettings
+              grokSetup={grokSetup}
               remote={remote}
               localReferences={data.references}
               backup={() =>

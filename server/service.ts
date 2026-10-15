@@ -416,7 +416,12 @@ async function route(
       return json({
         configured: c.gateway !== c.app,
         resource: c.gateway !== c.app ? resource(c) : null,
-        callbackAllowlistConfigured: !!c.redirects.length,
+        callbackAllowlistConfigured: c.redirects.some(
+          (uri) => uri !== c.app + "/api/scout/check/callback",
+        ),
+        externalRedirects: c.redirects.filter(
+          (uri) => uri !== c.app + "/api/scout/check/callback",
+        ),
       });
     }
     if (path === "/api/scout/clients") {

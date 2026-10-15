@@ -2517,3 +2517,6 @@ dialog:has(.reader-shell){width:min(1260px,96vw);max-width:96vw;max-height:94dvh
 .connected-accounts p{font-size:14px;line-height:1.5;max-width:75ch}
 .connected-accounts button{min-height:44px;max-width:100%;white-space:normal}
 .connected-accounts h4{font-size:15px;margin:4px 0 12px}
+.grok-client-setup label{display:block;margin-top:14px;max-width:100%}
+.grok-client-setup input{display:block;width:100%;min-width:0;font-size:16px}
+.grok-client-setup button{display:flex;margin:8px 0 16px;max-width:100%;white-space:normal}

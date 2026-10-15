@@ -522,3 +522,34 @@ it("preserves a recoverable UUID when INSERT succeeds but acknowledgement read-b
   });
   expect(await s.list(app.owner)).toHaveLength(1);
 });
+it("does not report the internal diagnostic callback as a configured external Grok client", async () => {
+  const headers = await session();
+  const internalOnly = {
+    ...app,
+    redirects: [app.app + "/api/scout/check/callback"],
+  };
+  const status = await handle(
+    new Request(app.app + "/api/scout/status", { headers }),
+    s,
+    internalOnly,
+  );
+  expect(await status.json()).toMatchObject({
+    callbackAllowlistConfigured: false,
+    externalRedirects: [],
+  });
+  const external = await handle(
+    new Request(app.app + "/api/scout/status", { headers }),
+    s,
+    {
+      ...internalOnly,
+      redirects: [
+        ...internalOnly.redirects,
+        "https://grok.com/connectors-oauth-exchange-code/",
+      ],
+    },
+  );
+  expect(await external.json()).toMatchObject({
+    callbackAllowlistConfigured: true,
+    externalRedirects: ["https://grok.com/connectors-oauth-exchange-code/"],
+  });
+});

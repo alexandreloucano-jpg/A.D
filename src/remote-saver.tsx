@@ -301,7 +301,9 @@ export function RemoteSaverSettings({
   remote,
   localReferences,
   backup,
+  grokSetup = false,
 }: {
+  grokSetup?: boolean;
   remote: RemoteSaver;
   localReferences: Reference[];
   backup: () => void;
@@ -312,6 +314,30 @@ export function RemoteSaverSettings({
     [credentials, setCredentials] = useState<Awaited<
       ReturnType<RemoteSaver["client"]>
     > | null>(null);
+  useEffect(() => {
+    if (!remote.connected) return;
+    let active = true;
+    void remote
+      .reader<{ externalRedirects: string[] }>("/api/scout/status")
+      .then((status) => {
+        if (active && status.externalRedirects?.length === 1)
+          setCallback((value) => value || status.externalRedirects[0]);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [remote.connected]);
+  async function copyCredential(label: string, value: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+      setMessage(label + " copié. Retournez dans Grok pour le coller.");
+    } catch {
+      setMessage(
+        "Copie non disponible. Faites un appui long dans le champ pour sélectionner et copier.",
+      );
+    }
+  }
   async function run(fn: () => Promise<void>) {
     setMessage("");
     try {
@@ -382,11 +408,12 @@ export function RemoteSaverSettings({
                 : "Exporter puis copier vers le Saver privé"}
             </button>
           </details>
-          <details>
+          <details className="grok-client-setup" open={grokSetup || undefined}>
             <summary>Configurer le client Grok Scout</summary>
             <p>
-              Saisissez uniquement l’URL de retour OAuth affichée par Grok et
-              préalablement autorisée côté serveur.
+              Le client créé donne accès uniquement aux quatre outils Saver. Il
+              ne connecte pas Grok avant votre consentement OAuth. L’adresse de
+              retour est vérifiée et autorisée côté serveur.
             </p>
             <label>
               URL de retour vérifiée
@@ -418,6 +445,13 @@ export function RemoteSaverSettings({
                   Client ID
                   <input readOnly value={credentials.client_id} />
                 </label>
+                <button
+                  onClick={() =>
+                    void copyCredential("ID client", credentials.client_id)
+                  }
+                >
+                  Copier l’ID client
+                </button>
                 <label>
                   Client secret
                   <input
@@ -426,18 +460,79 @@ export function RemoteSaverSettings({
                     value={credentials.client_secret}
                   />
                 </label>
+                <button
+                  onClick={() =>
+                    void copyCredential(
+                      "Secret client",
+                      credentials.client_secret,
+                    )
+                  }
+                >
+                  Copier le secret client
+                </button>
                 <label>
                   Endpoint MCP
                   <input readOnly value={credentials.resource} />
                 </label>
+                <button
+                  onClick={() =>
+                    void copyCredential("URL MCP", credentials.resource)
+                  }
+                >
+                  Copier l’URL MCP
+                </button>
                 <label>
-                  Autorisation
+                  Point de terminaison d’autorisation
                   <input readOnly value={credentials.authorization_endpoint} />
                 </label>
+                <button
+                  onClick={() =>
+                    void copyCredential(
+                      "Adresse d’autorisation",
+                      credentials.authorization_endpoint,
+                    )
+                  }
+                >
+                  Copier l’autorisation
+                </button>
                 <label>
-                  Jeton
+                  Point de terminaison du jeton
                   <input readOnly value={credentials.token_endpoint} />
                 </label>
+                <button
+                  onClick={() =>
+                    void copyCredential(
+                      "Adresse du jeton",
+                      credentials.token_endpoint,
+                    )
+                  }
+                >
+                  Copier le point de terminaison du jeton
+                </button>
+                <label>
+                  Permissions demandées
+                  <input readOnly value="saver:read saver:write" />
+                </label>
+                <button
+                  onClick={() =>
+                    void copyCredential("Permissions", "saver:read saver:write")
+                  }
+                >
+                  Copier les permissions
+                </button>
+                <p>
+                  <a
+                    href="https://grok.com/connectors"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Ouvrir les connecteurs Grok
+                  </a>
+                </p>
+                <p>
+                  Ne partagez pas le secret dans une conversation ou une
+                  capture. Fermer ces réglages masque les identifiants.
+                </p>
                 <button onClick={() => setCredentials(null)}>
                   Masquer les identifiants
                 </button>
