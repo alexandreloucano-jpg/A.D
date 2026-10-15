@@ -23,10 +23,27 @@ export default async function handler(
     const method = req.method || "GET";
     let raw: string | undefined;
     if (method !== "GET" && method !== "HEAD") {
-      if (req.body !== undefined)
-        raw =
-          typeof req.body === "string" ? req.body : JSON.stringify(req.body);
-      else {
+      if (req.body !== undefined) {
+        if (Buffer.isBuffer(req.body)) raw = req.body.toString("utf8");
+        else if (typeof req.body === "string") raw = req.body;
+        else if (
+          requestHeaders.get("content-type")?.split(";")[0] ===
+            "application/x-www-form-urlencoded" &&
+          req.body &&
+          typeof req.body === "object" &&
+          !Array.isArray(req.body)
+        ) {
+          const form = new URLSearchParams();
+          for (const [key, value] of Object.entries(req.body)) {
+            for (const item of Array.isArray(value) ? value : [value]) {
+              if (typeof item !== "string")
+                throw new ServiceError(400, "invalid_form");
+              form.append(key, item);
+            }
+          }
+          raw = form.toString();
+        } else raw = JSON.stringify(req.body);
+      } else {
         const chunks: Buffer[] = [];
         let length = 0;
         for await (const chunk of req) {
