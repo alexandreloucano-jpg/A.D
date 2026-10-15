@@ -538,6 +538,11 @@ export function App() {
                   >
                     {route === "saver" && (
                       <SaverView
+                        onCapture={() => {
+                          setError("");
+                          setCaptureContext(null);
+                          setModal("capture");
+                        }}
                         adminMode={adminMode}
                         refs={refs}
                         expanded={expanded}

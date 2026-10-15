@@ -13,6 +13,7 @@ export const xPageSchema = z.object({
         text: z.string().max(30000),
         created_at: z.string().datetime().optional(),
         author_id: z.string().optional(),
+        note_post: z.object({ text: z.string().max(100000) }).optional(),
         note_tweet: z.object({ text: z.string().max(100000) }).optional(),
       }),
     )
@@ -49,4 +50,34 @@ export type XStatus = {
   catchingUp: boolean;
   callback: string;
   blocker?: string;
+};
+
+export type ConnectionState =
+  | "not_configured"
+  | "ready"
+  | "consent_required"
+  | "verification_required"
+  | "connected"
+  | "expired"
+  | "error";
+export type ConnectionStatus = {
+  state?: ConnectionState;
+  configured: boolean;
+  connected: boolean;
+  hasAccount?: boolean;
+  username?: string;
+  permissions?: string[];
+  lastSyncAt?: string | null;
+  lastImportAt?: string | null;
+  diagnosticId?: string | null;
+  error?: string | null;
+};
+export const CONNECTION_LABELS: Record<ConnectionState, string> = {
+  not_configured: "non configuré",
+  ready: "prêt à connecter",
+  consent_required: "consentement requis",
+  verification_required: "échange à vérifier",
+  connected: "connecté",
+  expired: "accès expiré",
+  error: "erreur",
 };

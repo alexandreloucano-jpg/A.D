@@ -160,11 +160,11 @@ it("exchanges a real-shaped code only after browser binding and stores encrypted
     c,
   );
   expect(result.status).toBe(303);
-  expect(calls).toBe(3);
-  expect((await s.list(c.owner)).length).toBe(1);
+  expect(calls).toBe(2);
+  expect((await s.list(c.owner)).length).toBe(0);
   const stored = await s.get<any>("x-account", c.owner);
-  expect(stored.enabled).toBe(true);
-  expect(stored.lastSyncAt).toBeTruthy();
+  expect(stored.enabled).toBe(false);
+  expect(stored.lastSyncAt).toBeNull();
   expect(JSON.stringify(stored)).not.toContain("private-fixture");
   expect(
     unseal<any>(stored.encryptedTokens, "x-token:" + c.owner).access_token,
@@ -384,4 +384,85 @@ it("preserves old annotated X versions and searches updated provider text withou
     (await reader.search(c.owner, "distinctive keyword"))[0].referenceId,
   ).toBe(id);
   expect((await s.read(c.owner, id))?.content).toBe("Old source sentence.");
+});
+
+it("imports no more than five records only after an explicit authorized owner action", async () => {
+  await connected();
+  const calls: string[] = [];
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url: string) => {
+      calls.push(url);
+      expect(new URL(url).searchParams.get("max_results")).toBe("5");
+      return Response.json({
+        data: Array.from({ length: 5 }, (_, i) => ({
+          id: String(100 + i),
+          text: "Fixture " + i,
+        })),
+        meta: { next_token: "next-page" },
+      });
+    }),
+  );
+  const denied = await handle(request("/api/x/sync", "POST"), s, c);
+  expect(denied.status).toBe(403);
+  expect(calls).toHaveLength(0);
+  vi.stubEnv("X_BOOKMARK_IMPORT_ALLOWED", "1");
+  const result = await handle(request("/api/x/sync", "POST"), s, c);
+  expect(result.status).toBe(200);
+  const receipt = await result.json();
+  expect(receipt.verified).toBe(true);
+  expect(receipt.ids).toHaveLength(5);
+  expect(calls).toHaveLength(1);
+  for (const id of receipt.ids)
+    expect(await s.read(c.owner, id)).not.toBeNull();
+  const repeated = await handle(request("/api/x/sync", "POST"), s, c);
+  expect((await repeated.json()).ids).toEqual(receipt.ids);
+  expect(await s.list(c.owner)).toHaveLength(5);
+});
+it("refuses an oversized provider response before saving and cannot enable automatic import", async () => {
+  await connected();
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () =>
+      Response.json({
+        data: Array.from({ length: 6 }, (_, i) => ({
+          id: String(i + 1),
+          text: "Fixture",
+        })),
+      }),
+    ),
+  );
+  await expect(syncBookmarks(s, c)).rejects.toMatchObject({
+    code: "x_import_limit_exceeded",
+  });
+  expect(await s.list(c.owner)).toHaveLength(0);
+  const response = await handle(
+    new Request(c.app + "/api/x/automatic", {
+      method: "PUT",
+      headers: {
+        cookie: "__Host-ad_session=fixture-session",
+        origin: c.app,
+        "x-ad-csrf": "csrf",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ enabled: true }),
+    }),
+    s,
+    c,
+  );
+  expect(response.status).toBe(409);
+});
+it("reports expired authorization distinctly and keeps owner-scoped diagnostic IDs", async () => {
+  await connected();
+  await s.put("x-error", c.owner, {
+    code: "x_reconnect_required",
+    requestId: randomUUID(),
+  });
+  const result = await handle(request("/api/x/status"), s, c);
+  expect(await result.json()).toMatchObject({
+    state: "expired",
+    connected: false,
+    hasAccount: true,
+    automaticSync: false,
+  });
 });

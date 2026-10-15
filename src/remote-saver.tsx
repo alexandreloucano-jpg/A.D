@@ -34,6 +34,10 @@ async function response<T>(r: Response): Promise<T> {
       "Accès développeur X manquant. Aucun signet ne peut être importé avant configuration et autorisation.",
     x_reconnect_required:
       "L’autorisation X doit être renouvelée. Reconnectez X ; les références restent conservées.",
+    x_api_budget_approval_required:
+      "L’import X est suspendu : les crédits API du service ne sont pas autorisés. Aucun paiement n’a été engagé.",
+    x_manual_import_only:
+      "L’import automatique est désactivé. Utilisez le bouton d’import volontaire de cinq signets.",
     x_api_budget_required:
       "X exige un accès API ou des crédits disponibles. Aucun abonnement ni paiement n’a été modifié.",
     x_permission_denied:
@@ -81,16 +85,23 @@ async function response<T>(r: Response): Promise<T> {
     dedicated_gateway_not_configured:
       "La passerelle MCP dédiée n’est pas encore configurée.",
   };
-  if (!r.ok && messages[body.error]) throw Error(messages[body.error]);
+  const diagnostic =
+    typeof body.requestId === "string" &&
+    /^[a-f0-9-]{36}$/i.test(body.requestId)
+      ? " Diagnostic : " + body.requestId + "."
+      : "";
+  if (!r.ok && messages[body.error])
+    throw Error(messages[body.error] + diagnostic);
   if (!r.ok)
     throw Error(
-      r.status === 401
+      (r.status === 401
         ? "Reconnectez-vous pour accéder au Saver privé."
         : r.status === 409
           ? "Cet UUID existe avec un contenu différent. Aucune donnée distante remplacée."
           : r.status === 429
             ? "Quota atteint. Réessayez dans une minute ; votre brouillon est conservé."
-            : "Service Saver indisponible. Réessayez ; votre brouillon reste conservé.",
+            : "Service Saver indisponible. Réessayez ; votre brouillon reste conservé.") +
+        diagnostic,
     );
   return body as T;
 }
@@ -164,26 +175,6 @@ export function useRemoteSaver() {
   useEffect(() => {
     void refresh();
   }, [refresh]);
-  useEffect(() => {
-    if (!connected || !csrf.current) return;
-    let running = false;
-    const sync = async () => {
-      if (running || document.visibilityState !== "visible") return;
-      running = true;
-      try {
-        await fetch("/api/connections/sync", {
-          method: "POST",
-          credentials: "same-origin",
-          headers: { "x-ad-csrf": csrf.current },
-        });
-      } finally {
-        running = false;
-      }
-    };
-    void sync();
-    const timer = setInterval(() => void sync(), 30 * 60000);
-    return () => clearInterval(timer);
-  }, [connected]);
   useEffect(() => {
     if (!connected) return;
     const update = () => {

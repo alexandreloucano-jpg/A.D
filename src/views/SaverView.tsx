@@ -13,6 +13,7 @@ import { dateLabel } from "../display";
 import { type Workspace } from "../domain";
 export function SaverView({
   refs,
+  onCapture,
   adminMode = false,
   expanded,
   setExpanded,
@@ -24,6 +25,7 @@ export function SaverView({
   remote,
   readerMatches = [],
 }: {
+  onCapture: () => void;
   adminMode?: boolean;
   serverIds?: Set<string>;
   remote: RemoteSaver;
@@ -146,7 +148,7 @@ export function SaverView({
   );
   return (
     <>
-      <ConnectedAccounts remote={remote} />
+      <ConnectedAccounts remote={remote} onCapture={onCapture} />
       {remote.connected && adminMode && (
         <details className="scout-check">
           <summary>Vérifier la passerelle MCP</summary>

@@ -186,7 +186,7 @@ export async function importBookmark(
     }
   }
   const importedAt = new Date().toISOString(),
-    text = post.note_tweet?.text || post.text;
+    text = post.note_post?.text || post.note_tweet?.text || post.text;
   if (!reference) {
     const original: Reference = {
       id: uuidFor(ownerId, post.id),
@@ -260,13 +260,13 @@ export async function syncBookmarks(store: Store, c: Config) {
     let requests = 0;
     const previousCatchup = a.catchup;
     // Always inspect the newest bookmarks first. Post creation time is NOT bookmark time.
-    for (const mode of ["head", "catchup"] as const) {
-      if (mode === "catchup" && (!previousCatchup || a.phase !== "catchup"))
-        continue;
-      const cursor = mode === "head" ? null : previousCatchup;
+    const mode = a.phase === "catchup" && previousCatchup ? "catchup" : "head";
+    // Exactly one page per owner action, at most five records. No background loop.
+    for (const modeOfPage of [mode]) {
+      const cursor = modeOfPage === "head" ? null : previousCatchup;
       const q = new URLSearchParams({
-        max_results: "50",
-        "tweet.fields": "created_at,author_id,note_tweet",
+        max_results: "5",
+        "post.fields": "created_at,author_id,note_post",
       });
       if (cursor) q.set("pagination_token", cursor);
       const response = await provider(
@@ -278,19 +278,21 @@ export async function syncBookmarks(store: Store, c: Config) {
       if (page.errors?.length)
         throw new ServiceError(502, "x_partial_page_not_advanced");
       const posts = page.data || [];
+      if (posts.length > 5)
+        throw new ServiceError(502, "x_import_limit_exceeded");
       let allKnown = posts.length > 0;
       for (const post of posts)
         if (!(await store.get("x-origin", c.owner + ":" + post.id)))
           allKnown = false;
       for (const post of posts)
         ids.push(await importBookmark(store, c.owner, post));
-      if (mode === "catchup") a.catchup = page.meta?.next_token || null;
+      if (modeOfPage === "catchup") a.catchup = page.meta?.next_token || null;
       else if (!previousCatchup)
         a.catchup = allKnown ? null : page.meta?.next_token || null;
     }
     a.lastSyncAt = new Date().toISOString();
     a.retryAt = 0;
-    a.phase = a.phase === "head" ? "catchup" : "head";
+    a.phase = mode === "head" && a.catchup ? "catchup" : "head";
     a.revision++;
     await store.put("x-account", c.owner, a);
     await store.audit(c.owner, "x-official-api", "bookmark_sync", "verified");
@@ -320,6 +322,12 @@ async function xRouteInternal(r: Request, s: Store, c: Config) {
   const session = await owner(r, s, c, r.method !== "GET");
   if (path === "/api/x/status" && r.method === "GET") {
     const a = await account(s, c.owner);
+    const lastError = await s.get<{ code: string; requestId?: string }>(
+      "x-error",
+      c.owner,
+    );
+    const pending = await s.get("x-consent", c.owner);
+    const expired = lastError?.code === "x_reconnect_required";
     const configured =
       !!process.env.X_OAUTH_CLIENT_ID &&
       !!process.env.X_OAUTH_CLIENT_SECRET &&
@@ -332,10 +340,26 @@ async function xRouteInternal(r: Request, s: Store, c: Config) {
             .filter(Boolean)
         : [],
       requestedPermissions: [...X_SCOPES],
-      error: (await s.get<{ code: string }>("x-error", c.owner))?.code || null,
-      connected: !!a,
+      state: !configured
+        ? "not_configured"
+        : expired
+          ? "expired"
+          : lastError
+            ? "error"
+            : a
+              ? "connected"
+              : pending
+                ? "consent_required"
+                : "ready",
+      error: lastError?.code || null,
+      diagnosticId: lastError?.requestId || null,
+      hasAccount: !!a,
+      connected: !!a && !expired,
+      automaticSync: false,
+      manualImportLimit: 5,
+      importAllowed: process.env.X_BOOKMARK_IMPORT_ALLOWED === "1",
       username: a?.username || "",
-      enabled: a?.enabled || false,
+      enabled: false,
       lastSyncAt: a?.lastSyncAt || null,
       retryAt: a?.retryAt || 0,
       catchingUp: !!a?.catchup,
@@ -349,8 +373,6 @@ async function xRouteInternal(r: Request, s: Store, c: Config) {
     const values = config(c);
     const release = await lease(s, c.owner);
     try {
-      if (await account(s, c.owner))
-        throw new ServiceError(409, "x_already_connected");
       const state = opaque(),
         verifier = opaque(),
         browser = opaque();
@@ -385,6 +407,12 @@ async function xRouteInternal(r: Request, s: Store, c: Config) {
           .digest("base64url"),
         code_challenge_method: "S256",
       }).toString();
+      await s.put(
+        "x-consent",
+        session.owner,
+        { startedAt: new Date().toISOString() },
+        600,
+      );
       return new Response(JSON.stringify({ url: url.href }), {
         headers: {
           "content-type": "application/json",
@@ -417,7 +445,8 @@ async function xRouteInternal(r: Request, s: Store, c: Config) {
       pending.client !== values.client
     )
       throw new ServiceError(401, "x_state_browser_mismatch");
-    if (q.has("error"))
+    if (q.has("error")) {
+      await s.remove("x-consent", c.owner);
       return new Response(null, {
         status: 303,
         headers: {
@@ -426,11 +455,10 @@ async function xRouteInternal(r: Request, s: Store, c: Config) {
           "referrer-policy": "no-referrer",
         },
       });
+    }
     const code = z.string().min(1).max(3000).parse(q.get("code"));
     const release = await lease(s, c.owner);
     try {
-      if (await account(s, c.owner))
-        throw new ServiceError(409, "x_already_connected");
       const tokens = await exchange({
         grant_type: "authorization_code",
         code,
@@ -451,32 +479,28 @@ async function xRouteInternal(r: Request, s: Store, c: Config) {
             })
           ).json(),
         );
+      const previous = await account(s, c.owner);
+      const sameAccount = previous?.remoteId === profile.data.id;
       const a: Account = {
         remoteId: profile.data.id,
         username: profile.data.username,
         encryptedTokens: seal(tokens, "x-token:" + c.owner),
         expiresAt: Date.now() + tokens.expires_in * 1000,
-        enabled: true,
+        enabled: false,
         revision: 1,
-        lastSyncAt: null,
+        lastSyncAt: sameAccount ? previous.lastSyncAt : null,
         retryAt: 0,
-        cursor: null,
-        catchup: null,
-        phase: "head",
+        cursor: sameAccount ? previous.cursor : null,
+        catchup: sameAccount ? previous.catchup : null,
+        phase: sameAccount ? previous.phase : "head",
       };
       await s.put("x-account", c.owner, a);
       await s.audit(c.owner, "owner", "x_connect", "verified");
     } finally {
       await release();
     }
-    try {
-      await syncBookmarks(s, c);
-    } catch (e) {
-      await s.put("x-error", c.owner, {
-        code: e instanceof ServiceError ? e.code : "x_temporarily_unavailable",
-        at: new Date().toISOString(),
-      });
-    }
+    await s.remove("x-error", c.owner);
+    await s.remove("x-consent", c.owner);
     return new Response(null, {
       status: 303,
       headers: {
@@ -489,6 +513,8 @@ async function xRouteInternal(r: Request, s: Store, c: Config) {
     });
   }
   if (path === "/api/x/sync" && r.method === "POST") {
+    if (process.env.X_BOOKMARK_IMPORT_ALLOWED !== "1")
+      throw new ServiceError(403, "x_api_budget_approval_required");
     await s.quota("x-sync:" + c.owner, 4, 900);
     const result = await syncBookmarks(s, c);
     await s.remove("x-error", c.owner);
@@ -499,6 +525,7 @@ async function xRouteInternal(r: Request, s: Store, c: Config) {
       .object({ enabled: z.boolean() })
       .strict()
       .parse(await r.json());
+    if (enabled) throw new ServiceError(409, "x_manual_import_only");
     const release = await lease(s, c.owner);
     try {
       const a = await account(s, c.owner);
@@ -540,6 +567,7 @@ async function xRouteInternal(r: Request, s: Store, c: Config) {
         }
         await s.remove("x-account", c.owner);
         await s.remove("x-error", c.owner);
+        await s.remove("x-consent", c.owner);
       }
       return json({
         disconnected: !(await account(s, c.owner)),
@@ -568,6 +596,7 @@ export async function xRoute(r: Request, s: Store, c: Config) {
         await s.put("x-error", session.owner, {
           code: e.code,
           at: new Date().toISOString(),
+          requestId: randomUUID(),
         });
       } catch {
         /* original failure remains */

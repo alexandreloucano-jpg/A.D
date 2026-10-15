@@ -1,5 +1,7 @@
 # Saver — automatisation et interface utilisateur
 
+> Mise à jour : [Connexions en mode volontaire](SAVER_CONNECTIONS_MANUAL.md) remplace les sections d’import automatique X et de déclenchement périodique ci-dessous. Aucun import social automatique n’est désormais actif.
+
 ## Parcours quotidien
 
 L’utilisateur se connecte à Google, puis autorise les services qu’il souhaite relier dans **Mes connexions**. Il ne doit ni gérer les jetons, ni créer des clients OAuth, ni remplir des URLs techniques, ni importer du JSON pour utiliser Saver. Les réglages courants affichent le compte et une sauvegarde/restauration facultative. Les quatre modules restent actifs et les données locales sont conservées.

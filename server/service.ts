@@ -889,6 +889,12 @@ async function mcp(r: Request, s: Store, c: Config) {
       if (!reference || reference.isInternalQA || reference.projectId)
         throw new ServiceError(404, "reference_not_found");
       output = { reference };
+      await s.audit(
+        grant.owner,
+        grant.clientId,
+        call.name,
+        "verified:" + reference.id,
+      );
     } else {
       const inputs =
         call.name === "save_inspiration_reference"
@@ -940,6 +946,14 @@ async function mcp(r: Request, s: Store, c: Config) {
           });
         }
       }
+      for (const saved of results)
+        if (saved.verified)
+          await s.audit(
+            grant.owner,
+            grant.clientId,
+            call.name,
+            "verified:" + saved.id,
+          );
       output =
         call.name === "save_inspiration_reference" ? results[0] : { results };
     }

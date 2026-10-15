@@ -63,7 +63,7 @@ it("permits only the fixed authenticated job and reports no connected accounts w
   expect(await response.json()).toMatchObject({
     completed: true,
     outcomes: [
-      { service: "x", status: "not_connected_or_paused" },
+      { service: "x", status: "manual_import_only" },
       { service: "instagram", status: "not_connected" },
     ],
   });
@@ -176,4 +176,29 @@ it("upgrades and renews Instagram server-side without exposing credentials or re
   );
   await handle(request(), s, c);
   expect(await s.get("instagram-account", c.owner)).toBeNull();
+});
+
+it("never imports X bookmarks from maintenance even when an older account enabled automation", async () => {
+  await s.put("x-account", c.owner, {
+    enabled: true,
+    lastSyncAt: null,
+    retryAt: 0,
+  });
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => {
+      throw Error("No provider import allowed");
+    }),
+  );
+  const result = await handle(
+    new Request(c.app + "/api/jobs/connections", {
+      method: "POST",
+      headers: { authorization: "Bearer " + "a".repeat(43) },
+    }),
+    s,
+    c,
+  );
+  expect(result.status).toBe(200);
+  expect(fetch).not.toHaveBeenCalled();
+  expect(await s.list(c.owner)).toHaveLength(0);
 });

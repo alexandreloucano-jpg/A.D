@@ -48,25 +48,6 @@ export function XConnection({ remote }: { remote: RemoteSaver }) {
   useEffect(() => {
     void load();
   }, [remote.connected]);
-  useEffect(() => {
-    if (!status?.enabled || !status.connected) return;
-    const timer = setInterval(() => {
-      if (
-        document.visibilityState === "visible" &&
-        !running.current &&
-        Date.now() - (Date.parse(status.lastSyncAt || "") || 0) >= 30 * 60000 &&
-        status.retryAt < Date.now()
-      )
-        void sync();
-    }, 60000);
-    return () => clearInterval(timer);
-  }, [
-    status?.enabled,
-    status?.connected,
-    status?.lastSyncAt,
-    status?.retryAt,
-    remote.connected,
-  ]);
   return (
     <details className="x-connection">
       <summary>
@@ -140,24 +121,11 @@ export function XConnection({ remote }: { remote: RemoteSaver }) {
                 disabled={busy || status.retryAt > Date.now()}
                 onClick={() => void sync()}
               >
-                Synchroniser mes signets
+                Importer jusqu’à 5 signets
               </button>
-              <label className="check-field">
-                <input
-                  type="checkbox"
-                  checked={status.enabled}
-                  disabled={busy}
-                  onChange={(e) =>
-                    void run(async () => {
-                      await remote.reader("/api/x/automatic", "PUT", {
-                        enabled: e.target.checked,
-                      });
-                    })
-                  }
-                />
-                Synchroniser toutes les 30 minutes lorsque Saver est ouvert. Les
-                limites et le budget de l’API X s’appliquent.
-              </label>
+              <p>
+                Import volontaire uniquement, cinq signets maximum par action.
+              </p>
               <button
                 disabled={busy}
                 onClick={() =>

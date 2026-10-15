@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { Store, ServiceError, digest } from "./store.js";
 import { cookie, equal, opaque, owner, type Config } from "./security.js";
 import { seal, unseal, encryptionAvailable } from "./secrets.js";
@@ -65,12 +66,26 @@ export async function instagramRoute(
       configured = false;
     }
     const account = await s.get<Account>("instagram-account", session.owner);
-    const error = await s.get<{ code: string; at: string }>(
+    const error = await s.get<{ code: string; at: string; requestId?: string }>(
       "instagram-error",
       session.owner,
     );
     return json({
       configured,
+      state: !configured
+        ? "not_configured"
+        : (account && account.expiresAt <= Date.now()) ||
+            error?.code === "instagram_reauthorization_required"
+          ? "expired"
+          : error
+            ? "error"
+            : account
+              ? "connected"
+              : (await s.get("instagram-consent", session.owner))
+                ? "consent_required"
+                : "ready",
+      hasAccount: !!account,
+      diagnosticId: error?.requestId || null,
       connected: !!account && account.expiresAt > Date.now(),
       username: account?.username || "",
       accountType: account?.accountType || "",
@@ -124,6 +139,12 @@ export async function instagramRoute(
       scope: SCOPE,
       state,
     }).toString();
+    await s.put(
+      "instagram-consent",
+      session.owner,
+      { startedAt: new Date().toISOString() },
+      600,
+    );
     const response = json({ url: url.href });
     response.headers.set(
       "set-cookie",
@@ -153,8 +174,15 @@ export async function instagramRoute(
     )
       throw new ServiceError(401, "instagram_state_rejected");
     const cfg = config(c);
-    if (pending.client !== cfg.client || !p.get("code") || p.has("error"))
+    if (pending.client !== cfg.client || !p.get("code") || p.has("error")) {
+      await s.remove("instagram-consent", session.owner);
+      await s.put("instagram-error", session.owner, {
+        code: "instagram_consent_denied",
+        at: new Date().toISOString(),
+        requestId: randomUUID(),
+      });
       throw new ServiceError(401, "instagram_consent_denied");
+    }
     try {
       const rawToken = (await provider(
         "https://api.instagram.com/oauth/access_token",
@@ -224,6 +252,7 @@ export async function instagramRoute(
       };
       await s.put("instagram-account", session.owner, account);
       await s.remove("instagram-error", session.owner);
+      await s.remove("instagram-consent", session.owner);
       if (!(await s.get<Account>("instagram-account", session.owner)))
         throw new ServiceError(503, "instagram_connection_unverified");
       await s.audit(session.owner, "owner", "instagram_connect", "verified");
@@ -232,6 +261,7 @@ export async function instagramRoute(
       await s.put("instagram-error", session.owner, {
         code: e instanceof ServiceError ? e.code : "instagram_unavailable",
         at: new Date().toISOString(),
+        requestId: randomUUID(),
       });
       throw e;
     }
@@ -272,6 +302,7 @@ export async function instagramRoute(
     }
     await s.remove("instagram-account", session.owner);
     await s.remove("instagram-error", session.owner);
+    await s.remove("instagram-consent", session.owner);
     await s.audit(
       session.owner,
       "owner",
@@ -290,6 +321,7 @@ export async function maintainInstagram(s: Store, c: Config): Promise<string> {
     await s.put("instagram-error", c.owner, {
       code: "instagram_reauthorization_required",
       at: new Date().toISOString(),
+      requestId: randomUUID(),
     });
     return "reauthorization_required";
   }
@@ -360,6 +392,7 @@ export async function maintainInstagram(s: Store, c: Config): Promise<string> {
           ? e.code
           : "instagram_temporarily_unavailable",
       at: new Date().toISOString(),
+      requestId: randomUUID(),
     });
     throw e;
   }

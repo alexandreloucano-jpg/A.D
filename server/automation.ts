@@ -1,38 +1,11 @@
 import { Store, ServiceError } from "./store.js";
 import { equal, owner, type Config } from "./security.js";
-import { syncBookmarks } from "./x.js";
 import { maintainInstagram } from "./instagram.js";
 export async function runConnections(s: Store, c: Config) {
   const outcomes: { service: string; status: string; error?: string }[] = [];
-  const x = await s.get<{
-    enabled: boolean;
-    lastSyncAt: string | null;
-    retryAt: number;
-  }>("x-account", c.owner);
-  if (
-    x?.enabled &&
-    x.retryAt <= Date.now() &&
-    Date.now() - (Date.parse(x.lastSyncAt || "") || 0) >= 30 * 60000
-  ) {
-    try {
-      await s.quota("automatic-x:" + c.owner, 4, 900);
-      await syncBookmarks(s, c);
-      await s.remove("x-error", c.owner);
-      outcomes.push({ service: "x", status: "verified" });
-    } catch (e) {
-      const error =
-        e instanceof ServiceError ? e.code : "x_temporarily_unavailable";
-      await s.put("x-error", c.owner, {
-        code: error,
-        at: new Date().toISOString(),
-      });
-      outcomes.push({ service: "x", status: "retry", error });
-    }
-  } else
-    outcomes.push({
-      service: "x",
-      status: x?.enabled ? "not_due" : "not_connected_or_paused",
-    });
+  // Provider imports require a separate explicit owner action. Even legacy
+  // enabled accounts cannot be imported by foreground or scheduled jobs.
+  outcomes.push({ service: "x", status: "manual_import_only" });
   try {
     outcomes.push({
       service: "instagram",
