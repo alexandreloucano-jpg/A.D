@@ -1,3 +1,4 @@
+import { MarketPanel } from "../scout-market/MarketPanel";
 import { ArrowUpRight, ArrowRight, Folder, Link, Plus } from "lucide-react";
 import { dateLabel, type Route } from "../display";
 import { rediscover, type Task, type Workspace } from "../domain";
@@ -80,6 +81,7 @@ export function HomeView({
         </div>
       </section>
       <aside className="home-rail">
+        <MarketPanel mode="home" />
         <section>
           <div className="section-label">
             <h2>Dossiers récents</h2>

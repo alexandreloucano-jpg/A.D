@@ -1,0 +1,148 @@
+.market-panel {
+  color: var(--ink, #20313d);
+  padding: 20px 0;
+  min-width: 0;
+}
+.market-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+}
+.market-heading h2 {
+  font-family: "Bodoni Moda", serif;
+  font-weight: 400;
+  font-size: 32px;
+  margin: 8px 0;
+}
+.market-panel button,
+.market-panel select,
+.market-panel textarea {
+  min-height: 44px;
+  border: 1px solid #aebcc2;
+  background: #faf7ef;
+  color: #20313d;
+  border-radius: 6px;
+  padding: 9px 14px;
+  font: inherit;
+}
+.market-panel button {
+  cursor: pointer;
+}
+.market-panel button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+.market-panel button:focus-visible,
+.market-panel select:focus-visible,
+.market-panel textarea:focus-visible {
+  outline: 3px solid #376a90;
+  outline-offset: 2px;
+}
+.market-meta {
+  font-size: 12px;
+  line-height: 1.7;
+  color: #405466;
+}
+.market-tabs,
+.market-buttons,
+.market-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+.market-tabs [aria-pressed="true"] {
+  background: #20313d;
+  color: white;
+}
+.market-filters label {
+  display: grid;
+  gap: 5px;
+}
+.market-findings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
+  gap: 24px;
+}
+.market-finding {
+  border-top: 1px solid #aebcc2;
+  padding: 18px 0;
+}
+.market-finding h3 {
+  font-weight: 500;
+  line-height: 1.4;
+}
+.market-finding p {
+  line-height: 1.6;
+}
+.market-finding a {
+  display: inline-block;
+  min-height: 44px;
+  padding: 12px 0;
+  margin-right: 10px;
+}
+.market-home {
+  max-height: 42vh;
+  overflow: auto;
+  border-top: 1px solid #aebcc2;
+}
+.market-home .market-findings {
+  display: block;
+}
+.market-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: #20313d70;
+  display: flex;
+  justify-content: flex-end;
+}
+.market-detail {
+  width: min(660px, 100%);
+  height: 100%;
+  overflow: auto;
+  padding: 24px;
+  background: #faf7ef;
+  overscroll-behavior: contain;
+}
+.market-detail textarea {
+  display: block;
+  width: 100%;
+  min-height: 90px;
+  resize: vertical;
+  margin: 10px 0;
+}
+.market-detail h3 {
+  margin-top: 28px;
+}
+.market-detail blockquote {
+  margin: 16px 0;
+  padding-left: 15px;
+  border-left: 2px solid #718b9c;
+}
+.home-rail {
+  overflow: auto;
+}
+.market-home h2 {
+  font-size: 26px;
+}
+@media (max-width: 600px) {
+  .market-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .market-panel select,
+  .market-panel textarea {
+    font-size: 16px;
+  }
+  .market-detail {
+    padding: 20px;
+  }
+  .market-home {
+    max-height: none;
+  }
+  .market-filters label {
+    width: 100%;
+  }
+}

@@ -1,3 +1,5 @@
+import { marketJob } from "./market/job-route.js";
+import { marketRoute } from "./market.js";
 import { intakeRoute } from "./intake.js";
 import {
   mcpProtocol,
@@ -187,6 +189,8 @@ async function route(
     });
   }
   if (c.role === "app") {
+    if (path === "/api/jobs/market") return marketJob(r, s, c);
+    if (path.startsWith("/api/market/")) return marketRoute(r, s, c);
     if (path === "/api/intake") return intakeRoute(r, s, c);
     if (path === "/api/admin/automation") {
       method(r, "GET");

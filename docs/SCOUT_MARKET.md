@@ -1,0 +1,15 @@
+# Radar marché privé
+
+Domaine serveur indépendant de Saver : migration additive `005-market-intelligence.sql`, tables `ad_market_*`, clés propriétaires composites. Le rôle SQL du MCP ne reçoit aucun droit sur ces tables. Les quatre outils Saver restent inchangés.
+
+Sources : registre d’endpoints dans `server/market/sources.ts`, aucune carte préchargée. Journal du Luxe : robots et mentions légales vérifiés le 16 octobre 2026. FHCM exclue car ses conditions restreignent les liens profonds. Une source rapporte une annonce, pas un besoin commercial établi. Les extraits sont limités à 320 caractères. Aucune extraction de profils ni copie intégrale d’article n’est conservée.
+
+Collecte manuelle : première tranche robots/index, puis tranches de trois pages avec curseur SQL et lease de 55 secondes. Aucun travail non garanti après réponse HTTP, aucun ordonnanceur actif. Le bouton Reprendre continue le même run. Échec de source conservé dans le reçu, aucun faux succès. HTTPS, allowlist, toutes les adresses DNS publiques vérifiées, adresse épinglée dans TLS, redirections revérifiées, délai 8 secondes, réponse 1,5 Mo maximum. Aucune clé IA et aucune dépense. La reconnaissance d’organisation reste conservatrice ; les articles sans entité explicitement reconnue ne sont pas qualifiés automatiquement.
+
+Qualification déterministe : facteurs inconnus à null, score pondéré uniquement avec couverture >=60 %, confiance distincte. Le budget reste inconnu. Zone Paris seulement si le contenu la mentionne ; zone inconnue visible sinon. La date de publication n’est jamais présentée comme date exacte du fait. Chaque UUID reste stable lors d’une reprise et les décisions humaines ne sont pas écrasées.
+
+Accueil, Explorer et pipeline dans Projets lisent le même domaine Neon. Sauvegarde/refus/report, brouillon LATER, acceptation NOW explicite, KILL réversible uniquement vers LATER. Les interactions avancées exigent une confirmation et une preuve déclarée par le propriétaire. Aucun message ni tâche de l’ancien domaine n’est créé automatiquement. Les annotations, références Saver, préférences Taste et données historiques ne sont pas modifiées.
+
+Configuration serveur Preview : AD_MARKET_ENABLED, AD_MARKET_SCAN_ENABLED. Désactiver ces drapeaux constitue le rollback sans suppression des données. AD_MARKET_AI_ENABLED reste inactif ; pas d’enrichissement par modèle revendiqué. Le point d’exploitation `/api/jobs/market` exige un secret dédié long et ne permet que l’exécution bornée du scan public ; il ne donne aucune lecture privée ni session propriétaire. Le SSO Vercel de l’application reste actif.
+
+Validation : distinguer tests Vitest/PGlite, parcours Playwright avec fixtures, ingestion Vercel réelle et lecture propriétaire réelle. Les reçus de scan, sauvegardes et captures privées restent dans artifacts/, jamais dans Git public. Ne pas considérer la session de test Chromium comme une connexion du propriétaire.
