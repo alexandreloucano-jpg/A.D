@@ -1,3 +1,10 @@
+import {
+  mcpProtocol,
+  mcpDiscoveryLog,
+  MCP_LEGACY_VERSIONS,
+  MCP_SUPPORTED_VERSIONS,
+  MCP_SERVER_INFO,
+} from "./mcp-protocol.js";
 import { relayConnections } from "./job-relay.js";
 import { automationRoute } from "./automation.js";
 import { grokConnection } from "./connections.js";
@@ -750,8 +757,9 @@ async function revoke(r: Request, s: Store, c: Config) {
 }
 const toolDescriptions = {
   get_saved_inspiration:
-    "Search your personal saved references. No projects or tasks.",
-  get_saver_capture: "Read one saved reference by persistent UUID.",
+    "Search references already saved in the owner’s A.D Saver library. Read-only: never creates or changes a reference. Does NOT access X/Twitter bookmarks, Instagram saved posts or external accounts.",
+  get_saver_capture:
+    "Read one existing A.D Saver reference by its persistent UUID. Read-only. Does not fetch X/Twitter or Instagram bookmarks.",
   save_inspiration_reference:
     "Save one reference only after explicit owner approval in this conversation. Returns the persistent UUID and verified read-back.",
   save_reference_batch:
@@ -772,41 +780,141 @@ async function mcp(r: Request, s: Store, c: Config) {
     throw new ServiceError(403, "origin_rejected");
   await s.quota("mcp:" + grant.clientId, 30);
   await s.quota("mcp-owner:" + grant.owner, 120);
-  const input = z
+  let raw: unknown;
+  try {
+    raw = await body(r);
+  } catch (e) {
+    if (e instanceof ServiceError && e.code === "invalid_json")
+      return json(
+        {
+          jsonrpc: "2.0",
+          id: null,
+          error: { code: -32700, message: "Parse error" },
+        },
+        400,
+      );
+    throw e;
+  }
+  const parsed = z
     .object({
       jsonrpc: z.literal("2.0"),
-      id: z.union([z.string(), z.number()]).optional(),
+      id: z.union([z.string(), z.number().int()]).optional(),
       method: z.string(),
       params: z.unknown().optional(),
     })
     .strict()
-    .parse(await body(r));
+    .safeParse(raw);
+  if (!parsed.success)
+    return json(
+      {
+        jsonrpc: "2.0",
+        id: null,
+        error: { code: -32600, message: "Invalid request" },
+      },
+      400,
+    );
+  const input = parsed.data;
   if (input.id === undefined) {
     if (!input.method.startsWith("notifications/"))
       throw new ServiceError(400, "invalid_notification");
     return new Response(null, { status: 202, headers });
   }
-  const result = (value: unknown) =>
-    json({ jsonrpc: "2.0", id: input.id, result: value });
-  const error = (code: number, message: string) =>
-    json({ jsonrpc: "2.0", id: input.id, error: { code, message } });
+  const protocol = mcpProtocol(r, input.method, input.params);
+  const error = (
+    code: number,
+    message: string,
+    status = 200,
+    data?: Record<string, unknown>,
+  ) =>
+    json(
+      {
+        jsonrpc: "2.0",
+        id: input.id,
+        error: { code, message, ...(data ? { data } : {}) },
+      },
+      status,
+    );
+  if (protocol.failure) {
+    console.warn(
+      JSON.stringify({
+        event: "mcp_protocol_rejected",
+        method: [
+          "initialize",
+          "server/discover",
+          "tools/list",
+          "tools/call",
+          "ping",
+        ].includes(input.method)
+          ? input.method
+          : "other",
+        code: protocol.failure.code,
+      }),
+    );
+    return error(
+      protocol.failure.code,
+      protocol.failure.message,
+      400,
+      protocol.failure.data,
+    );
+  }
+  input.params = protocol.params;
+  const result = (value: Record<string, unknown>) =>
+    json({
+      jsonrpc: "2.0",
+      id: input.id,
+      result: protocol.modern
+        ? {
+            resultType: "complete",
+            _meta: { "io.modelcontextprotocol/serverInfo": MCP_SERVER_INFO },
+            ...value,
+          }
+        : value,
+    });
+  const instructions =
+    "Saver-only creative references. Use get_saved_inspiration to search and get_saver_capture to read; neither changes saved references. Save tools require explicit owner approval. No access to X/Twitter bookmarks, Instagram saved posts, projects, tasks, preferences or any global MCP.";
+  if (input.method === "server/discover") {
+    mcpDiscoveryLog(
+      "server/discover",
+      protocol.version,
+      protocol.version,
+      SCOUT_TOOLS.length,
+    );
+    return result({
+      supportedVersions: MCP_SUPPORTED_VERSIONS,
+      capabilities: { tools: {} },
+      instructions,
+      ttlMs: 0,
+      cacheScope: "private",
+    });
+  }
   if (input.method === "initialize") {
     const p = z
       .object({ protocolVersion: z.string() })
       .passthrough()
       .parse(input.params);
-    const supported = ["2025-11-25", "2025-06-18", "2025-03-26"];
+    const selected = (MCP_LEGACY_VERSIONS as readonly string[]).includes(
+      p.protocolVersion,
+    )
+      ? p.protocolVersion
+      : "2025-06-18";
+    mcpDiscoveryLog("initialize", p.protocolVersion, selected);
     return result({
-      protocolVersion: supported.includes(p.protocolVersion)
-        ? p.protocolVersion
-        : "2025-06-18",
+      protocolVersion: selected,
       capabilities: { tools: {} },
-      serverInfo: { name: "ad-saver-scout", version: "1.0.0" },
+      serverInfo: MCP_SERVER_INFO,
+      instructions,
     });
   }
   if (input.method === "ping") return result({});
-  if (input.method === "tools/list")
+  if (input.method === "tools/list") {
+    mcpDiscoveryLog(
+      "tools/list",
+      protocol.version,
+      protocol.version,
+      SCOUT_TOOLS.length,
+    );
     return result({
+      ...(protocol.modern ? { ttlMs: 0, cacheScope: "private" } : {}),
       tools: SCOUT_TOOLS.map((name) => ({
         name,
         description: toolDescriptions[name],
@@ -859,11 +967,20 @@ async function mcp(r: Request, s: Store, c: Config) {
                   },
       })),
     });
-  if (input.method !== "tools/call") return error(-32601, "Method not allowed");
-  const call = z
+  }
+  if (input.method !== "tools/call")
+    return error(-32601, "Method not allowed", protocol.modern ? 404 : 200);
+  const parsedCall = z
     .object({ name: z.string(), arguments: z.unknown().optional() })
     .strict()
-    .parse(input.params);
+    .safeParse(input.params);
+  if (!parsedCall.success)
+    return error(
+      -32602,
+      "Invalid tool call parameters",
+      protocol.modern ? 400 : 200,
+    );
+  const call = parsedCall.data;
   if (!(SCOUT_TOOLS as readonly string[]).includes(call.name)) {
     await s.audit(grant.owner, grant.clientId, "tool_denied", "denied");
     return error(-32601, "Tool not allowed");
