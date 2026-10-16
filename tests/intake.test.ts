@@ -183,3 +183,28 @@ it("rejects unauthenticated requests and enforces a persistent owner quota", asy
       .status,
   ).toBe(429);
 });
+it("serves full synced source text only to the owner and one selected UUID", async () => {
+  const refId = "3983fabe-b131-47bf-aae2-3f0b28e47cda";
+  await s.put("intake-source", "device-sync-fixture", {
+    owner: c.owner,
+    referenceId: refId,
+    sourceText: "Texte intégral privé",
+    images: [],
+    videos: [],
+    notes: [],
+  });
+  const read = (query: string, cookie = true) =>
+    handle(
+      new Request(c.app + "/api/intake?" + query, {
+        headers: cookie ? { cookie: "__Host-ad_session=intake-fixture" } : {},
+      }),
+      s,
+      c,
+    );
+  const metadata = await (await read("ids=" + refId)).json();
+  expect(metadata.sources[0].sourceText).toBeUndefined();
+  const full = await (await read("content=1&ids=" + refId)).json();
+  expect(full.sources[0].sourceText).toBe("Texte intégral privé");
+  expect((await read("content=1&ids=" + refId, false)).status).toBe(401);
+  expect((await read("content=1&ids=" + refId + "," + refId)).status).toBe(400);
+});

@@ -2609,3 +2609,27 @@ dialog:has(.reader-shell){width:min(1260px,96vw);max-width:96vw;max-height:94dvh
 .local-content-gate {min-height:1px;min-width:1px;}
 
 .saver-media-retry{margin-block:12px}.saver-media-retry button{min-height:44px}.saver-media-retry p{font-size:13px;color:var(--muted);line-height:1.5}
+
+.saver-device-sync {
+  border: 1px solid #b9c4c9;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  line-height: 1.55;
+}
+.saver-device-sync p {
+  margin: 6px 0;
+}
+.saver-device-sync button,
+.saver-device-sync a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 14px;
+  border: 1px solid #718896;
+  border-radius: 6px;
+}
+.saver-device-sync button:disabled {
+  opacity: 0.6;
+}

@@ -27,6 +27,9 @@ export async function intakeRoute(r: Request, s: Store, c: Config) {
           .split(",")
           .filter(Boolean),
       );
+    const includeContent = new URL(r.url).searchParams.get("content") === "1";
+    if (includeContent && ids.length !== 1)
+      throw new ServiceError(400, "single_reference_required");
     const rows = ids.length
       ? await s.query(
           "SELECT data FROM ad_records WHERE namespace='intake-source' AND data->>'owner'=$1 AND data->>'referenceId'=ANY($2::text[])",
@@ -39,6 +42,9 @@ export async function intakeRoute(r: Request, s: Store, c: Config) {
           const d = row.data as Record<string, unknown>;
           return {
             referenceId: d.referenceId,
+            ...(includeContent
+              ? { sourceText: d.sourceText, author: d.author }
+              : {}),
             images: d.images,
             videos: d.videos || [],
             tags: d.tags,
@@ -85,6 +91,7 @@ export async function intakeRoute(r: Request, s: Store, c: Config) {
     id?: string;
     verified: boolean;
     existing?: boolean;
+    sourceTextVerified?: boolean;
     error?: string;
   }[] = [];
   try {
@@ -169,10 +176,10 @@ export async function intakeRoute(r: Request, s: Store, c: Config) {
             sourceDate: item.sourceDate || null,
             receivedAt: now,
           });
-        const source = await s.get<{ referenceId: string }>(
-            "intake-source",
-            sourceKey,
-          ),
+        const source = await s.get<{
+            referenceId: string;
+            sourceText?: string;
+          }>("intake-source", sourceKey),
           readback = await s.read(session.owner, ref.id);
         if (!readback || source?.referenceId !== ref.id)
           throw new ServiceError(503, "intake_readback_failed");
@@ -180,6 +187,8 @@ export async function intakeRoute(r: Request, s: Store, c: Config) {
         results.push({
           url: item.url,
           id: readback.id,
+          sourceTextVerified:
+            source.sourceText === (item.originalText || item.text),
           verified: true,
           existing,
         });

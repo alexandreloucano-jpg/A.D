@@ -1,3 +1,4 @@
+import { DeviceSync, SyncedContent } from "../intake/DeviceSync";
 import {
   downloadLocalMedia,
   getMediaProgress,
@@ -243,6 +244,12 @@ export function SaverView({
   );
   return (
     <>
+      <DeviceSync
+        rows={data.references}
+        remote={remote}
+        serverIds={serverIds}
+        onSynced={() => void collections.reload()}
+      />
       <IntakePanel
         remote={remote}
         onLocalImport={onLocalImport}
@@ -921,6 +928,11 @@ export function SaverView({
                       <ArrowRight size={14} />
                     </button>
                   </div>
+                  {expanded === r.id &&
+                    serverIds.has(r.id) &&
+                    remote.connected && (
+                      <SyncedContent id={r.id} remote={remote} />
+                    )}
                   {expanded === r.id && (
                     <div className="receipt">
                       <Check size={15} />

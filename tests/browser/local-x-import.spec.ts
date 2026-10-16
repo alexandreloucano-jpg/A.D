@@ -89,6 +89,11 @@ for (const width of [390, 1440])
     await expect(
       page.getByText("Archive X locale", { exact: true }),
     ).toBeVisible();
+    if (
+      await page.getByLabel("Conserver uniquement sur cet appareil").isVisible()
+    )
+      await page.getByLabel("Conserver uniquement sur cet appareil").check();
+
     await page
       .getByRole("button", {
         name: "Enregistrer 1 référence(s) sélectionnée(s)",
@@ -184,6 +189,11 @@ test("partial selections keep the extension cursor unconfirmed until all items a
     ),
   );
   await page.getByRole("checkbox", { name: /Second signet/ }).uncheck();
+  if (
+    await page.getByLabel("Conserver uniquement sur cet appareil").isVisible()
+  )
+    await page.getByLabel("Conserver uniquement sur cet appareil").check();
+
   await page
     .getByRole("button", {
       name: "Enregistrer 1 référence(s) sélectionnée(s)",
@@ -208,6 +218,11 @@ test("partial selections keep the extension cursor unconfirmed until all items a
         JSON.parse(sessionStorage.getItem("ad.intake.draft.v1") || "{}").nonce,
     ),
   ).toBe("ac6ac0b4-2175-4d40-bf45-a2571f957151");
+  if (
+    await page.getByLabel("Conserver uniquement sur cet appareil").isVisible()
+  )
+    await page.getByLabel("Conserver uniquement sur cet appareil").check();
+
   await page
     .getByRole("button", {
       name: "Enregistrer 1 référence(s) sélectionnée(s)",
@@ -245,6 +260,11 @@ test("large local import completes in batches, reports content progress and pres
       ),
     count,
   );
+  if (
+    await page.getByLabel("Conserver uniquement sur cet appareil").isVisible()
+  )
+    await page.getByLabel("Conserver uniquement sur cet appareil").check();
+
   await page
     .getByRole("button", {
       name: `Enregistrer ${count} référence(s) sélectionnée(s)`,
@@ -340,6 +360,11 @@ test("an old extension capture bound to another tab recovers public image bytes 
       location.origin,
     ),
   );
+  if (
+    await page.getByLabel("Conserver uniquement sur cet appareil").isVisible()
+  )
+    await page.getByLabel("Conserver uniquement sur cet appareil").check();
+
   await page
     .getByRole("button", {
       name: "Enregistrer 1 référence(s) sélectionnée(s)",
@@ -420,6 +445,11 @@ test("legacy media failures resume automatically in bulk after reload with four 
       location.origin,
     ),
   );
+  if (
+    await page.getByLabel("Conserver uniquement sur cet appareil").isVisible()
+  )
+    await page.getByLabel("Conserver uniquement sur cet appareil").check();
+
   await page
     .getByRole("button", {
       name: "Enregistrer 8 référence(s) sélectionnée(s)",

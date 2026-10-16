@@ -41,7 +41,7 @@ export function IntakePanel({
     [busy, setBusy] = useState(false),
     [progress, setProgress] = useState(0),
     [visible, setVisible] = useState(30);
-  const [localOnly, setLocalOnly] = useState(true);
+  const [localOnly, setLocalOnly] = useState(false);
   const [phase, setPhase] = useState<"references" | "content">("references");
   const [total, setTotal] = useState(0);
   const pendingNonce = useRef<string | undefined>(undefined);
