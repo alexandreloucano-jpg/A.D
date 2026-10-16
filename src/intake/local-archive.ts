@@ -270,6 +270,35 @@ async function mediaBlob(url: string, nonce?: string): Promise<Blob> {
     return (await fromExtension(url, nonce || crypto.randomUUID())).blob;
   }
 }
+export const readLocalCopies = (ids: string[]) =>
+  readMany<LocalCopy>("copies", ids);
+export async function ensureLocalAsset(id: string, url: string) {
+  const copy = await readLocalCopy(id);
+  if (!copy || !copy.media.some((m) => m.url === url))
+    throw Error("Média absent de cette capture.");
+  const cached = await readLocalAsset(url);
+  if (cached) return cached;
+  const blob = await mediaBlob(url, copy.nonce);
+  const sha256 = Array.from(
+    new Uint8Array(
+      await crypto.subtle.digest("SHA-256", await blob.arrayBuffer()),
+    ),
+    (b) => b.toString(16).padStart(2, "0"),
+  ).join("");
+  await write("assets", url, { blob, sha256 });
+  const readback = await readLocalAsset(url);
+  if (readback?.blob.size !== blob.size || readback.sha256 !== sha256)
+    throw Error("Copie locale non confirmée.");
+  const latest = await readLocalCopy(id);
+  if (latest) {
+    latest.media = latest.media.map((m) =>
+      m.url === url ? { url, state: "saved", bytes: blob.size } : m,
+    );
+    await write("copies", id, latest);
+    changed(id);
+  }
+  return readback;
+}
 export function downloadLocalMedia(ids: string[]): Promise<void> {
   ids.forEach((id) => {
     if (!activeIds.has(id)) queue.add(id);

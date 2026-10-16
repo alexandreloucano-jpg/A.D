@@ -1,5 +1,7 @@
+import { syncCloudMedia, type CloudMedia } from "./cloud-media";
+import { readLocalCopies } from "./local-archive";
 import { COLLECTIONS_KEY, collectionsSchema } from "../collections/model";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Reference } from "../domain";
 import type { RemoteSaver } from "../remote-saver";
 import { localOnlyIds, readLocalCopy, setLocalOnly } from "./local-archive";
@@ -130,8 +132,26 @@ export function DeviceSync({
 }) {
   const [busy, setBusy] = useState(false),
     [groupsCopied, setGroupsCopied] = useState(false),
+    [hasMedia, setHasMedia] = useState(false),
+    [mediaCopied, setMediaCopied] = useState(false),
     [message, setMessage] = useState(""),
     [error, setError] = useState("");
+  const rowIds = rows
+    .filter((r) => !r.isInternalQA)
+    .map((r) => r.id)
+    .sort()
+    .join(",");
+  useEffect(() => {
+    let active = true;
+    void readLocalCopies(rowIds.split(",").filter(Boolean))
+      .then((copies) => {
+        if (active) setHasMedia(copies.some((c) => !!c?.media.length));
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [rowIds]);
   let local: Set<string>;
   try {
     local = localOnlyIds();
@@ -149,7 +169,10 @@ export function DeviceSync({
   const pending = rows.filter(
     (r) => !r.isInternalQA && (local.has(r.id) || !serverIds.has(r.id)),
   );
-  const needsCopy = pending.length > 0 || (hasLocalGroups && !groupsCopied);
+  const needsCopy =
+    pending.length > 0 ||
+    (hasLocalGroups && !groupsCopied) ||
+    (hasMedia && !mediaCopied);
   return (
     <section
       aria-label="Disponibilité sur vos appareils"
@@ -178,11 +201,17 @@ export function DeviceSync({
                 void syncDeviceReferences(pending, remote, (done, total) =>
                   setMessage(`Synchronisation vérifiée : ${done}/${total}`),
                 )
-                  .then(() => {
+                  .then(async () => {
+                    const mediaReceipt = await syncCloudMedia(
+                      rowIds.split(",").filter(Boolean),
+                      remote,
+                      setMessage,
+                    );
+                    setMediaCopied(true);
                     setGroupsCopied(true);
                     onSynced?.();
                     setMessage(
-                      "Texte, références et liens des médias synchronisés et relus. Actualisez Saver sur iPhone.",
+                      `Texte et références synchronisés. ${mediaReceipt.saved} fichier(s) photo/vidéo sauvegardé(s) en privé et vérifié(s). Actualisez Saver sur iPhone.`,
                     );
                   })
                   .catch((e) =>
@@ -205,8 +234,9 @@ export function DeviceSync({
             </a>
           )}
           <p>
-            Les fichiers image/vidéo archivés uniquement dans ce navigateur ne
-            sont pas téléversés ; leurs liens source sont conservés.
+            Les photos et vidéos sont copiées dans votre stockage privé, puis
+            vérifiées. Les fichiers introuvables restent signalés comme non
+            confirmés ; les originaux locaux sont conservés.
           </p>
         </>
       )}
@@ -231,6 +261,7 @@ export function SyncedContent({
   const [text, setText] = useState(""),
     [videos, setVideos] = useState<string[]>([]),
     [images, setImages] = useState<string[]>([]),
+    [archived, setArchived] = useState<CloudMedia[]>([]),
     [error, setError] = useState(""),
     [loaded, setLoaded] = useState(false);
   return (
@@ -247,6 +278,12 @@ export function SyncedContent({
             }[];
           }>("/api/intake?content=1&ids=" + encodeURIComponent(id))
           .then((r) => {
+            void remote
+              .reader<{ items: CloudMedia[] }>("/api/media/reference/" + id)
+              .then((m) =>
+                setArchived(m.items.filter((x) => x.verified && x.url)),
+              )
+              .catch(() => {});
             setText(
               r.sources[0]?.sourceText ||
                 "Aucun texte source supplémentaire synchronisé.",
@@ -268,29 +305,59 @@ export function SyncedContent({
       <p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
         {text || "Lecture du contenu privé…"}
       </p>
-      {images.map((url, index) => (
-        <img
-          key={url}
-          src={url}
-          alt={"Image source " + (index + 1)}
-          loading="lazy"
-          referrerPolicy="no-referrer"
-          style={{ maxWidth: "100%", height: "auto" }}
-        />
-      ))}
-      {videos.map((url) => (
-        <div key={url}>
-          <video
-            src={url}
-            controls
-            preload="none"
+      {archived.map((m) =>
+        m.mime.startsWith("image/") ? (
+          <img
+            key={m.sha256}
+            src={m.url!}
+            alt="Photo sauvegardée dans votre compte"
+            loading="lazy"
             style={{ maxWidth: "100%" }}
           />
-          <a href={url} target="_blank" rel="noreferrer">
-            Ouvrir la vidéo source ↗
-          </a>
-        </div>
-      ))}
+        ) : (
+          <video
+            key={m.sha256}
+            src={m.url!}
+            controls
+            preload="none"
+            playsInline
+            style={{ maxWidth: "100%" }}
+          />
+        ),
+      )}
+      {archived.length > 0 && (
+        <p>
+          {archived.length} fichier(s) privé(s) vérifié(s), lisibles sans la
+          source.
+        </p>
+      )}
+      {images
+        .filter((url) => !archived.some((m) => m.sourceUrl === url))
+        .map((url, index) => (
+          <img
+            key={url}
+            src={url}
+            alt={"Image source " + (index + 1)}
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            style={{ maxWidth: "100%", height: "auto" }}
+          />
+        ))}
+      {videos
+        .filter((url) => !archived.some((m) => m.sourceUrl === url))
+        .map((url) => (
+          <div key={url}>
+            <video
+              src={url}
+              controls
+              preload="none"
+              style={{ maxWidth: "100%" }}
+            />
+            <a href={url} target="_blank" rel="noreferrer">
+              Ouvrir la vidéo source ↗
+            </a>
+          </div>
+        ))}
     </details>
   );
 }

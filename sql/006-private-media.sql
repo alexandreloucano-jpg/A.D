@@ -1,0 +1,4 @@
+-- Isolated beta, additive private binary storage metadata. No gateway grants.
+CREATE TABLE IF NOT EXISTS ad_media_budget(owner_id text PRIMARY KEY,reserved_bytes bigint NOT NULL DEFAULT 0 CHECK(reserved_bytes>=0 AND reserved_bytes<=943718400));
+CREATE TABLE IF NOT EXISTS ad_media_assets(owner_id text NOT NULL,sha256 text NOT NULL CHECK(sha256 ~ '^[a-f0-9]{64}$'),pathname text NOT NULL,mime text NOT NULL,size integer NOT NULL CHECK(size>0 AND size<=25165824),verified boolean NOT NULL DEFAULT false,created_at timestamptz NOT NULL DEFAULT now(),verified_at timestamptz,PRIMARY KEY(owner_id,sha256));
+CREATE TABLE IF NOT EXISTS ad_media_links(owner_id text NOT NULL,reference_id uuid NOT NULL,source_url text NOT NULL,sha256 text NOT NULL,PRIMARY KEY(owner_id,reference_id,source_url),FOREIGN KEY(owner_id,reference_id) REFERENCES ad_saver(owner_id,id),FOREIGN KEY(owner_id,sha256) REFERENCES ad_media_assets(owner_id,sha256));

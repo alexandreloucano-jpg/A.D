@@ -20,6 +20,7 @@
     "@mozilla/readability": "^0.6.0",
     "@napi-rs/canvas": "^1.0.11",
     "@neondatabase/serverless": "^1.2.0",
+    "@vercel/blob": "^2.8.2",
     "ipaddr.js": "^2.5.0",
     "jose": "^6.2.12",
     "linkedom": "^0.18.13",

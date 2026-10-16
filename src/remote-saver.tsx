@@ -8,6 +8,18 @@ async function response<T>(r: Response): Promise<T> {
     );
   const body = await r.json();
   const messages: Record<string, string> = {
+    private_media_storage_unavailable:
+      "Stockage privé des fichiers non configuré. Les originaux restent sur cet appareil.",
+    media_free_storage_full:
+      "Espace de stockage gratuit atteint. Les originaux locaux sont conservés ; aucun forfait payant n’a été activé.",
+    media_hash_mismatch:
+      "Le fichier reçu ne correspond pas à l’original. Copie non confirmée ; l’original local reste conservé.",
+    media_upload_incomplete:
+      "Le fichier n’est pas encore entièrement envoyé. Reprenez la copie ; l’original local reste conservé.",
+    media_source_not_owned:
+      "Ce média n’est pas rattaché à une référence privée synchronisée. Synchronisez d’abord sa référence.",
+    media_transfer_busy:
+      "Un transfert est déjà en cours. Reprenez dans quelques instants.",
     intake_busy:
       "Un import est déjà en cours. Patientez puis reprenez cette capture conservée.",
     intake_notes_limit:

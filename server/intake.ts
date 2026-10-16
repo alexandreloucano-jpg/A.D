@@ -36,6 +36,16 @@ export async function intakeRoute(r: Request, s: Store, c: Config) {
           [session.owner, ids],
         )
       : [];
+    const previews =
+      process.env.BLOB_READ_WRITE_TOKEN && ids.length
+        ? await s.query(
+            "SELECT l.reference_id, a.sha256 FROM ad_media_links l JOIN ad_media_assets a ON a.owner_id=l.owner_id AND a.sha256=l.sha256 WHERE l.owner_id=$1 AND l.reference_id=ANY($2::uuid[]) AND a.verified AND a.mime LIKE 'image/%'",
+            [session.owner, ids],
+          )
+        : [];
+    const privateImages = new Map(
+      previews.map((p) => [p.reference_id, "/api/media/" + p.sha256]),
+    );
     return Response.json(
       {
         sources: rows.map((row) => {
@@ -46,6 +56,7 @@ export async function intakeRoute(r: Request, s: Store, c: Config) {
               ? { sourceText: d.sourceText, author: d.author }
               : {}),
             images: d.images,
+            privateImage: privateImages.get(d.referenceId),
             videos: d.videos || [],
             tags: d.tags,
             publishedAt: d.publishedAt,
@@ -156,6 +167,9 @@ export async function intakeRoute(r: Request, s: Store, c: Config) {
             ...previous,
             notes: mergedNotes,
             tags: [...new Set([...(previous.tags || []), ...item.tags])],
+            videos: [
+              ...new Set([...(previous.videos || []), ...item.videos]),
+            ].slice(0, 4),
             images: [
               ...new Set([...(previous.images || []), ...item.images]),
             ].slice(0, 8),

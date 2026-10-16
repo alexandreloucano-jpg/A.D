@@ -113,6 +113,7 @@ export function SaverView({
             sources: {
               referenceId: string;
               images: string[];
+              privateImage?: string;
               notes?: string[];
             }[];
           }>(
@@ -120,7 +121,11 @@ export function SaverView({
               encodeURIComponent(ids.slice(i, i + 100).join(",")),
           );
           for (const row of result.sources) {
-            const image = row.images?.find(publicImage);
+            const image =
+              row.privateImage &&
+              /^\/api\/media\/[a-f0-9]{64}$/.test(row.privateImage)
+                ? row.privateImage
+                : row.images?.find(publicImage);
             if (image) found[row.referenceId] = image;
             if (row.notes?.length) notes[row.referenceId] = row.notes;
           }

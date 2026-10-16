@@ -1,3 +1,4 @@
+import { once } from "node:events";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { database, ServiceError } from "../server/store.js";
 import { configuration } from "../server/security.js";
@@ -72,8 +73,29 @@ export default async function handler(
     );
     res.statusCode = response.status;
     response.headers.forEach((value, key) => res.setHeader(key, value));
-    res.end(Buffer.from(await response.arrayBuffer()));
+    if (
+      url.pathname.startsWith("/api/media/") &&
+      response.body &&
+      response.ok
+    ) {
+      const reader = response.body.getReader();
+      try {
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          if (res.destroyed) break;
+          if (!res.write(Buffer.from(value))) await once(res, "drain");
+        }
+        res.end();
+      } finally {
+        await reader.cancel().catch(() => {});
+      }
+    } else res.end(Buffer.from(await response.arrayBuffer()));
   } catch (error) {
+    if (res.headersSent) {
+      res.destroy(error instanceof Error ? error : undefined);
+      return;
+    }
     res.statusCode = error instanceof ServiceError ? error.status : 503;
     res.setHeader("content-type", "application/json");
     res.setHeader("cache-control", "no-store");

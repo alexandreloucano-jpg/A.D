@@ -106,7 +106,7 @@ test("one click shares local-only text and stable UUID with a separate phone con
     .click();
   await expect(
     page.getByText(
-      "Texte, références et liens des médias synchronisés et relus. Actualisez Saver sur iPhone.",
+      "Texte et références synchronisés. 0 fichier(s) photo/vidéo sauvegardé(s) en privé et vérifié(s). Actualisez Saver sur iPhone.",
     ),
   ).toBeVisible();
   expect(refs[0].id).toBe(id);

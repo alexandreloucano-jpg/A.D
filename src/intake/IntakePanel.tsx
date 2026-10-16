@@ -8,6 +8,7 @@ import {
   normalizeIntake,
   type IntakeItem,
 } from "./model";
+import { syncCloudMedia } from "./cloud-media";
 import { saveLocalCopies, downloadLocalMedia } from "./local-archive";
 import { parseBookmarkFile } from "./parse";
 const DRAFT = "ad.intake.draft.v1";
@@ -224,11 +225,14 @@ export function IntakePanel({
       await saveLocalCopies(chosen, ids, next.nonce, (done) =>
         setProgress(done),
       );
-      void downloadLocalMedia(ids).catch(() =>
-        setNotice(
-          "Le texte est conservé. La copie des médias a été interrompue ; utilisez Reprendre sur les cartes concernées.",
-        ),
-      );
+      if (remote.connected && !localOnly) {
+        await syncCloudMedia(ids, remote, setNotice);
+      } else
+        void downloadLocalMedia(ids).catch(() =>
+          setNotice(
+            "Le texte est conservé. La copie des médias a été interrompue ; utilisez Reprendre sur les cartes concernées.",
+          ),
+        );
 
       if (!(await onSaved(ids, group)))
         throw Error(
@@ -249,7 +253,7 @@ export function IntakePanel({
       }
       if (remote.connected && !localOnly) await remote.refresh();
       setNotice(
-        `${ids.length} référence(s) conservée(s) avec UUID et relecture. Le texte est local ; la conservation des fichiers média est suivie sur chaque carte. Vos annotations et groupes existants sont conservés.`,
+        `${ids.length} référence(s) conservée(s) avec UUID et relecture. ${remote.connected && !localOnly ? "Le contenu et les fichiers disponibles ont été vérifiés dans votre stockage privé." : "Le texte est local ; la conservation des fichiers média est suivie sur chaque carte."} Vos annotations et groupes existants sont conservés.`,
       );
       setProgress(0);
     } catch (e) {
