@@ -239,7 +239,7 @@ export function useRemoteSaver() {
     ]);
     return verified;
   }
-  async function migrate(rows: Reference[]) {
+  async function migrate(rows: Reference[], refreshAfter = true) {
     if (!connected) throw Error("Connexion propriétaire requise.");
     setBusy(true);
     setError("");
@@ -257,7 +257,7 @@ export function useRemoteSaver() {
             "Migration partielle : un UUID existe avec un contenu différent ou sa relecture a échoué. Les copies locales sont intactes ; réessayez après vérification.",
           );
       }
-      await refresh();
+      if (refreshAfter) await refresh();
     } finally {
       setBusy(false);
     }

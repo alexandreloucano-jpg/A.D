@@ -21,7 +21,7 @@ export async function syncDeviceReferences(
   progress(0, candidates.length);
   for (let start = 0; start < candidates.length; start += 20) {
     const batch = candidates.slice(start, start + 20);
-    await remote.migrate(batch);
+    await remote.migrate(batch, false);
     const items: IntakeItem[] = [];
     const ids = new Map<string, string>();
     for (const ref of batch) {

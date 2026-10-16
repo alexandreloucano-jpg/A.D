@@ -139,3 +139,69 @@ test("an empty phone has a direct owner sign-in action", async ({ page }) => {
     page.getByRole("link", { name: "Se connecter avec Google", exact: true }),
   ).toHaveAttribute("href", "/api/auth/google/login");
 });
+test("a source read-back failure keeps the local-only choice and original content", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const result = await page.evaluate(async () => {
+    const archivePath = "/src/intake/local-archive.ts",
+      syncPath = "/src/intake/DeviceSync.tsx";
+    const archive = await import(archivePath),
+      sync = await import(syncPath);
+    const id = crypto.randomUUID();
+    const item = {
+      url: "https://x.com/i/web/status/987654321",
+      title: "Source de test",
+      text: "Texte court",
+      originalText: "Original à conserver même si la copie échoue.",
+      images: [],
+      videos: [],
+      tags: [],
+      notes: [],
+    };
+    await archive.saveLocalCopies([item], [id]);
+    archive.setLocalOnly([id], true);
+    const reference = {
+      id,
+      title: item.title,
+      content: item.text,
+      url: item.url,
+      origin: "human",
+      capturedAt: new Date().toISOString(),
+      approvedAt: new Date().toISOString(),
+      revision: 1,
+      isInternalQA: true,
+    };
+    reference.isInternalQA = false;
+    let failed = false;
+    try {
+      await sync.syncDeviceReferences(
+        [reference],
+        {
+          connected: true,
+          references: [],
+          migrate: async () => {},
+          refresh: async () => {},
+          reader: async () => ({
+            results: [
+              { url: item.url, id, verified: true, sourceTextVerified: false },
+            ],
+          }),
+        },
+        () => {},
+      );
+    } catch {
+      failed = true;
+    }
+    return {
+      failed,
+      stillLocal: archive.localOnlyIds().has(id),
+      original: (await archive.readLocalCopy(id)).item.originalText,
+    };
+  });
+  expect(result).toEqual({
+    failed: true,
+    stillLocal: true,
+    original: "Original à conserver même si la copie échoue.",
+  });
+});
