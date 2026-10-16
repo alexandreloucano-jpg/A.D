@@ -12,6 +12,20 @@ import {
   type ScanRun,
 } from "../src/scout-market/schema.js";
 const uuid = z.string().uuid();
+async function resumableRun(
+  s: Store,
+  ownerId: string,
+  job: ScanRun | undefined,
+) {
+  if (!job || job.status !== "running") return job;
+  const active = await s.query(
+    "SELECT lease_id FROM ad_market_leases WHERE owner_id=$1 AND expires_at>now()",
+    [ownerId],
+  );
+  return active.length
+    ? job
+    : { ...job, status: "partial" as const, paused: true };
+}
 const json = (value: unknown, status = 200) =>
   new Response(JSON.stringify(value), {
     status,
@@ -31,7 +45,11 @@ export async function marketRoute(r: Request, s: Store, c: Config) {
       "SELECT data FROM ad_market_scan_runs WHERE owner_id=$1 ORDER BY data->>'startedAt' DESC LIMIT 1",
       [session.owner],
     );
-    const job = last?.data as unknown as ScanRun | undefined;
+    const job = await resumableRun(
+      s,
+      session.owner,
+      last?.data as unknown as ScanRun | undefined,
+    );
     const [successful] = await s.query(
       "SELECT data FROM ad_market_scan_runs WHERE owner_id=$1 AND data->>'status'='succeeded' ORDER BY data->>'finishedAt' DESC LIMIT 1",
       [session.owner],
@@ -97,7 +115,9 @@ export async function marketRoute(r: Request, s: Store, c: Config) {
       [session.owner, uuid.parse(path.split("/")[2])],
     );
     if (!run) throw new ServiceError(404, "market_run_missing");
-    return json(run.data);
+    return json(
+      await resumableRun(s, session.owner, run.data as unknown as ScanRun),
+    );
   }
   if (path === "/opportunities" && r.method === "GET") {
     const q = listQuery.parse(Object.fromEntries(new URL(r.url).searchParams));

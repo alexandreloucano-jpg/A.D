@@ -276,3 +276,23 @@ it("protects relationships, contacts and the operator capability from other owne
   bearer.headers.set("authorization", "Bearer not-an-owner-session");
   expect((await handle(bearer, s, c)).status).toBe(401);
 });
+it("offers a persisted cursor for a killed serverless slice after its SQL lease expires", async () => {
+  await s.query("DELETE FROM ad_market_leases WHERE owner_id=$1", [c.owner]);
+  const id = crypto.randomUUID();
+  await s.query("INSERT INTO ad_market_scan_runs VALUES($1,$2,$3::jsonb)", [
+    c.owner,
+    id,
+    JSON.stringify({
+      id,
+      status: "running",
+      paused: false,
+      cursor: 3,
+      urls: ["https://www.journalduluxe.fr/fr/mode/recovery"],
+      startedAt: new Date().toISOString(),
+    }),
+  ]);
+  const result = await (await handle(req("/runs/" + id), s, c)).json();
+  expect(result.status).toBe("partial");
+  expect(result.paused).toBe(true);
+  expect(result.cursor).toBe(3);
+});
