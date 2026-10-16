@@ -1,3 +1,4 @@
+import { ChevronDown, Link2, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { RemoteSaver } from "../remote-saver";
 import {
@@ -167,15 +168,26 @@ export function ConnectedAccounts({
   const x = accounts.x,
     instagram = accounts.instagram,
     grok = accounts.grok;
+  function label(status: Social | null) {
+    return !remote.connected
+      ? "connexion A.D requise"
+      : status
+        ? CONNECTION_LABELS[stateOf(status)]
+        : "vérification en cours";
+  }
   function heading(service: string, status: Social | null) {
     return (
-      service +
-      " · " +
-      (!remote.connected
-        ? "connexion A.D requise"
-        : status
-          ? CONNECTION_LABELS[stateOf(status)]
-          : "vérification en cours")
+      <h4 aria-label={service + " · " + label(status)}>
+        <span className="connection-provider">{service}</span>
+        <span
+          className={
+            "connection-badge connection-badge--" +
+            (status ? stateOf(status) : "loading")
+          }
+        >
+          {label(status)}
+        </span>
+      </h4>
     );
   }
   function problem(status: Social | null) {
@@ -193,7 +205,36 @@ export function ConnectedAccounts({
   }
   return (
     <details className="connected-accounts" ref={panel}>
-      <summary>Mes connexions</summary>
+      <summary>
+        <span className="connection-summary-title">
+          <Link2 size={17} aria-hidden="true" />
+          <span>Mes connexions</span>
+        </span>
+        <span className="connection-overview" aria-hidden="true">
+          {(
+            [
+              ["X", x],
+              ["Instagram", instagram],
+              ["Grok", grok],
+            ] as const
+          ).map(([name, status]) => (
+            <span
+              key={String(name)}
+              className={
+                "connection-mini connection-mini--" +
+                (remote.connected && status ? stateOf(status) : "loading")
+              }
+            >
+              {String(name)}
+            </span>
+          ))}
+        </span>
+        <ChevronDown
+          className="connection-chevron"
+          size={17}
+          aria-hidden="true"
+        />
+      </summary>
       {!remote.connected ? (
         <p>
           <a className="primary" href="/api/auth/google/login">
@@ -201,165 +242,179 @@ export function ConnectedAccounts({
           </a>
         </p>
       ) : (
-        <>
+        <div className="connection-account-line">
           <p>
-            Votre compte A.D est connecté. Chaque réseau conserve son
-            autorisation distincte.
+            <span className="connection-owner-status">Compte A.D connecté</span>
+            <span>Chaque service conserve son autorisation distincte.</span>
           </p>
           <button disabled={!!busy} onClick={() => void load()}>
+            <RefreshCw size={15} aria-hidden="true" />
             Actualiser les connexions
           </button>
-        </>
+        </div>
       )}
-      <section aria-label="Connexion X">
-        <h4>{heading("X", x)}</h4>
-        <p>
-          Import volontaire de cinq signets maximum à la fois. Aucune
-          synchronisation automatique.
-        </p>
-        {problem(x)}
-        {remote.connected && x && stateOf(x) === "not_configured" && (
+      <div className="connection-grid">
+        <section aria-label="Connexion X">
+          {heading("X", x)}
           <p>
-            La connexion X n’est pas encore disponible : l’accès développeur et
-            les crédits API du service restent à autoriser.
+            Import volontaire de cinq signets maximum à la fois. Aucune
+            synchronisation automatique.
           </p>
-        )}
-        {remote.connected && x?.configured && (
-          <>
-            {x.connected ? (
-              <>
-                <p>
-                  Permissions : lecture des signets et maintien de la connexion.
-                  Aucun droit de publication.
-                </p>
-                <p>
-                  {x.lastSyncAt
-                    ? "Dernier import vérifié : " +
-                      new Date(x.lastSyncAt).toLocaleString("fr-FR")
-                    : "Aucun signet importé."}
-                </p>
-                {!x.importAllowed && (
-                  <p>
-                    L’import est suspendu tant que les crédits API X ne sont pas
-                    autorisés pour le service.
-                  </p>
-                )}
-                <button
-                  disabled={!!busy || !x.importAllowed}
-                  onClick={() => void importX()}
-                >
-                  Importer jusqu’à 5 signets
-                </button>
-              </>
-            ) : (
-              <button disabled={!!busy} onClick={() => void action("x")}>
-                {x.hasAccount ? "Reconnecter X" : "Connecter X"}
-              </button>
-            )}
-            {(x.hasAccount || x.connected) && (
-              <button disabled={!!busy} onClick={() => void action("x", true)}>
-                Déconnecter X
-              </button>
-            )}
-          </>
-        )}
-      </section>
-      <section aria-label="Connexion Instagram">
-        <h4>{heading("Instagram", instagram)}</h4>
-        <p>
-          L’import des publications enregistrées n’est pas disponible sur
-          Instagram. Partagez ou ajoutez un lien ou du texte dans Saver ; aucune
-          connexion Instagram n’est nécessaire pour cet ajout.
-        </p>
-        <button onClick={onCapture}>Ajouter une publication Instagram</button>
-        {problem(instagram)}
-        {remote.connected &&
-          instagram &&
-          stateOf(instagram) === "not_configured" && (
+          {problem(x)}
+          {remote.connected && x && stateOf(x) === "not_configured" && (
             <p>
-              La connexion professionnelle Instagram n’est pas configurée.
-              L’ajout manuel reste disponible.
+              La connexion X n’est pas encore disponible : l’accès développeur
+              et les crédits API du service restent à autoriser.
             </p>
           )}
-        {remote.connected && instagram?.configured && (
-          <>
-            <p>
-              Compte Creator ou Business uniquement. Permission : profil
-              professionnel de base. Aucun import de favoris.
-            </p>
-            {!instagram.connected && (
-              <button
-                disabled={!!busy}
-                onClick={() => void action("instagram")}
-              >
-                {instagram.hasAccount
-                  ? "Reconnecter Instagram"
-                  : "Connecter Instagram"}
-              </button>
-            )}
-            {(instagram.hasAccount || instagram.connected) && (
-              <button
-                disabled={!!busy}
-                onClick={() => void action("instagram", true)}
-              >
-                Déconnecter Instagram
-              </button>
-            )}
-          </>
-        )}
-      </section>
-      <section aria-label="Connexion Grok">
-        <h4>{heading("Grok", grok)}</h4>
-        <p>
-          Lecture et sauvegarde dans Saver uniquement. Une proposition de Grok
-          exige votre validation avant sauvegarde.
-        </p>
-        {problem(grok)}
-        {grok?.state === "verification_required" && (
+          {remote.connected && x?.configured && (
+            <>
+              {x.connected ? (
+                <>
+                  <p>
+                    Permissions : lecture des signets et maintien de la
+                    connexion. Aucun droit de publication.
+                  </p>
+                  <p>
+                    {x.lastSyncAt
+                      ? "Dernier import vérifié : " +
+                        new Date(x.lastSyncAt).toLocaleString("fr-FR")
+                      : "Aucun signet importé."}
+                  </p>
+                  {!x.importAllowed && (
+                    <p>
+                      L’import est suspendu tant que les crédits API X ne sont
+                      pas autorisés pour le service.
+                    </p>
+                  )}
+                  <button
+                    disabled={!!busy || !x.importAllowed}
+                    onClick={() => void importX()}
+                  >
+                    Importer jusqu’à 5 signets
+                  </button>
+                </>
+              ) : (
+                <button disabled={!!busy} onClick={() => void action("x")}>
+                  {x.hasAccount ? "Reconnecter X" : "Connecter X"}
+                </button>
+              )}
+              {(x.hasAccount || x.connected) && (
+                <button
+                  disabled={!!busy}
+                  onClick={() => void action("x", true)}
+                >
+                  Déconnecter X
+                </button>
+              )}
+            </>
+          )}
+        </section>
+        <section aria-label="Connexion Instagram">
+          {heading("Instagram", instagram)}
           <p>
-            Autorisation reçue. Grok doit proposer une référence, attendre votre
-            validation, puis la sauvegarder et la relire pour confirmer la
-            connexion.
+            L’import des publications enregistrées n’est pas disponible sur
+            Instagram. Partagez ou ajoutez un lien ou du texte dans Saver ;
+            aucune connexion Instagram n’est nécessaire pour cet ajout.
           </p>
-        )}
-        {remote.connected && grok?.configured && (
-          <>
-            {!grok.connected && (
-              <a
-                className="primary"
-                href="https://grok.com/connectors"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => void openGrok()}
-              >
-                Connecter Grok
-              </a>
+          <button onClick={onCapture}>Ajouter une publication Instagram</button>
+          {problem(instagram)}
+          {remote.connected &&
+            instagram &&
+            stateOf(instagram) === "not_configured" && (
+              <p>
+                La connexion professionnelle Instagram n’est pas configurée.
+                L’ajout manuel reste disponible.
+              </p>
             )}
-            {(grok.hasAccount || grok.connected) && (
-              <button
-                disabled={!!busy}
-                onClick={async () => {
-                  setBusy("grok");
-                  try {
-                    await remote.reader("/api/connections/grok", "DELETE", {});
-                    await load();
-                    setMessage(
-                      "Grok déconnecté. Vos références sont conservées.",
-                    );
-                  } catch (e) {
-                    setMessage(failure(e));
-                  } finally {
-                    setBusy("");
-                  }
-                }}
-              >
-                Déconnecter Grok
-              </button>
-            )}
-          </>
-        )}
-      </section>
-      {message && <p role="status">{message}</p>}
+          {remote.connected && instagram?.configured && (
+            <>
+              <p>
+                Compte Creator ou Business uniquement. Permission : profil
+                professionnel de base. Aucun import de favoris.
+              </p>
+              {!instagram.connected && (
+                <button
+                  disabled={!!busy}
+                  onClick={() => void action("instagram")}
+                >
+                  {instagram.hasAccount
+                    ? "Reconnecter Instagram"
+                    : "Connecter Instagram"}
+                </button>
+              )}
+              {(instagram.hasAccount || instagram.connected) && (
+                <button
+                  disabled={!!busy}
+                  onClick={() => void action("instagram", true)}
+                >
+                  Déconnecter Instagram
+                </button>
+              )}
+            </>
+          )}
+        </section>
+        <section aria-label="Connexion Grok">
+          {heading("Grok", grok)}
+          <p>
+            Lecture et sauvegarde dans Saver uniquement. Une proposition de Grok
+            exige votre validation avant sauvegarde.
+          </p>
+          {problem(grok)}
+          {grok?.state === "verification_required" && (
+            <p>
+              Autorisation reçue. Grok doit proposer une référence, attendre
+              votre validation, puis la sauvegarder et la relire pour confirmer
+              la connexion.
+            </p>
+          )}
+          {remote.connected && grok?.configured && (
+            <>
+              {!grok.connected && (
+                <a
+                  className="primary"
+                  href="https://grok.com/connectors"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => void openGrok()}
+                >
+                  Connecter Grok
+                </a>
+              )}
+              {(grok.hasAccount || grok.connected) && (
+                <button
+                  disabled={!!busy}
+                  onClick={async () => {
+                    setBusy("grok");
+                    try {
+                      await remote.reader(
+                        "/api/connections/grok",
+                        "DELETE",
+                        {},
+                      );
+                      await load();
+                      setMessage(
+                        "Grok déconnecté. Vos références sont conservées.",
+                      );
+                    } catch (e) {
+                      setMessage(failure(e));
+                    } finally {
+                      setBusy("");
+                    }
+                  }}
+                >
+                  Déconnecter Grok
+                </button>
+              )}
+            </>
+          )}
+        </section>
+      </div>
+      {message && (
+        <p className="connection-feedback" role="status">
+          {message}
+        </p>
+      )}
     </details>
   );
 }

@@ -2511,12 +2511,72 @@ dialog:has(.reader-shell){width:min(1260px,96vw);max-width:96vw;max-height:94dvh
 .saver-ingestion-actions{display:flex;flex-wrap:wrap;gap:8px;padding-bottom:8px;flex-shrink:0}.saver-ingestion-actions button{min-height:44px}@media(max-width:600px){.saver-ingestion-actions button{font-size:14px}.saver-groups+div p{font-size:14px}}
 .reader-meta label{max-width:100%;min-width:0}.reader-meta select{max-width:100%;width:100%;min-height:44px;font-size:16px}.x-connection,.scout-check{flex-shrink:0}.x-connection summary,.scout-check summary{min-height:44px;display:flex;align-items:center;cursor:pointer}.x-connection p,.scout-check p{font-size:14px;line-height:1.5}.x-connection label{max-width:70ch}
 
-.connected-accounts{flex-shrink:0;max-width:100%;overflow-wrap:anywhere}
-.connected-accounts>summary{min-height:44px;display:flex;align-items:center;cursor:pointer}
-.connected-accounts section{padding:12px 0;border-top:1px solid var(--line,#d8d8d0)}
-.connected-accounts p{font-size:14px;line-height:1.5;max-width:75ch}
-.connected-accounts button{min-height:44px;max-width:100%;white-space:normal}
-.connected-accounts h4{font-size:15px;margin:4px 0 12px}
+/* Compact connection panels inspired by Affect UI's visual hierarchy.
+   Original styles; existing A.D tokens and provider behavior retained. */
+.connected-accounts {
+  flex-shrink: 0;
+  max-width: 100%;
+  margin-block: 4px 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(248, 248, 241, .65);
+  overflow-wrap: anywhere;
+}
+.connected-accounts > summary {
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 18px;
+  cursor: pointer;
+  list-style: none;
+  border-radius: inherit;
+}
+.connected-accounts > summary::-webkit-details-marker { display: none; }
+.connection-summary-title { display: inline-flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; }
+.connection-overview { display: flex; flex-wrap: wrap; gap: 14px; margin-left: auto; }
+.connection-mini { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+.connection-mini::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: #929ca2; flex-shrink: 0; }
+.connection-mini--connected::before { background: #2c6758; }
+.connection-mini--error::before, .connection-mini--expired::before { background: #a65c40; }
+.connection-mini--verification_required::before, .connection-mini--consent_required::before { background: #987335; }
+.connection-chevron { flex-shrink: 0; color: var(--muted); transition: transform .18s ease; }
+.connected-accounts[open] .connection-chevron { transform: rotate(180deg); }
+.connected-accounts[open] > summary { border-bottom: 1px solid var(--line); border-radius: 16px 16px 0 0; }
+.connection-account-line { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 16px 18px 4px; }
+.connection-account-line > p { display: grid; gap: 4px; margin: 0; color: var(--muted); }
+.connection-owner-status { font-size: 12px; color: var(--ink); font-weight: 600; }
+.connected-accounts .connection-account-line > button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex-shrink: 0; background: transparent; }
+.connection-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 16px 18px 18px; }
+.connection-grid > section { min-width: 0; padding: 18px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255, 255, 255, .48); }
+.connected-accounts h4 { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 14px; font-size: 15px; }
+.connection-provider { font-weight: 600; letter-spacing: -.02em; }
+.connection-badge { display: inline-flex; align-items: center; max-width: 100%; padding: 5px 8px; border-radius: 6px; font-size: 10px; font-weight: 500; line-height: 1.4; color: var(--muted); background: #e8ebea; }
+.connection-badge--connected { color: #245849; background: #e1ece5; }
+.connection-badge--error, .connection-badge--expired { color: #8c452e; background: #f4e8df; }
+.connection-badge--verification_required, .connection-badge--consent_required { color: #78571f; background: #f1ead9; }
+.connected-accounts p { font-size: 13px; line-height: 1.6; max-width: 75ch; }
+.connection-grid p { margin: 0 0 14px; color: var(--muted); }
+.connected-accounts button, .connected-accounts a.primary { min-height: 44px; max-width: 100%; white-space: normal; font-size: 12px; border-radius: 8px; }
+.connection-grid button, .connection-grid a.primary { margin: 4px 6px 0 0; }
+.connection-grid [role=alert] { padding: 10px; border-left: 2px solid #a65c40; background: #f4ece4; color: #78442f; border-radius: 4px; font-size: 12px; }
+.connected-accounts > p { margin: 16px 18px; }
+.connected-accounts .connection-feedback { margin: 0 18px 18px; padding: 12px 14px; border-radius: 8px; background: #e6edeb; color: var(--ink); }
+@media (max-width: 1000px) {
+  .connection-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 600px) {
+  .connected-accounts > summary { gap: 8px; padding: 12px; flex-wrap: wrap; }
+  .connection-summary-title { font-size: 13px; }
+  .connection-overview { gap: 9px; }
+  .connection-mini { font-size: 9px; gap: 4px; }
+  .connection-account-line { padding: 14px 12px 0; flex-wrap: wrap; gap: 8px; }
+  .connection-account-line > p { font-size: 12px; }
+  .connection-grid { padding: 12px; gap: 10px; }
+  .connection-grid > section { padding: 15px; }
+  .connected-accounts .connection-feedback { margin: 0 12px 12px; }
+}
+@media (prefers-reduced-motion: reduce) { .connection-chevron { transition: none; } }
 .grok-client-setup label{display:block;margin-top:14px;max-width:100%}
 .grok-client-setup input{display:block;width:100%;min-width:0;font-size:16px}
 .grok-client-setup button{display:flex;margin:8px 0 16px;max-width:100%;white-space:normal}
