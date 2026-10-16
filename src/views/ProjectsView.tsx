@@ -33,7 +33,9 @@ export function ProjectsView({
     data.tasks.filter((t) => t.projectId === id && t.lane === "LATER").length;
   return (
     <>
-      {!project && <MarketPanel mode="pipeline" query={query} />}
+      {!project && (
+        <MarketPanel mode="pipeline" query={query} projects={data.projects} />
+      )}
       {project ? (
         <>
           <div className="project-controls">

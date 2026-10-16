@@ -595,8 +595,8 @@ export function App() {
                           : "références"
                         : route === "explorer"
                           ? signals.length === 1
-                            ? "signal"
-                            : "signaux"
+                            ? "signal manuel"
+                            : "signaux manuels"
                           : projects.length === 1
                             ? "dossier"
                             : "dossiers"}

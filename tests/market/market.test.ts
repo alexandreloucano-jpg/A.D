@@ -211,3 +211,68 @@ it("SQL lease refuses concurrent scans and direct NOW without acceptance", async
     ]),
   ).rejects.toThrow();
 });
+it("groups repeated event headlines across URLs but keeps distinct events and human corrections", async () => {
+  const repository = new MarketRepository(s, c.owner);
+  const original = (await repository.findings())[0];
+  const duplicate = fixture();
+  duplicate.canonicalUrl =
+    "https://www.journalduluxe.fr/fr/mode/another-source-story";
+  expect(await repository.ingest(duplicate)).toBe(false);
+  const detail = await repository.get(original.id);
+  expect(detail?.reviewState).toBe("saved");
+  expect(detail?.sourceCount).toBe(2);
+  const different = fixture();
+  different.canonicalUrl =
+    "https://www.journalduluxe.fr/fr/mode/a-different-event";
+  different.headline = "Dior ouvre une boutique à Paris";
+  different.eventType = "store_opening";
+  expect(await repository.ingest(different)).toBe(true);
+});
+it("protects relationships, contacts and the operator capability from other owners and MCP credentials", async () => {
+  const f = (await new MarketRepository(s, c.owner).findings())[0];
+  const blocked = await handle(
+    req("/companies/" + f.companyId + "/relationship", {
+      status: "blocked",
+      humanApproval: true,
+    }),
+    s,
+    c,
+  );
+  expect(blocked.status).toBe(200);
+  const brief = await (await handle(req("/brief/today"), s, c)).json();
+  expect(
+    brief.observations.some(
+      (x: { companyId: string }) => x.companyId === f.companyId,
+    ),
+  ).toBe(false);
+  await handle(
+    req("/companies/" + f.companyId + "/relationship", {
+      status: "unknown",
+      humanApproval: true,
+    }),
+    s,
+    c,
+  );
+  const alien = await handle(
+    req("/companies/" + crypto.randomUUID() + "/relationship", {
+      status: "existing",
+      humanApproval: true,
+    }),
+    s,
+    c,
+  );
+  expect(alien.status).toBe(404);
+  const job = await handle(
+    new Request(c.app + "/api/jobs/market", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "{}",
+    }),
+    s,
+    c,
+  );
+  expect(job.status).toBe(401);
+  const bearer = req("/opportunities");
+  bearer.headers.set("authorization", "Bearer not-an-owner-session");
+  expect((await handle(bearer, s, c)).status).toBe(401);
+});

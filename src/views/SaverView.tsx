@@ -57,6 +57,15 @@ export function SaverView({
   filter: "all" | "links" | "notes";
   setFilter: (filter: "all" | "links" | "notes") => void;
 }) {
+  useEffect(() => {
+    if (!expanded) return;
+    const frame = requestAnimationFrame(() =>
+      document
+        .querySelector('.reference-card[data-expanded="true"]')
+        ?.scrollIntoView({ block: "nearest" }),
+    );
+    return () => cancelAnimationFrame(frame);
+  }, [expanded]);
   const collections = useCollections(remote);
   const [mediaProgress, setMediaProgress] = useState(getMediaProgress);
   const [mediaRetrying, setMediaRetrying] = useState(false),

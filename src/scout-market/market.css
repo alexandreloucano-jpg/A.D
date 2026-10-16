@@ -146,3 +146,54 @@
     width: 100%;
   }
 }
+.market-scan-details {
+  margin: 8px 0;
+  font-size: 13px;
+}
+.market-scan-details summary {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+.market-scan-details summary::before {
+  content: "▸";
+  margin-right: 8px;
+}
+.market-scan-details[open] summary::before {
+  content: "▾";
+}
+@media (max-width: 600px) {
+  .market-panel {
+    padding: 8px 0;
+  }
+  .market-heading {
+    gap: 8px;
+  }
+  .market-panel .market-heading h2 {
+    font-size: 26px;
+    line-height: 1.15;
+    margin: 4px 0;
+  }
+  .market-heading .eyebrow {
+    margin: 0;
+  }
+  .market-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    gap: 6px;
+  }
+  .market-tabs button {
+    white-space: nowrap;
+  }
+  .market-finding {
+    padding: 12px 0;
+  }
+  .market-panel .market-heading > div {
+    min-width: 0;
+  }
+  .market-panel .market-heading > button {
+    align-self: flex-start;
+  }
+}

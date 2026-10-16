@@ -1,17 +1,59 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useScoutMarket } from "./useScoutMarket";
 import { marketRequest } from "./client";
 import { stages, type Finding, type MarketAction } from "./schema";
 import "./market.css";
+const labels: Record<string, string> = {
+  low: "faible",
+  medium: "moyenne",
+  high: "élevée",
+  discovered: "Découverte",
+  qualified: "Qualifiée",
+  contact_identified: "Interlocuteur identifié",
+  proposal_drafted: "Brouillon préparé",
+  contacted: "Contact effectué",
+  meeting: "Rendez-vous",
+  negotiation: "Négociation",
+  won: "Gagnée",
+  lost: "Perdue",
+  brand_launch: "Lancement de marque",
+  store_opening: "Ouverture de boutique",
+  product_launch: "Lancement de produit",
+  brand_collaboration: "Collaboration",
+  major_hire: "Évolution de direction",
+  campaign_launch: "Campagne",
+  hospitality_renovation: "Rénovation",
+  commercial_event: "Événement commercial",
+  other_verified_event: "Annonce à qualifier",
+  new: "À examiner",
+  reviewing: "En cours de revue",
+  saved: "En pipeline",
+  rejected: "Refusée",
+  snoozed: "Reportée",
+  unknown: "Non vérifiée",
+  existing: "Relation existante",
+  cold: "Prospect froid confirmé",
+  blocked: "Exclue",
+  service_fit: "Adéquation des prestations",
+  trigger_strength: "Déclencheur commercial",
+  time_relevance: "Actualité",
+  creative_opportunity: "Espace créatif",
+  decision_maker_access: "Accès au décisionnaire",
+  taste_fit: "Préférences Taste confirmées",
+};
+const label = (v: string) => labels[v] || v;
 const date = (v: string | null) =>
   v ? new Date(v).toLocaleDateString("fr-FR") : "Non établie";
 export function MarketPanel({
   mode = "explorer",
   query = "",
+  projects = [],
 }: {
   mode?: "explorer" | "home" | "pipeline";
   query?: string;
+  projects?: { id: string; title: string }[];
 }) {
+  const returnFocus = useRef<HTMLElement | null>(null);
   const m = useScoutMarket(query, mode),
     [view, setView] = useState("Radar"),
     [sector, setSector] = useState(""),
@@ -23,11 +65,22 @@ export function MarketPanel({
     [days, setDays] = useState("45"),
     [selected, setSelected] = useState<Finding | null>(null),
     [actions, setActions] = useState<MarketAction[]>([]),
+    [history, setHistory] = useState<
+      { event: string; reason: string | null; occurredAt: string }[]
+    >([]),
+    [detailError, setDetailError] = useState(""),
     [reason, setReason] = useState(""),
     [draft, setDraft] = useState(""),
     [interaction, setInteraction] = useState(""),
-    [nextStage, setNextStage] = useState("qualified");
+    [nextStage, setNextStage] = useState("qualified"),
+    [linkedProject, setLinkedProject] = useState("");
+  function closeDetail() {
+    setSelected(null);
+    requestAnimationFrame(() => returnFocus.current?.focus());
+  }
   async function inspect(f: Finding) {
+    returnFocus.current = document.activeElement as HTMLElement;
+    setDetailError("");
     setSelected(f);
     setReason("");
     setDraft(
@@ -36,30 +89,44 @@ export function MarketPanel({
         ".",
     );
     try {
-      const detail = await marketRequest<{ actions: MarketAction[] }>(
-        "/opportunities/" + f.id,
-      );
+      const detail = await marketRequest<{
+        actions: MarketAction[];
+        timeline?: typeof history;
+      }>("/opportunities/" + f.id);
       setActions(detail.actions);
+      setHistory(detail.timeline || []);
     } catch {
+      setDetailError(
+        "La lecture du détail a échoué. Fermez puis réessayez ; la référence reste conservée.",
+      );
       setActions([]);
     }
   }
   async function operation(path: string, body: unknown) {
     if (await m.mutate(path, body)) {
       if (selected) {
-        const detail = await marketRequest<{
-          opportunity: Finding;
-          actions: MarketAction[];
-        }>("/opportunities/" + selected.id);
-        setSelected(detail.opportunity);
-        setActions(detail.actions);
+        try {
+          const detail = await marketRequest<{
+            opportunity: Finding;
+            actions: MarketAction[];
+            timeline?: typeof history;
+          }>("/opportunities/" + selected.id);
+          setSelected(detail.opportunity);
+          setActions(detail.actions);
+          setHistory(detail.timeline || []);
+        } catch {
+          setDetailError(
+            "Décision enregistrée ; relecture du détail indisponible. Fermez puis actualisez.",
+          );
+        }
       }
     }
   }
-  const items = m.items
+  const items = (mode === "home" ? m.observations : m.items)
     .filter(
       (f) =>
         (mode !== "pipeline" || f.reviewState === "saved") &&
+        (view === "Rejetées" || f.relationshipStatus !== "blocked") &&
         (!sector || f.sector === sector) &&
         (!city || f.city === city) &&
         (!event || f.eventType === event) &&
@@ -70,7 +137,7 @@ export function MarketPanel({
           Date.now() - Date.parse(f.publishedAt) < Number(days) * 86400000) &&
         (mode !== "home" || !["rejected", "snoozed"].includes(f.reviewState)) &&
         (view === "Rejetées"
-          ? f.reviewState === "rejected"
+          ? f.reviewState === "rejected" || f.relationshipStatus === "blocked"
           : view === "Enregistrées"
             ? f.reviewState === "saved"
             : view === "À vérifier"
@@ -82,6 +149,15 @@ export function MarketPanel({
     )
     .sort((a, b) => (b.score || 0) - (a.score || 0));
   if (mode === "home" && !m.status?.enabled) return null;
+  if (!m.loading && !m.status?.enabled)
+    return mode === "home" ? null : (
+      <section className="market-unavailable" aria-label="Radar marché">
+        <p>
+          {m.error || "Radar privé non activé."}{" "}
+          <a href="/api/auth/google/login">Se connecter à A.D</a>
+        </p>
+      </section>
+    );
   return (
     <section
       className={"market-panel market-" + mode}
@@ -105,17 +181,7 @@ export function MarketPanel({
           </h2>
         </div>
         {mode === "explorer" && m.status?.enabled && (
-          <button
-            disabled={m.busy}
-            onClick={() =>
-              void m.mutate(
-                m.status?.lastRun?.paused
-                  ? "/runs/" + m.status.lastRun.id + "/resume"
-                  : "/runs",
-                { mode: "manual" },
-              )
-            }
-          >
+          <button disabled={m.busy} onClick={() => void m.runScan()}>
             {m.busy
               ? "Collecte en cours…"
               : m.status.lastRun?.paused
@@ -137,18 +203,28 @@ export function MarketPanel({
         </p>
       )}
       {m.status?.enabled && mode !== "home" && (
-        <p className="market-meta">
-          {m.status.sourceCount} source publique · IA désactivée · aucune
-          dépense ni prospection automatique.
-          <br />
-          {m.status.lastRun
-            ? `${m.status.lastRun.status === "partial" ? "Scan partiel" : m.status.lastRun.status === "failed" ? "Scan en erreur" : "Dernier scan"} · ${m.status.lastRun.itemsSeen} pages examinées · ${m.status.lastRun.insertedCount} signaux ajoutés · ${date(m.status.lastRun.finishedAt)}${m.status.lastRun.paused ? " · reprise disponible" : ""}`
-            : "Aucun scan effectué."}
-          {m.status.lastRun?.failures.length
-            ? ` · ${m.status.lastRun.failures.length} échec(s) de source`
-            : ""}
-          {m.status.stale ? " · résultats à actualiser" : ""}
-        </p>
+        <details className="market-scan-details">
+          <summary>
+            {m.items.length} opportunités ·{" "}
+            {m.status.lastRun?.status === "partial"
+              ? "scan partiel"
+              : m.status.lastRun?.status === "failed"
+                ? "scan en erreur"
+                : "suivi du scan"}
+          </summary>
+          <p className="market-meta">
+            {m.status.sourceCount} source publique · IA désactivée · aucune
+            dépense ni prospection automatique.
+            <br />
+            {m.status.lastRun
+              ? `${m.status.lastRun.status === "partial" ? "Scan partiel" : m.status.lastRun.status === "failed" ? "Scan en erreur" : "Dernier scan"} · ${m.status.lastRun.itemsSeen} pages examinées · ${m.status.lastRun.insertedCount} signaux ajoutés · ${date(m.status.lastRun.finishedAt)}${m.status.lastRun.paused ? " · reprise disponible" : ""}`
+              : "Aucun scan effectué."}
+            {m.status.lastRun?.failures.length
+              ? ` · ${m.status.lastRun.failures.length} échec(s) de source`
+              : ""}
+            {m.status.stale ? " · résultats à actualiser" : ""}
+          </p>
+        </details>
       )}
       {mode === "explorer" && (
         <>
@@ -218,7 +294,9 @@ export function MarketPanel({
                   >
                     <option value="">Tout</option>
                     {f.options.map((o) => (
-                      <option key={o}>{o}</option>
+                      <option key={o} value={o}>
+                        {label(o)}
+                      </option>
                     ))}
                   </select>
                 </label>
@@ -250,8 +328,8 @@ export function MarketPanel({
               Rapporté · {f.publisher} · publié le {date(f.publishedAt)} · fait
               : {date(f.eventDate)} · collecté le {date(f.firstSeenAt)}
               <br />
-              {f.eventType} · {f.sourceCount} source · confiance {f.confidence}{" "}
-              · {f.reviewState}
+              {label(f.eventType)} · {f.sourceCount} source · confiance{" "}
+              {label(f.confidence)} · {label(f.reviewState)}
               <br />
               Pertinence {f.score === null ? "à vérifier" : f.score + "/100"} ·
               couverture {Math.round(f.coverage * 100)} % · aucune probabilité
@@ -279,10 +357,10 @@ export function MarketPanel({
           aria-modal="true"
           aria-label={"Examiner " + selected.companyName}
           onKeyDown={(e) => {
-            if (e.key === "Escape") setSelected(null);
+            if (e.key === "Escape") closeDetail();
             if (e.key === "Tab") {
               const nodes = e.currentTarget.querySelectorAll<HTMLElement>(
-                "button,a,select,textarea,input",
+                "button:not(:disabled),a[href],select:not(:disabled),textarea:not(:disabled),input:not(:disabled)",
               );
               const first = nodes[0],
                 last = nodes[nodes.length - 1];
@@ -298,7 +376,8 @@ export function MarketPanel({
         >
           <div className="market-detail">
             {m.error && <p role="alert">{m.error}</p>}
-            <button autoFocus onClick={() => setSelected(null)}>
+            {detailError && <p role="alert">{detailError}</p>}
+            <button autoFocus onClick={closeDetail}>
               Fermer
             </button>
             <h2>{selected.companyName}</h2>
@@ -331,9 +410,20 @@ export function MarketPanel({
             <h3>Scoring et justification</h3>
             {Object.entries(selected.factors).map(([key, f]) => (
               <p key={key}>
-                {key} : {f.value ?? "inconnu"} · {f.reason}
+                {label(key)} : {f.value ?? "inconnu"} · {f.reason}
               </p>
             ))}
+            <h3>Historique de décision</h3>
+            {history.length ? (
+              history.map((h, i) => (
+                <p key={i}>
+                  {date(h.occurredAt)} · {label(h.event)} ·{" "}
+                  {h.reason || "Décision conservée."}
+                </p>
+              ))
+            ) : (
+              <p>Aucune décision enregistrée.</p>
+            )}
             <h3>Décision humaine</h3>
             <label>
               Motif / notes
@@ -356,6 +446,74 @@ export function MarketPanel({
                     void operation(
                       "/opportunities/" + selected.id + "/review",
                       { decision, ...(reason ? { reason } : {}) },
+                    )
+                  }
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <h3>Associer un projet existant</h3>
+            {projects.length ? (
+              <label>
+                Projet
+                <select
+                  value={linkedProject}
+                  onChange={(e) => setLinkedProject(e.target.value)}
+                >
+                  <option value="">Choisir un dossier</option>
+                  {projects.map((p) => (
+                    <option value={p.id} key={p.id}>
+                      {p.title}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  disabled={
+                    m.busy || !linkedProject || selected.reviewState !== "saved"
+                  }
+                  onClick={() =>
+                    void operation(
+                      "/opportunities/" + selected.id + "/project",
+                      { projectId: linkedProject, humanApproval: true },
+                    )
+                  }
+                >
+                  Associer après sauvegarde en pipeline
+                </button>
+              </label>
+            ) : (
+              <p>
+                Créez d’abord un dossier dans Projets pour l’associer. Le
+                pipeline est déjà conservé côté serveur.
+              </p>
+            )}
+            {selected.projectId && (
+              <p>
+                Projet associé ·{" "}
+                {projects.find((p) => p.id === selected.projectId)?.title ||
+                  "dossier lié"}
+              </p>
+            )}
+            <h3>Relation et exclusions</h3>
+            <p>
+              Relation : {label(selected.relationshipStatus || "unknown")}.
+              Aucune relation existante n’est déduite automatiquement.
+            </p>
+            <div className="market-buttons">
+              {[
+                ["unknown", "Réinclure / relation inconnue"],
+                ["existing", "Relation existante"],
+                ["cold", "Prospect froid confirmé"],
+                ["blocked", "Exclure cette entreprise"],
+              ].map(([status, label]) => (
+                <button
+                  disabled={m.busy}
+                  key={status}
+                  onClick={() =>
+                    void operation(
+                      "/companies/" + selected.companyId + "/relationship",
+                      { status, humanApproval: true },
                     )
                   }
                 >
@@ -423,7 +581,9 @@ export function MarketPanel({
                 onChange={(e) => setNextStage(e.target.value)}
               >
                 {stages.map((s) => (
-                  <option key={s}>{s}</option>
+                  <option key={s} value={s}>
+                    {label(s)}
+                  </option>
                 ))}
               </select>
             </label>

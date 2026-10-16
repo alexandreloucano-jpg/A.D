@@ -11,6 +11,7 @@ export function useScoutMarket(query = "", view = "") {
   const [items, setItems] = useState<Finding[]>([]),
     [status, setStatus] = useState<MarketStatus | null>(null),
     [actions, setActions] = useState<MarketAction[]>([]),
+    [observations, setObservations] = useState<Finding[]>([]),
     [error, setError] = useState(""),
     [loading, setLoading] = useState(true),
     [busy, setBusy] = useState(false);
@@ -23,10 +24,14 @@ export function useScoutMarket(query = "", view = "") {
           marketRequest<{ items: Finding[] }>(
             "/opportunities?q=" + encodeURIComponent(query),
           ),
-          marketRequest<{ acceptedNowActions: MarketAction[] }>("/brief/today"),
+          marketRequest<{
+            acceptedNowActions: MarketAction[];
+            observations?: Finding[];
+          }>("/brief/today"),
         ]);
         setItems(list.items);
         setActions(brief.acceptedNowActions);
+        setObservations(brief.observations || []);
       }
       setError("");
     } catch (e) {
@@ -41,6 +46,38 @@ export function useScoutMarket(query = "", view = "") {
     window.addEventListener("ad-market-update", update);
     return () => window.removeEventListener("ad-market-update", update);
   }, [refresh, view]);
+  async function runScan() {
+    setBusy(true);
+    setError("");
+    try {
+      let path = status?.lastRun?.paused
+        ? "/runs/" + status.lastRun.id + "/resume"
+        : "/runs";
+      for (let slice = 0; slice < 12; slice++) {
+        const run = await marketRequest<ScanRun>(path, { mode: "manual" });
+        setStatus((previous) =>
+          previous ? { ...previous, lastRun: run } : previous,
+        );
+        if (
+          !run.paused ||
+          run.status === "failed" ||
+          document.visibilityState !== "visible"
+        )
+          break;
+        path = "/runs/" + run.id + "/resume";
+      }
+      await refresh();
+      window.dispatchEvent(new Event("ad-market-update"));
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? e.message
+          : "Collecte interrompue. La reprise est conservée.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
   async function mutate(path: string, body: unknown) {
     setBusy(true);
     setError("");
@@ -56,5 +93,16 @@ export function useScoutMarket(query = "", view = "") {
       setBusy(false);
     }
   }
-  return { items, status, error, loading, busy, mutate, refresh, actions };
+  return {
+    items,
+    status,
+    error,
+    loading,
+    busy,
+    mutate,
+    refresh,
+    actions,
+    observations,
+    runScan,
+  };
 }

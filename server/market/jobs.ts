@@ -60,7 +60,34 @@ export async function scan(s: Store, owner: string, resume?: string) {
             !robotsAllows(robots.text, "/")
           )
             throw new ServiceError(403, "market_robots_denied");
-          const listing = await publicFetch(source.url);
+          const [cached] = await s.query(
+            "SELECT data FROM ad_market_sources WHERE owner_id=$1 AND source_id=$2",
+            [owner, source.id],
+          );
+          const previous = cached?.data as
+            { etag?: string; modified?: string; urls?: string[] } | undefined;
+          const headers: Record<string, string> = {};
+          if (previous?.etag) headers["if-none-match"] = previous.etag;
+          else if (previous?.modified)
+            headers["if-modified-since"] = previous.modified;
+          let listing = await publicFetch(source.url, headers);
+          if (listing.status === 304 && !previous?.urls?.length)
+            listing = await publicFetch(source.url);
+          if (listing.status === 304)
+            job.urls.push(
+              ...previous!.urls!.filter((u) => {
+                try {
+                  const p = new URL(u);
+                  return (
+                    p.hostname === source.domain &&
+                    source.articlePattern.test(p.pathname) &&
+                    robotsAllows(robots.text, p.pathname)
+                  );
+                } catch {
+                  return false;
+                }
+              }),
+            );
           const { document } = parseHTML(listing.text);
           job.urls.push(
             ...[...document.querySelectorAll("a[href]")]
@@ -95,12 +122,30 @@ export async function scan(s: Store, owner: string, resume?: string) {
                 lastSuccessAt: new Date().toISOString(),
                 errorCode: null,
                 policyUrl: source.policyUrl,
-                etag: listing.etag,
-                modified: listing.modified,
+                etag: listing.etag || previous?.etag || null,
+                modified: listing.modified || previous?.modified || null,
+                urls: job.urls,
               }),
             ],
           );
         } catch (e) {
+          const error =
+            e instanceof ServiceError ? e.code : "market_source_unavailable";
+          await s.query(
+            "INSERT INTO ad_market_sources(owner_id,source_id,data) VALUES($1,$2,$3::jsonb) ON CONFLICT(owner_id,source_id) DO UPDATE SET data=ad_market_sources.data||excluded.data",
+            [
+              owner,
+              source.id,
+              JSON.stringify({
+                id: source.id,
+                name: source.name,
+                enabled: true,
+                sourceType: "public_html",
+                lastCheckedAt: new Date().toISOString(),
+                errorCode: error,
+              }),
+            ],
+          );
           job.failures.push({
             sourceId: source.id,
             error:
@@ -159,7 +204,9 @@ export async function scan(s: Store, owner: string, resume?: string) {
     job.finishedAt = new Date().toISOString();
     await save();
     const findings = (await repository.findings()).filter(
-      (f) => !["rejected", "snoozed"].includes(f.reviewState),
+      (f) =>
+        !["rejected", "snoozed"].includes(f.reviewState) &&
+        f.relationshipStatus !== "blocked",
     );
     const brief = {
       date: new Date().toLocaleDateString("en-CA", {

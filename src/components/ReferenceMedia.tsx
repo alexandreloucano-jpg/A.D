@@ -17,7 +17,10 @@ export function ReferenceMedia({ url, title }: { url: string; title: string }) {
       },
       { rootMargin: "160px" },
     );
-    if (stage.current) observer.observe(stage.current);
+    if (stage.current)
+      observer.observe(
+        stage.current.closest(".reference-card") || stage.current,
+      );
     return () => observer.disconnect();
   }, [url]);
   useEffect(() => {
@@ -36,7 +39,7 @@ export function ReferenceMedia({ url, title }: { url: string; title: string }) {
           key={url + attempt}
           src={url}
           alt={title}
-          loading="lazy"
+          loading="eager"
           decoding="async"
           referrerPolicy="no-referrer"
           onLoad={() => setStatus("ready")}

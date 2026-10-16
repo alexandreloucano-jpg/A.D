@@ -131,6 +131,7 @@ export async function marketRoute(r: Request, s: Store, c: Config) {
       .filter(
         (f) =>
           !["rejected", "snoozed"].includes(f.reviewState) &&
+          f.relationshipStatus !== "blocked" &&
           f.publishedAt &&
           Date.now() - Date.parse(f.publishedAt) < 45 * 86400000,
       )
@@ -150,7 +151,7 @@ export async function marketRoute(r: Request, s: Store, c: Config) {
       [session.owner],
     );
     const [revenue] = await s.query(
-      "SELECT coalesce(sum((data->>'outcomeValueEur')::numeric),0) AS value FROM ad_market_feedback WHERE owner_id=$1 AND data->>'event'='won' AND data->>'valueConfirmed'='true'",
+      "SELECT coalesce(sum((data->>'outcomeValueEur')::numeric),0) AS value FROM (SELECT DISTINCT ON (opportunity_id) data FROM ad_market_feedback WHERE owner_id=$1 AND data->>'event'='won' AND data->>'valueConfirmed'='true' ORDER BY opportunity_id,data->>'createdAt' DESC) confirmed",
       [session.owner],
     );
     return json({
@@ -167,6 +168,92 @@ export async function marketRoute(r: Request, s: Store, c: Config) {
       changes: [],
       stale: !items.length,
       confirmedRevenueEur: Number(revenue?.value || 0),
+    });
+  }
+  const deleteContact = /^\/contacts\/([a-f0-9-]+)$/.exec(path);
+  if (deleteContact && r.method === "DELETE") {
+    await s.query(
+      "DELETE FROM ad_market_contacts WHERE owner_id=$1 AND id=$2",
+      [session.owner, uuid.parse(deleteContact[1])],
+    );
+    return json({ removed: true });
+  }
+  const companyMatch =
+    /^\/companies\/([a-f0-9-]+)\/(relationship|contacts)$/.exec(path);
+  if (companyMatch && r.method === "POST") {
+    const companyId = uuid.parse(companyMatch[1]);
+    const [company] = await s.query(
+      "SELECT data FROM ad_market_companies WHERE owner_id=$1 AND id=$2",
+      [session.owner, companyId],
+    );
+    if (!company) throw new ServiceError(404, "market_company_missing");
+    if (companyMatch[2] === "relationship") {
+      const b = z
+        .object({
+          status: z.enum(["unknown", "existing", "cold", "blocked"]),
+          humanApproval: z.literal(true),
+        })
+        .strict()
+        .parse(await r.json());
+      const [row] = await s.query(
+        "UPDATE ad_market_companies SET data=data||$3::jsonb WHERE owner_id=$1 AND id=$2 RETURNING data",
+        [
+          session.owner,
+          companyId,
+          JSON.stringify({
+            relationshipStatus: b.status,
+            updatedAt: new Date().toISOString(),
+          }),
+        ],
+      );
+      return json(row.data);
+    }
+    const b = z
+      .object({
+        role: z.string().trim().min(2).max(120),
+        name: z.string().trim().max(120).optional(),
+        businessEmail: z.email().optional(),
+        sourceUrl: z.url().refine((u) => {
+          const x = new URL(u);
+          return x.protocol === "https:" && !x.username && !x.password;
+        }),
+        humanApproval: z.literal(true),
+      })
+      .strict()
+      .parse(await r.json());
+    const contactId = randomUUID(),
+      stamp = new Date().toISOString();
+    const data = {
+      id: contactId,
+      ...b,
+      verifiedAt: null,
+      contactDataBasis:
+        "Coordonnée professionnelle publique déclarée par le propriétaire ; vérification indépendante non effectuée.",
+      createdAt: stamp,
+      retentionUntil: new Date(Date.now() + 90 * 86400000).toISOString(),
+      doNotContact: true,
+    };
+    await s.query(
+      "INSERT INTO ad_market_contacts(owner_id,id,company_id,data) VALUES($1,$2,$3,$4::jsonb)",
+      [session.owner, contactId, companyId, JSON.stringify(data)],
+    );
+    return json(data);
+  }
+  if (path === "/feedback" && r.method === "GET") {
+    const rows = await s.query(
+      "SELECT data FROM ad_market_feedback WHERE owner_id=$1",
+      [session.owner],
+    );
+    const outcomes = rows.map((r) => r.data as { event: string });
+    return json({
+      observedEvents: outcomes.length,
+      confirmedOutcomes: outcomes.filter((e) =>
+        ["won", "lost"].includes(e.event),
+      ).length,
+      scoringVersion: "ADOpportunityScoreV1",
+      weightsChanged: false,
+      automaticLearning: false,
+      note: "Aucun ajustement de poids sans validation humaine et jeu d’issues suffisant.",
     });
   }
   const match =
@@ -271,6 +358,8 @@ export async function marketRoute(r: Request, s: Store, c: Config) {
         );
       }
       if (match[2] === "project") {
+        if (f.reviewState !== "saved")
+          throw new ServiceError(409, "market_save_before_project");
         const b = z
           .object({ projectId: uuid, humanApproval: z.literal(true) })
           .strict()

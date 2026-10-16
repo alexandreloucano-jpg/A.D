@@ -31,6 +31,7 @@ export interface Finding {
   signalId: string;
   evidenceId: string;
   companyName: string;
+  relationshipStatus?: "unknown" | "existing" | "cold" | "blocked";
   sector: string;
   city: string | null;
   eventType: string;
