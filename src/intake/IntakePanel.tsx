@@ -42,6 +42,8 @@ export function IntakePanel({
     [progress, setProgress] = useState(0),
     [visible, setVisible] = useState(30);
   const [localOnly, setLocalOnly] = useState(true);
+  const [phase, setPhase] = useState<"references" | "content">("references");
+  const [total, setTotal] = useState(0);
   const pendingNonce = useRef<string | undefined>(undefined);
   const locked = useRef(false),
     file = useRef<HTMLInputElement>(null);
@@ -157,12 +159,16 @@ export function IntakePanel({
     try {
       const chosen = draft.items.filter((i) => selected.has(i.url));
       if (!chosen.length) throw Error("Sélectionnez au moins une référence.");
+      setPhase("references");
+      setProgress(0);
+      setTotal(chosen.length);
       const todo = chosen.filter((i) => !next.receipts[i.url]);
       if (localOnly || !remote.connected) {
         const ids = await onLocalImport(todo);
         for (let i = 0; i < todo.length; i++)
           next.receipts[todo[i].url] = ids[i];
         remember(next);
+        setProgress(chosen.length);
         todo.length = 0;
       }
       while (todo.length) {
@@ -213,7 +219,11 @@ export function IntakePanel({
       }
       const ids = chosen.map((i) => next.receipts[i.url]);
       if (!localOnly && remote.connected) await onLocalImport(chosen, ids);
-      await saveLocalCopies(chosen, ids, next.nonce);
+      setPhase("content");
+      setProgress(0);
+      await saveLocalCopies(chosen, ids, next.nonce, (done) =>
+        setProgress(done),
+      );
       void downloadLocalMedia(ids).catch(() =>
         setNotice(
           "Le texte est conservé. La copie des médias a été interrompue ; utilisez Reprendre sur les cartes concernées.",
@@ -479,9 +489,10 @@ export function IntakePanel({
             )}
             {notice && <p role="status">{notice}</p>}
             {draft && remote.connected && (
-              <label>
+              <label className="intake-local-option">
                 <input
                   type="checkbox"
+                  disabled={busy}
                   checked={localOnly}
                   onChange={(e) => setLocalOnly(e.target.checked)}
                 />{" "}
@@ -496,7 +507,7 @@ export function IntakePanel({
                   onClick={() => void save()}
                 >
                   {busy
-                    ? `Enregistrement… ${progress} vérifié(s)`
+                    ? `${phase === "content" ? "Copie du contenu" : "Enregistrement"}… ${progress}/${total}`
                     : `Enregistrer ${selected.size} référence(s) sélectionnée(s)`}
                 </button>
                 <button

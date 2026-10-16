@@ -12,3 +12,7 @@ Implémentation dans l’extension A.D et les composants React actifs, sans remp
 - Aucune activation de fournisseur IA, préférence confirmée, groupe IA ou tâche NOW. Le collecteur ne prouve pas une connexion Grok et les contenus strictement locaux ne deviennent pas accessibles au MCP distant.
 
 Validation : tests SQL et protections existants, tests du transfert sans données de session, restrictions CDN, import xarchive, tests navigateur 390/1440 avec une image PNG et un MP4 synthétiques réellement conservés/rechargés, zéro écriture cloud en mode local, recherche plein texte, lecteur et régressions des comptes connectés. Tests amont xarchive exécutés sur fixtures. Aucun import du compte X réel n’est revendiqué. Le Chromium de cet environnement ne charge pas le service worker d’extension ; les interactions Chrome réelles et la collecte X nécessitent une vérification dans un navigateur utilisateur.
+
+## Correctif de reprise 1.1.1
+
+La copie du contenu est réalisée par transactions de 50 références avec progression réelle et relecture. Les cartes hors écran ne déclenchent pas de lectures de fichiers. La reprise des médias publics via l’extension est indépendante de l’onglet initial ; les contrôles des contenus privés restent inchangés. Avec une ancienne extension, A.D tente une copie directe du CDN public sans cookies si CORS le permet. Le navigateur refuse les autres hôtes, redirections, types et tailles non autorisés. Le texte et les UUID sont conservés lors des échecs.

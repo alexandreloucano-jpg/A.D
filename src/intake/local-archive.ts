@@ -1,3 +1,4 @@
+import { fetchPublicMedia } from "./public-media";
 import { normalizeIntake, type IntakeItem } from "./model";
 export type ArchivedMedia = {
   url: string;
@@ -17,11 +18,24 @@ let opening: Promise<IDBDatabase> | undefined;
 function db() {
   return (opening ||= new Promise<IDBDatabase>((resolve, reject) => {
     const r = indexedDB.open(NAME, 1);
+    let blocked = false;
+    r.onblocked = () => {
+      blocked = true;
+      opening = undefined;
+      reject(
+        Error(
+          "Un autre onglet bloque le stockage local. Fermez les autres onglets A.D puis reprenez le lot conservé.",
+        ),
+      );
+    };
     r.onupgradeneeded = () => {
       for (const name of ["copies", "assets", "versions"])
         r.result.createObjectStore(name);
     };
-    r.onsuccess = () => resolve(r.result);
+    r.onsuccess = () => {
+      if (blocked) r.result.close();
+      else resolve(r.result);
+    };
     r.onerror = () => {
       opening = undefined;
       reject(Error("Le stockage local des contenus est indisponible."));
@@ -57,46 +71,95 @@ export const readLocalAsset = (url: string) =>
 function changed(id: string) {
   window.dispatchEvent(new CustomEvent("ad-local-archive", { detail: id }));
 }
+async function readMany<T>(
+  store: string,
+  keys: string[],
+): Promise<(T | undefined)[]> {
+  const d = await db();
+  return new Promise((resolve, reject) => {
+    const t = d.transaction(store),
+      values: (T | undefined)[] = new Array(keys.length);
+    keys.forEach((key, i) => {
+      const r = t.objectStore(store).get(key);
+      r.onsuccess = () => {
+        values[i] = r.result;
+      };
+    });
+    t.oncomplete = () => resolve(values);
+    t.onerror = () =>
+      reject(Error("Lecture locale interrompue. Le lot reste disponible."));
+    t.onabort = t.onerror;
+  });
+}
 export async function saveLocalCopies(
   items: IntakeItem[],
   ids: string[],
   nonce?: string,
+  onProgress?: (done: number, total: number) => void,
 ) {
   if (items.length !== ids.length)
     throw Error("Les UUID du lot ne correspondent pas aux contenus.");
-  for (let i = 0; i < items.length; i++) {
-    const item = normalizeIntake(items[i]),
-      id = ids[i];
-    if (!/^[a-f0-9-]{36}$/i.test(id)) throw Error("UUID non valide.");
-    const old = await readLocalCopy(id),
-      savedAt = new Date().toISOString();
-    if (old && JSON.stringify(old.item) !== JSON.stringify(item))
-      await write(
-        "versions",
-        id + ":" + old.savedAt + ":" + crypto.randomUUID(),
-        old,
-      );
-    const media = [] as ArchivedMedia[];
-    for (const url of [...new Set([...item.images, ...item.videos])]) {
-      const asset = await readLocalAsset(url);
-      media.push({
-        url,
-        state: asset ? "saved" : "pending",
-        ...(asset ? { bytes: asset.blob.size } : {}),
-      });
-    }
-    const copy: LocalCopy = {
-      id,
+  const d = await db();
+  onProgress?.(0, items.length);
+  for (let start = 0; start < items.length; start += 50) {
+    const chunk = items.slice(start, start + 50).map(normalizeIntake),
+      keys = ids.slice(start, start + 50);
+    if (keys.some((id) => !/^[a-f0-9-]{36}$/i.test(id)))
+      throw Error("UUID non valide.");
+    const old = await readMany<LocalCopy>("copies", keys),
+      urls = [
+        ...new Set(chunk.flatMap((item) => [...item.images, ...item.videos])),
+      ];
+    const cached = await readMany<{ blob: Blob }>("assets", urls),
+      assets = new Map(urls.map((url, i) => [url, cached[i]]));
+    const copies = chunk.map((item, i): LocalCopy => ({
+      id: keys[i],
       item,
-      media,
-      savedAt,
-      nonce: nonce || old?.nonce,
-    };
-    await write("copies", id, copy);
-    const verified = await readLocalCopy(id);
-    if (verified?.savedAt !== savedAt)
-      throw Error("Relecture locale non confirmée.");
-    changed(id);
+      nonce: nonce || old[i]?.nonce,
+      savedAt: new Date().toISOString(),
+      media: [...new Set([...item.images, ...item.videos])].map((url) => {
+        const asset = assets.get(url);
+        return {
+          url,
+          state: asset ? "saved" : "pending",
+          ...(asset ? { bytes: asset.blob.size } : {}),
+        };
+      }),
+    }));
+    await new Promise<void>((resolve, reject) => {
+      const t = d.transaction(["copies", "versions"], "readwrite");
+      copies.forEach((copy, i) => {
+        if (
+          old[i] &&
+          JSON.stringify(old[i]!.item) !== JSON.stringify(copy.item)
+        )
+          t.objectStore("versions").put(
+            old[i],
+            keys[i] + ":" + old[i]!.savedAt + ":" + crypto.randomUUID(),
+          );
+        t.objectStore("copies").put(copy, keys[i]);
+      });
+      t.oncomplete = () => resolve();
+      t.onerror = () =>
+        reject(
+          Error(
+            "Stockage local insuffisant ou indisponible. Les lots déjà conservés restent intacts.",
+          ),
+        );
+      t.onabort = t.onerror;
+    });
+    const verified = await readMany<LocalCopy>("copies", keys);
+    if (
+      copies.some(
+        (copy, i) =>
+          verified[i]?.savedAt !== copy.savedAt ||
+          JSON.stringify(verified[i]?.item) !== JSON.stringify(copy.item),
+      )
+    )
+      throw Error("Relecture du contenu local non confirmée. Reprenez ce lot.");
+    keys.forEach(changed);
+    onProgress?.(start + chunk.length, items.length);
+    await new Promise((resolve) => setTimeout(resolve, 0));
   }
 }
 function fromExtension(url: string, nonce: string): Promise<{ blob: Blob }> {
@@ -117,7 +180,8 @@ function fromExtension(url: string, nonce: string): Promise<{ blob: Blob }> {
       if (error) reject(error);
       else resolve(value!);
     }
-    function receive(e: MessageEvent) {
+    let processing = false;
+    async function receive(e: MessageEvent) {
       if (
         e.source !== window ||
         e.origin !== location.origin ||
@@ -126,8 +190,19 @@ function fromExtension(url: string, nonce: string): Promise<{ blob: Blob }> {
         e.data.nonce !== nonce
       )
         return;
+      if (processing) return;
+      processing = true;
       try {
-        if (e.data.error) throw Error(String(e.data.error));
+        if (e.data.error) {
+          try {
+            finish(undefined, { blob: await fetchPublicMedia(url) });
+            return;
+          } catch {
+            throw Error(
+              "Le texte reste conservé. Pour reprendre ce média, mettez à jour l’extension A.D 1.1.1, rechargez A.D puis réessayez. Le lien source peut aussi être devenu inaccessible.",
+            );
+          }
+        }
         if (
           ![
             "image/jpeg",

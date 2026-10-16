@@ -149,15 +149,20 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
       }
     }
     if (
-      !["READ_CAPTURE", "CONFIRM_CAPTURE", "FETCH_MEDIA"].includes(
-        message?.type,
-      ) ||
+      ![
+        "READ_CAPTURE",
+        "CONFIRM_CAPTURE",
+        "FETCH_MEDIA",
+        "FETCH_PUBLIC_MEDIA",
+      ].includes(message?.type) ||
       sender.frameId !== 0 ||
       sender.origin !== ORIGIN ||
       !sender.tab?.id ||
       !sender.url?.startsWith(ORIGIN + "/")
     )
       throw Error("Origine refusée.");
+    if (message.type === "FETCH_PUBLIC_MEDIA")
+      return await fetchMedia(message.url);
     if (!/^[a-f0-9-]{36}$/i.test(message.nonce || ""))
       throw Error("Capture invalide.");
     const key = "capture:" + message.nonce,

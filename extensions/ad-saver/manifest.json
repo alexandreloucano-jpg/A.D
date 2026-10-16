@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "A.D — Capture Saver",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Importez vos signets X et leur contenu dans A.D Saver depuis votre navigateur connecté.",
   "permissions": [
     "activeTab",

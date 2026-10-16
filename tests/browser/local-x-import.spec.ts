@@ -78,13 +78,24 @@ for (const width of [390, 1440])
         exact: true,
       })
       .click();
+    await expect
+      .poll(() =>
+        page.evaluate(() => sessionStorage.getItem("ad.intake.draft.v1")),
+      )
+      .toBeNull();
+    await page.getByRole("button", { name: "Fermer", exact: true }).click();
+    await page
+      .getByRole("button", { name: "Archive X locale", exact: true })
+      .scrollIntoViewIfNeeded();
     await expect(
       page.getByText("Contenu conservé sur cet appareil · 2/2 fichiers", {
         exact: true,
       }),
     ).toBeVisible();
-    await page.getByRole("button", { name: "Fermer", exact: true }).click();
     await page.reload();
+    await page
+      .getByRole("button", { name: "Archive X locale", exact: true })
+      .scrollIntoViewIfNeeded();
     await page
       .getByText("Contenu conservé sur cet appareil · 2/2 fichiers", {
         exact: true,
@@ -189,6 +200,154 @@ test("partial selections keep the extension cursor unconfirmed until all items a
   await expect
     .poll(() =>
       page.evaluate(() => (window as unknown as { acks: number }).acks),
+    )
+    .toBe(1);
+});
+test("large local import completes in batches, reports content progress and preserves all UUIDs after reload", async ({
+  page,
+}) => {
+  test.setTimeout(60000);
+  await page.route("**/api/**", (route) =>
+    route.fulfill({ status: 401, json: { error: "unauthenticated" } }),
+  );
+  await page.goto("/#/saver");
+  const count = 500;
+  await page.evaluate(
+    (count) =>
+      window.postMessage(
+        {
+          type: "AD_SAVER_CAPTURE",
+          nonce: "ac6ac0b4-2175-4d40-bf45-a2571f957151",
+          items: Array.from({ length: count }, (_, i) => ({
+            url: "https://x.com/i/web/status/" + (1000000 + i),
+            title: "Archive lot " + i,
+            text: "Contenu source du signet " + i,
+          })),
+        },
+        location.origin,
+      ),
+    count,
+  );
+  await page
+    .getByRole("button", {
+      name: `Enregistrer ${count} référence(s) sélectionnée(s)`,
+      exact: true,
+    })
+    .click();
+  await expect(
+    page.getByRole("button", { name: /Copie du contenu… \d+\/500/ }),
+  ).toBeVisible();
+  await expect
+    .poll(
+      () => page.evaluate(() => sessionStorage.getItem("ad.intake.draft.v1")),
+      { timeout: 45000 },
+    )
+    .toBeNull();
+  const ids = await page.evaluate(
+    () =>
+      new Promise<string[]>((resolve, reject) => {
+        const r = indexedDB.open("ad-saver-content-v1");
+        r.onsuccess = () => {
+          const t = r.result.transaction("copies"),
+            get = t.objectStore("copies").getAllKeys();
+          get.onsuccess = () => resolve(get.result as string[]);
+        };
+        r.onerror = () => reject(r.error);
+      }),
+  );
+  expect(ids).toHaveLength(count);
+  expect(new Set(ids).size).toBe(count);
+  await page.reload();
+  const reloaded = await page.evaluate(
+    () =>
+      new Promise<string[]>((resolve, reject) => {
+        const r = indexedDB.open("ad-saver-content-v1");
+        r.onsuccess = () => {
+          const get = r.result
+            .transaction("copies")
+            .objectStore("copies")
+            .getAllKeys();
+          get.onsuccess = () => resolve(get.result as string[]);
+        };
+        r.onerror = () => reject(r.error);
+      }),
+  );
+  expect(reloaded.sort()).toEqual(ids.sort());
+});
+test("an old extension capture bound to another tab recovers public image bytes without rescanning X", async ({
+  page,
+}) => {
+  await page.route("**/api/**", (route) =>
+    route.fulfill({ status: 401, json: { error: "unauthenticated" } }),
+  );
+  await page.route("https://pbs.twimg.com/media/recover.png", async (route) => {
+    expect(route.request().headers().cookie).toBeUndefined();
+    await route.fulfill({
+      contentType: "image/png",
+      headers: { "access-control-allow-origin": "*" },
+      body: Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j2ioAAAAASUVORK5CYII=",
+        "base64",
+      ),
+    });
+  });
+  await page.addInitScript(() =>
+    window.addEventListener("message", (e) => {
+      if (e.data?.type === "AD_SAVER_MEDIA_REQUEST")
+        window.postMessage(
+          {
+            type: "AD_SAVER_MEDIA_RESULT",
+            id: e.data.id,
+            nonce: e.data.nonce,
+            error: "Capture expirée ou réservée à un autre onglet.",
+          },
+          location.origin,
+        );
+    }),
+  );
+  await page.goto("/#/saver");
+  await page.evaluate(() =>
+    window.postMessage(
+      {
+        type: "AD_SAVER_CAPTURE",
+        nonce: "ac6ac0b4-2175-4d40-bf45-a2571f957151",
+        items: [
+          {
+            url: "https://x.com/a/status/333",
+            title: "Image récupérée",
+            text: "Texte conservé",
+            images: ["https://pbs.twimg.com/media/recover.png"],
+          },
+        ],
+      },
+      location.origin,
+    ),
+  );
+  await page
+    .getByRole("button", {
+      name: "Enregistrer 1 référence(s) sélectionnée(s)",
+      exact: true,
+    })
+    .click();
+  await expect
+    .poll(() =>
+      page.evaluate(() => sessionStorage.getItem("ad.intake.draft.v1")),
+    )
+    .toBeNull();
+  await page.getByRole("button", { name: "Fermer", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Image récupérée", exact: true })
+    .scrollIntoViewIfNeeded();
+  await page
+    .getByText("Contenu conservé sur cet appareil · 1/1 fichiers", {
+      exact: true,
+    })
+    .click();
+  await expect
+    .poll(() =>
+      page
+        .locator(".local-content img")
+        .evaluate((n: HTMLImageElement) => n.naturalWidth),
     )
     .toBe(1);
 });

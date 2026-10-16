@@ -1,3 +1,4 @@
+import { downloadLocalMedia } from "../intake/local-archive";
 import { LocalContent } from "../intake/LocalContent";
 import type { IntakeItem } from "../intake/model";
 import { IntakePanel } from "../intake/IntakePanel";
@@ -53,10 +54,13 @@ export function SaverView({
   setFilter: (filter: "all" | "links" | "notes") => void;
 }) {
   const collections = useCollections(remote);
+  const [mediaRetrying, setMediaRetrying] = useState(false),
+    [mediaRetryMessage, setMediaRetryMessage] = useState("");
   const [intakeRevision, setIntakeRevision] = useState(0);
   const [intakeMedia, setIntakeMedia] = useState<Record<string, string>>({});
   const [intakeNotes, setIntakeNotes] = useState<Record<string, string[]>>({});
   const intakeIds = refs
+    .filter((r) => serverIds.has(r.id))
     .map((r) => r.id)
     .sort()
     .join(",");
@@ -232,6 +236,31 @@ export function SaverView({
           );
         }}
       />
+      {data.references.length > 0 && (
+        <div className="saver-media-retry">
+          <button
+            disabled={mediaRetrying}
+            onClick={() => {
+              setMediaRetrying(true);
+              setMediaRetryMessage(
+                "Reprise demandée. Les compteurs de fichiers sont mis à jour sur les cartes.",
+              );
+              void downloadLocalMedia(data.references.map((r) => r.id))
+                .catch(() =>
+                  setMediaRetryMessage(
+                    "La reprise a été interrompue. Les contenus déjà conservés restent intacts.",
+                  ),
+                )
+                .finally(() => setMediaRetrying(false));
+            }}
+          >
+            {mediaRetrying
+              ? "Reprise des médias en cours…"
+              : "Reprendre tous les médias locaux"}
+          </button>
+          {mediaRetryMessage && <p role="status">{mediaRetryMessage}</p>}
+        </div>
+      )}
       <ConnectedAccounts remote={remote} onCapture={onCapture} />
       {remote.connected && adminMode && (
         <details className="scout-check">

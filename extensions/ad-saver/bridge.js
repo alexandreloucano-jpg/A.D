@@ -36,7 +36,7 @@
     ) {
       const { id, url, nonce: mediaNonce } = event.data;
       void chrome.runtime
-        .sendMessage({ type: "FETCH_MEDIA", nonce: mediaNonce, url })
+        .sendMessage({ type: "FETCH_PUBLIC_MEDIA", nonce: mediaNonce, url })
         .then((result) =>
           window.postMessage(
             {

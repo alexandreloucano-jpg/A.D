@@ -2603,3 +2603,9 @@ dialog:has(.reader-shell){width:min(1260px,96vw);max-width:96vw;max-height:94dvh
 .intake-inputs > summary { min-height: 44px; padding-block: 12px; cursor: pointer; }
 
 .local-content { margin-block: 12px; } .local-content summary { min-height:44px; cursor:pointer; padding-block:12px; } .local-content img,.local-content video { display:block; width:100%; max-height:420px; object-fit:contain; margin-block:12px; } .local-original { white-space:pre-wrap; overflow-wrap:anywhere; max-height:300px; overflow:auto; }
+
+.intake-shell .intake-local-option {display:flex;align-items:center;gap:12px;min-height:44px;cursor:pointer}.intake-shell .intake-local-option input[type=checkbox] {width:20px;height:20px;min-height:20px;padding:0;margin:0;flex:0 0 20px}
+
+.local-content-gate {min-height:1px;min-width:1px;}
+
+.saver-media-retry{margin-block:12px}.saver-media-retry button{min-height:44px}.saver-media-retry p{font-size:13px;color:var(--muted);line-height:1.5}

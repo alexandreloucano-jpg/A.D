@@ -164,3 +164,57 @@ it("transfers only sanitized bookmark content from the extension page, never X s
   );
   expect(denied.ok).toBe(false);
 });
+it("recovers public media from a new A.D tab while keeping private capture contents bound to the original tab", async () => {
+  let listener: (
+    m: unknown,
+    s: unknown,
+    r: (v: Record<string, unknown>) => void,
+  ) => boolean = () => false;
+  let downloads = 0;
+  const chrome = {
+    runtime: {
+      id: "own-extension",
+      onMessage: { addListener: (fn: typeof listener) => (listener = fn) },
+    },
+    storage: { local: { get: async () => ({}) } },
+  };
+  const source = (
+    await readFile("extensions/ad-saver/background.js", "utf8")
+  ).replace(/^import[^\n]+\n/gm, "");
+  runInNewContext(source, {
+    chrome,
+    Date,
+    Error,
+    fetchMedia: async () => {
+      downloads++;
+      return { mime: "image/png", base64: "AA==" };
+    },
+  });
+  const sender = {
+    id: "own-extension",
+    origin: "https://ad-saver-reader-beta-alexandreloucano-3399.vercel.app",
+    frameId: 0,
+    tab: { id: 999 },
+    url: "https://ad-saver-reader-beta-alexandreloucano-3399.vercel.app/#/saver",
+  };
+  const ask = (type: string, changes = {}) =>
+    new Promise<Record<string, unknown>>((resolve) =>
+      listener(
+        {
+          type,
+          url: "https://pbs.twimg.com/a.jpg",
+          nonce: "ac6ac0b4-2175-4d40-bf45-a2571f957151",
+        },
+        { ...sender, ...changes },
+        resolve,
+      ),
+    );
+  expect((await ask("FETCH_PUBLIC_MEDIA")).ok).toBe(true);
+  expect(downloads).toBe(1);
+  expect((await ask("READ_CAPTURE")).ok).toBe(false);
+  expect(
+    (await ask("FETCH_PUBLIC_MEDIA", { origin: "https://evil.example" })).ok,
+  ).toBe(false);
+  expect((await ask("FETCH_PUBLIC_MEDIA", { frameId: 1 })).ok).toBe(false);
+  expect(downloads).toBe(1);
+});
