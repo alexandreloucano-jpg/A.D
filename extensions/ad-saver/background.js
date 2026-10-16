@@ -17,10 +17,7 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
   if (sender.id !== chrome.runtime.id) return false;
   void (async () => {
     if (message?.type === "PREPARE_X_ARCHIVE") {
-      if (
-        sender.tab?.id === undefined ||
-        sender.url !== chrome.runtime.getURL("xarchive/options.html")
-      )
+      if (sender.url !== chrome.runtime.getURL("xarchive/options.html"))
         throw Error("Transfert réservé au collecteur A.D.");
       if (
         !Array.isArray(message.bookmarks) ||
