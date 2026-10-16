@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { safeUrl } from "../domain";
+import { safeUrl } from "../domain.js";
 export const intakeItemSchema = z
   .object({
     title: z.string().trim().max(10000).default(""),
