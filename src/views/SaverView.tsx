@@ -1,3 +1,5 @@
+import { IntakePanel } from "../intake/IntakePanel";
+import { publicImage } from "../intake/model";
 import { ConnectedAccounts } from "../social/ConnectedAccounts";
 import { validateProposals } from "../collections/model";
 import { useEffect, useState } from "react";
@@ -44,6 +46,57 @@ export function SaverView({
   setFilter: (filter: "all" | "links" | "notes") => void;
 }) {
   const collections = useCollections(remote);
+  const [intakeRevision, setIntakeRevision] = useState(0);
+  const [intakeMedia, setIntakeMedia] = useState<Record<string, string>>({});
+  const [intakeNotes, setIntakeNotes] = useState<Record<string, string[]>>({});
+  const intakeIds = refs
+    .map((r) => r.id)
+    .sort()
+    .join(",");
+  useEffect(() => {
+    let active = true;
+    if (!remote.connected) {
+      setIntakeMedia({});
+      setIntakeNotes({});
+      return;
+    }
+    const ids = intakeIds.split(",").filter(Boolean);
+    void (async () => {
+      const found: Record<string, string> = {};
+      const notes: Record<string, string[]> = {};
+      try {
+        for (let i = 0; i < ids.length; i += 100) {
+          const result = await remote.reader<{
+            sources: {
+              referenceId: string;
+              images: string[];
+              notes?: string[];
+            }[];
+          }>(
+            "/api/intake?ids=" +
+              encodeURIComponent(ids.slice(i, i + 100).join(",")),
+          );
+          for (const row of result.sources) {
+            const image = row.images?.find(publicImage);
+            if (image) found[row.referenceId] = image;
+            if (row.notes?.length) notes[row.referenceId] = row.notes;
+          }
+        }
+        if (active) {
+          setIntakeMedia(found);
+          setIntakeNotes(notes);
+        }
+      } catch {
+        /* Existing link/text cards remain available if optional media metadata is unavailable. */
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [remote.connected, intakeIds, intakeRevision]);
+  const mediaFor = (id: string, url?: string) =>
+    directImageUrl(url) || intakeMedia[id];
+
   const [groupId, setGroupId] = useState("");
   const [scoutCheck, setScoutCheck] = useState<{
     verified: boolean;
@@ -148,6 +201,29 @@ export function SaverView({
   );
   return (
     <>
+      <IntakePanel
+        remote={remote}
+        groups={collections.value.groups}
+        onSaved={async (ids, group) => {
+          setIntakeRevision((v) => v + 1);
+          if (!group) return true;
+          if (
+            !collections.ready ||
+            !collections.value.groups.some((g) => g.id === group)
+          )
+            return false;
+          return collections.save(
+            collections.value.groups.map((g) =>
+              g.id === group
+                ? {
+                    ...g,
+                    referenceIds: [...new Set([...g.referenceIds, ...ids])],
+                  }
+                : g,
+            ),
+          );
+        }}
+      />
       <ConnectedAccounts remote={remote} onCapture={onCapture} />
       {remote.connected && adminMode && (
         <details className="scout-check">
@@ -661,12 +737,12 @@ export function SaverView({
                 className="reference-card"
                 key={r.id}
                 data-expanded={expanded === r.id}
-                data-has-media={!!directImageUrl(r.url)}
+                data-has-media={!!mediaFor(r.id, r.url)}
               >
-                {directImageUrl(r.url) && (
+                {mediaFor(r.id, r.url) && (
                   <ReferenceMedia
                     key={r.url}
-                    url={directImageUrl(r.url)!}
+                    url={mediaFor(r.id, r.url)!}
                     title={r.title}
                   />
                 )}
@@ -721,6 +797,16 @@ export function SaverView({
                       {r.title}
                     </button>
                   </h2>
+                  {intakeNotes[r.id]?.length > 0 && (
+                    <details>
+                      <summary>
+                        Notes importées ({intakeNotes[r.id].length})
+                      </summary>
+                      {intakeNotes[r.id].map((note, index) => (
+                        <p key={index}>{note}</p>
+                      ))}
+                    </details>
+                  )}
                   {readerMatches
                     .filter((hit) => hit.referenceId === r.id && hit.note)
                     .slice(0, 2)

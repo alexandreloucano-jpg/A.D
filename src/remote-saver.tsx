@@ -8,6 +8,16 @@ async function response<T>(r: Response): Promise<T> {
     );
   const body = await r.json();
   const messages: Record<string, string> = {
+    intake_busy:
+      "Un import est déjà en cours. Patientez puis reprenez cette capture conservée.",
+    intake_notes_limit:
+      "Cette référence dépasse la limite de notes importées. Les notes existantes sont conservées.",
+    intake_source_invalid:
+      "Lien non valide ou contenant des paramètres sensibles. Utilisez le lien de partage public.",
+    existing_reference_missing:
+      "La référence liée est introuvable. La capture est conservée, sans recréation automatique.",
+    intake_readback_failed:
+      "La relecture n’a pas abouti. Reprenez l’import ; le même UUID sera utilisé.",
     form_domain_mismatch:
       "Le formulaire a été soumis sur un autre domaine. Rouvrez A.D à son adresse canonique et recommencez.",
     csrf_origin_missing:

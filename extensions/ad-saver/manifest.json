@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "A.D — Capture Saver",
+  "version": "1.0.0",
+  "description": "Capture volontaire des publications X affichées, avec prévisualisation dans A.D. Aucun cookie, jeton ou appel privé.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Capturer dans A.D Saver"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://ad-saver-reader-beta-alexandreloucano-3399.vercel.app/*"
+      ],
+      "js": [
+        "bridge.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "distribution": "development-zip",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "recordsOnlyAfterOwnerApproval": true
+}

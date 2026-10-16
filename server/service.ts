@@ -1,3 +1,4 @@
+import { intakeRoute } from "./intake.js";
 import {
   mcpProtocol,
   mcpDiscoveryLog,
@@ -186,6 +187,7 @@ async function route(
     });
   }
   if (c.role === "app") {
+    if (path === "/api/intake") return intakeRoute(r, s, c);
     if (path === "/api/admin/automation") {
       method(r, "GET");
       const session = await owner(r, s, c);
