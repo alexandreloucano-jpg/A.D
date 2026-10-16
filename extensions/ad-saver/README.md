@@ -1,21 +1,25 @@
-# A.D Saver — capture volontaire dans le navigateur
+# A.D Saver — import X et conservation locale
 
-Code original A.D, sans code ni asset de Gloss, Dewey ou XBookmark.
+L’extension A.D intègre le collecteur xarchive (MIT). Le commit source et les adaptations figurent dans xarchive/UPSTREAM.md ; sa licence est conservée dans xarchive/LICENSE et celle de Dexie dans xarchive/vendor/DEXIE-LICENSE. Le collecteur utilise les interfaces GraphQL privées du site X, qui peuvent changer. Aucun crédit de l’API officielle X n’est utilisé.
 
-L’extension Chrome / Edge collecte seulement le texte et les images déjà rendus dans les publications X affichées. Le bouton de collecte des signets fait défiler la page ouverte, au plus 500 publications et 65 secondes. Ce n’est ni un export complet garanti, ni une synchronisation en arrière-plan. Les publications indisponibles et les vidéos non accessibles ne sont pas reconstituées.
+## Installation sur ordinateur
 
-Aucune lecture de cookies ou de jetons, aucun appel d’API X privée. Permissions : activeTab, scripting, storage. Le transfert est limité au domaine de la bêta A.D et à l’onglet créé, avec identifiant de capture aléatoire, expiration de 24 heures et confirmation après sauvegarde vérifiée. Il faut une session propriétaire A.D pour enregistrer dans Neon. Fermer l’extension ne suffit pas à confirmer une sauvegarde.
+Décompresser le ZIP, ouvrir chrome://extensions, activer le mode développeur et charger le dossier contenant manifest.json. Ouvrir X connecté à son compte puis ses signets. Dans l’extension A.D, choisir « Importer mes signets X dans Saver », lancer « Full refresh », puis « Envoyer mes signets dans Saver ». Vérifier et enregistrer le lot dans A.D. Le transfert est découpé en lots de 2 000 ; le bouton envoie le lot suivant après confirmation du précédent. L’archive complète et les collectes interrompues restent dans l’extension. Une collecte complète signifie fin de pagination reconnue, pas garantie que X a renvoyé tout l’historique.
 
-## Distribution de développement
+Le ZIP est une distribution de développement, pas une publication Chrome Web Store. Cette extension ne s’installe pas sur iPhone. Aucun compte éditeur ou achat n’a été créé. Sur iPhone, le collage de liens et l’import de fichiers restent disponibles ; aucune récupération de la session X du téléphone n’est revendiquée.
 
-Le ZIP disponible dans Saver n’est pas une publication Chrome Web Store. Sur ordinateur : décompresser le ZIP, ouvrir chrome://extensions, activer le mode développeur et charger le dossier décompressé. Aucun paiement ou compte de publication n’a été créé. Ne jamais saisir de cookie ou de clé API dans l’extension.
+## Confidentialité
 
-## iPhone
+Les permissions cookies, webRequest et accès aux domaines X sont nécessaires à la collecte autorisée par l’utilisateur. Les en-têtes et cookies de la session restent dans le profil local de l’extension et servent uniquement à X. Ils ne font jamais partie du transfert vers A.D. Le transfert vers l’onglet A.D créé est lié à son identifiant, à un nonce aléatoire et expire après 24 heures. Les téléchargements de médias se limitent aux domaines publics pbs.twimg.com et video.twimg.com, sans cookies ni en-têtes de session, sans redirection.
 
-Cette extension Chrome ne fonctionne pas sur iPhone. Dans la bêta web : utiliser le lien partagé d’une publication, puis « Coller une publication ». Ce parcours conserve le lien et le texte réellement fourni ; il ne télécharge pas automatiquement les publications privées. Une véritable cible de partage iOS exige une application / extension native signée et distribuée via Apple ; elle n’est pas incluse dans ce ZIP.
+Aucune collecte programmée. Aucun ajout de tâche, achat, modification du compte X ou groupe IA automatique. Les erreurs de l’interface privée restent explicites. Il est possible de désactiver/désinstaller l’extension à tout moment ; l’accès local à X est alors interrompu. Conserver auparavant ses archives si nécessaire.
 
-## Fichiers et récupération
+## Ce qui est conservé dans A.D
 
-Saver accepte CSV, JSON ou signets HTML, au plus 2 000 références et 12 Mo par fichier. Prévisualisation avant enregistrement, lots de 20, UUID stable et relecture serveur. Les doublons de liens X et Instagram sont normalisés. Les titres existants, annotations, collections et tâches sont conservés. Les notes importées sont stockées séparément et consultables dans Saver et sa recherche. Le brouillon est conservé dans l’onglet pour reprendre un échec ; ne pas effacer les données du navigateur avant la fin.
+Par défaut, les nouvelles références sont enregistrées uniquement sur l’appareil. Texte, contexte cité fourni, notes, tags et URL sont conservés dans IndexedDB, avec copie locale des références existantes dans le stockage de l’application. Le choix local exclut ces nouvelles références de la migration cloud automatique. Une copie cloud est facultative et demande la session propriétaire existante. Les UUID sont relus, les liens dédoublonnés et les annotations et collections existantes préservées.
 
-Les médias distants restent des liens vers leur source et peuvent expirer. Aucune copie permanente de médias privés n’est promise. Les exports de fournisseurs tiers ne sont pas présumés compatibles : les champs reconnus sont validés, tout fichier incomplet ou invalide est refusé avant import. Les sauvegardes complètes A.D doivent utiliser la restauration existante pour préserver tous les UUID.
+Les images et vidéos MP4 accessibles sont copiées dans IndexedDB via l’extension, puis relues. La carte affiche le nombre de fichiers effectivement conservés ; un lien disponible seul ne compte pas comme fichier conservé. Limites par transfert : image 8 Mio, vidéo 24 Mio, types JPEG/PNG/WebP/GIF/MP4. Les fichiers trop volumineux, sources indisponibles et manques d’espace affichent une erreur récupérable ; le texte et les liens restent conservés. Aucune vidéo manquante ou média déjà supprimé n’est reconstitué. Le navigateur et l’onglet doivent rester ouverts pendant les téléchargements. Un rechargement interrompt les fichiers en cours ; « Reprendre la conservation des médias » relance ceux qui ne sont pas confirmés.
+
+Les fichiers confirmés sont lisibles depuis leur copie locale même si l’URL source cesse de fonctionner. Effacer les données du navigateur supprime ces fichiers. L’export JSON de l’espace A.D existant ne contient pas ces fichiers binaires : ne pas le considérer comme une sauvegarde complète de médias. L’archive cumulative xarchive conserve les liens, pas les fichiers. Aucune synchronisation des fichiers entre appareils n’est promise.
+
+L’IA Saver existante n’est ni activée ni remplacée par ce collecteur. Les textes importés sont consultables et recherchables ; toute analyse exige un fournisseur IA effectivement configuré et les autorisations existantes. Les suggestions restent à valider.

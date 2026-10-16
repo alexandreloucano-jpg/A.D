@@ -37,7 +37,7 @@ it("binds transfer to its own extension, top-level A.D origin, nonce, tab and ex
   };
   const source = (
     await readFile("extensions/ad-saver/background.js", "utf8")
-  ).replace(/^import[^\n]+\n/, "");
+  ).replace(/^import[^\n]+\n/gm, "");
   runInNewContext(source, {
     chrome,
     Date,
@@ -84,9 +84,83 @@ it("packages only explicit user-triggered capture permissions", async () => {
   const manifest = JSON.parse(
     await readFile("extensions/ad-saver/manifest.json", "utf8"),
   );
-  expect(manifest.permissions).toEqual(["activeTab", "scripting", "storage"]);
-  expect(manifest.host_permissions).toBeUndefined();
+  expect(manifest.permissions).not.toContain("debugger");
+  expect(manifest.permissions).toContain("cookies");
+  expect(manifest.permissions).toContain("webRequest");
+  expect(manifest.host_permissions).toEqual([
+    "https://x.com/*",
+    "https://twitter.com/*",
+    "https://abs.twimg.com/*",
+    "https://pbs.twimg.com/*",
+    "https://video.twimg.com/*",
+  ]);
   expect(manifest.content_scripts[0].matches).toEqual([
     "https://ad-saver-reader-beta-alexandreloucano-3399.vercel.app/*",
   ]);
+});
+it("transfers only sanitized bookmark content from the extension page, never X session fields", async () => {
+  const stored: Record<string, unknown> = {};
+  let listener: (
+    m: unknown,
+    s: unknown,
+    r: (v: Record<string, unknown>) => void,
+  ) => boolean = () => false;
+  const chrome = {
+    runtime: {
+      id: "own-extension",
+      getURL: (p: string) => "chrome-extension://own-extension/" + p,
+      onMessage: { addListener: (fn: typeof listener) => (listener = fn) },
+    },
+    storage: {
+      local: {
+        get: async (k: string) => ({ [k]: stored[k] }),
+        set: async (v: Record<string, unknown>) => Object.assign(stored, v),
+      },
+    },
+    tabs: { create: async () => ({ id: 91 }) },
+  };
+  const source = (
+    await readFile("extensions/ad-saver/background.js", "utf8")
+  ).replace(/^import[^\n]+\n/gm, "");
+  runInNewContext(source, { chrome, Date, Error, crypto: globalThis.crypto });
+  const reply = await new Promise<Record<string, unknown>>((resolve) =>
+    listener(
+      {
+        type: "PREPARE_X_ARCHIVE",
+        archiveUser: "123",
+        nextOffset: 1,
+        signature: "1",
+        bookmarks: [
+          {
+            tweet_id: "987",
+            full_text: "Visible text",
+            authorization: "DO_NOT_TRANSFER",
+            media: [],
+            quoted_tweet: { tweet_id: "456", full_text: "Quoted source" },
+          },
+        ],
+      },
+      {
+        id: "own-extension",
+        tab: { id: 9 },
+        url: "chrome-extension://own-extension/xarchive/options.html",
+      },
+      resolve,
+    ),
+  );
+  expect(reply.prepared).toBe(1);
+  expect(JSON.stringify(stored)).not.toContain("DO_NOT_TRANSFER");
+  expect(JSON.stringify(stored)).toContain("Quoted source");
+  const denied = await new Promise<Record<string, unknown>>((resolve) =>
+    listener(
+      { type: "PREPARE_X_ARCHIVE", bookmarks: [] },
+      {
+        id: "own-extension",
+        tab: { id: 91 },
+        url: "https://ad-saver-reader-beta-alexandreloucano-3399.vercel.app/",
+      },
+      resolve,
+    ),
+  );
+  expect(denied.ok).toBe(false);
 });

@@ -1,3 +1,5 @@
+import { LocalContent } from "../intake/LocalContent";
+import type { IntakeItem } from "../intake/model";
 import { IntakePanel } from "../intake/IntakePanel";
 import { publicImage } from "../intake/model";
 import { ConnectedAccounts } from "../social/ConnectedAccounts";
@@ -16,6 +18,7 @@ import { type Workspace } from "../domain";
 export function SaverView({
   refs,
   onCapture,
+  onLocalImport,
   adminMode = false,
   expanded,
   setExpanded,
@@ -28,6 +31,10 @@ export function SaverView({
   readerMatches = [],
 }: {
   onCapture: () => void;
+  onLocalImport: (
+    items: IntakeItem[],
+    preferredIds?: string[],
+  ) => Promise<string[]>;
   adminMode?: boolean;
   serverIds?: Set<string>;
   remote: RemoteSaver;
@@ -203,6 +210,7 @@ export function SaverView({
     <>
       <IntakePanel
         remote={remote}
+        onLocalImport={onLocalImport}
         groups={collections.value.groups}
         onSaved={async (ids, group) => {
           setIntakeRevision((v) => v + 1);
@@ -797,6 +805,7 @@ export function SaverView({
                       {r.title}
                     </button>
                   </h2>
+                  <LocalContent id={r.id} />
                   {intakeNotes[r.id]?.length > 0 && (
                     <details>
                       <summary>

@@ -1,12 +1,17 @@
 {
   "manifest_version": 3,
   "name": "A.D — Capture Saver",
-  "version": "1.0.0",
-  "description": "Capture volontaire des publications X affichées, avec prévisualisation dans A.D. Aucun cookie, jeton ou appel privé.",
+  "version": "1.1.0",
+  "description": "Importez vos signets X et leur contenu dans A.D Saver depuis votre navigateur connecté.",
   "permissions": [
     "activeTab",
     "scripting",
-    "storage"
+    "storage",
+    "cookies",
+    "webRequest",
+    "declarativeNetRequestWithHostAccess",
+    "downloads",
+    "unlimitedStorage"
   ],
   "background": {
     "service_worker": "background.js",
@@ -26,9 +31,28 @@
       ],
       "run_at": "document_idle",
       "all_frames": false
+    },
+    {
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*"
+      ],
+      "js": [
+        "xarchive/content.js"
+      ],
+      "run_at": "document_start"
     }
   ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'none'"
-  }
+  },
+  "host_permissions": [
+    "https://x.com/*",
+    "https://twitter.com/*",
+    "https://abs.twimg.com/*",
+    "https://pbs.twimg.com/*",
+    "https://video.twimg.com/*"
+  ],
+  "options_page": "xarchive/options.html",
+  "minimum_chrome_version": "120"
 }

@@ -90,7 +90,37 @@ function mapped(value: unknown): IntakeItem {
     .map((s) => s.trim())
     .filter(Boolean)
     .slice(0, 30);
-  const images = find(["images", "mediaurls", "imageurl", "mediaurl"]);
+  const rawMedia = Array.isArray(data.media)
+    ? (data.media as Record<string, unknown>[])
+    : [];
+  const rawVideos = find(["videos"]);
+  const videos = Array.isArray(rawVideos)
+    ? rawVideos.filter((v): v is string => typeof v === "string")
+    : rawMedia
+        .filter((m) => ["video", "animated_gif"].includes(String(m.type)))
+        .flatMap((m) => {
+          const variants = Array.isArray(m.variants)
+            ? (m.variants as {
+                url?: string;
+                content_type?: string;
+                bitrate?: number;
+              }[])
+            : [];
+          const mp4 = variants
+            .filter(
+              (v) =>
+                v.content_type === "video/mp4" && typeof v.url === "string",
+            )
+            .sort((a, b) => (a.bitrate || 0) - (b.bitrate || 0));
+          return mp4.length
+            ? [mp4.find((v) => (v.bitrate || 0) >= 256000)?.url || mp4[0].url!]
+            : [];
+        });
+  const images =
+    find(["images", "mediaurls", "imageurl", "mediaurl"]) ||
+    rawMedia
+      .map((m) => (m.type === "photo" ? m.url : m.thumbnail_url))
+      .filter((v) => typeof v === "string");
   const imageList = Array.isArray(images)
     ? images
     : typeof images === "string"
@@ -112,6 +142,19 @@ function mapped(value: unknown): IntakeItem {
   ).filter((n): n is string => typeof n === "string" && !!n.trim());
   return normalizeIntake({
     title: str(find(["title", "titre", "name"])),
+    videos: videos.slice(0, 4),
+    ...(data.author &&
+    typeof data.author === "object" &&
+    typeof (data.author as Record<string, unknown>).screen_name === "string"
+      ? {
+          author: String(
+            (data.author as Record<string, unknown>).screen_name,
+          ).slice(0, 200),
+        }
+      : {}),
+    originalText: str(
+      find(["originaltext", "fulltext", "text", "content"]),
+    ).slice(0, 200000),
     text: str(
       find([
         "fulltext",
@@ -122,7 +165,7 @@ function mapped(value: unknown): IntakeItem {
         "description",
         "tweet",
       ]),
-    ),
+    ).slice(0, 10000),
     url:
       url ||
       (/^\d+$/.test(sourceId) ? "https://x.com/i/web/status/" + sourceId : ""),

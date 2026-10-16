@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile, readdir } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 const files = [
   "manifest.json",
@@ -8,16 +8,42 @@ const files = [
   "popup.html",
   "popup.js",
   "README.md",
+  "media.js",
+  "transfer-x.js",
 ];
 const manifest = JSON.parse(
   await readFile("extensions/ad-saver/manifest.json", "utf8"),
 );
 if (
   manifest.permissions.some((p) =>
-    ["cookies", "webRequest", "debugger", "tabs"].includes(p),
+    ["debugger", "tabs", "proxy", "nativeMessaging"].includes(p),
   )
 )
   throw Error("Unexpected broad permission");
+if (
+  manifest.host_permissions.some(
+    (p) =>
+      ![
+        "https://x.com/*",
+        "https://twitter.com/*",
+        "https://abs.twimg.com/*",
+        "https://pbs.twimg.com/*",
+        "https://video.twimg.com/*",
+      ].includes(p),
+  )
+)
+  throw Error("Unexpected host permission");
+async function include(dir) {
+  for (const entry of await readdir("extensions/ad-saver/" + dir, {
+    withFileTypes: true,
+  })) {
+    const path = dir + "/" + entry.name;
+    if (entry.name.startsWith(".")) continue;
+    if (entry.isDirectory()) await include(path);
+    else files.push(path);
+  }
+}
+await include("xarchive");
 await mkdir("public", { recursive: true });
 execFileSync("python3", [
   "-c",

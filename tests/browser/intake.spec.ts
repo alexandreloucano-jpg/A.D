@@ -64,6 +64,7 @@ for (const width of [390, 1440])
     await expect(
       page.getByText("Architecture mobile", { exact: true }),
     ).toBeVisible();
+    await page.getByLabel("Conserver uniquement sur cet appareil").uncheck();
     await page.screenshot({ path: `artifacts/intake-preview-${width}.png` });
     await page
       .getByRole("button", {
@@ -87,9 +88,7 @@ for (const width of [390, 1440])
       ),
     ).toBe(true);
   });
-test("capture reads only the rendered X fixture", async ({
-  page,
-}) => {
+test("capture reads only the rendered X fixture", async ({ page }) => {
   await page.route("https://x.com/**", (route) =>
     route.fulfill({
       contentType: "text/html",

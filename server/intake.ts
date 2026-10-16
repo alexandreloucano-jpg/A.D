@@ -40,6 +40,7 @@ export async function intakeRoute(r: Request, s: Store, c: Config) {
           return {
             referenceId: d.referenceId,
             images: d.images,
+            videos: d.videos || [],
             tags: d.tags,
             publishedAt: d.publishedAt,
             notes: d.notes || [],
@@ -108,6 +109,7 @@ export async function intakeRoute(r: Request, s: Store, c: Config) {
             notes?: string[];
             tags?: string[];
             images?: string[];
+            videos?: string[];
           }>("intake-source", sourceKey);
         const mergedNotes = [
           ...new Set([...(previous?.notes || []), ...item.notes]),
@@ -157,7 +159,9 @@ export async function intakeRoute(r: Request, s: Store, c: Config) {
             referenceId: ref.id,
             method: input.method,
             sourceUrl: item.url,
-            sourceText: item.text,
+            sourceText: item.originalText || item.text,
+            videos: item.videos,
+            author: item.author || null,
             images: item.images,
             tags: item.tags,
             notes: item.notes,

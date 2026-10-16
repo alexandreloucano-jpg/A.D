@@ -1,3 +1,4 @@
+import { readLocalCopy } from "../intake/local-archive";
 import { useEffect, useRef, useState } from "react";
 import type { Reference } from "../domain";
 import type { RemoteSaver } from "../remote-saver";
@@ -69,7 +70,21 @@ export function Reader({
     humanAnnotations: unknown[];
     aiInterpretations: unknown[];
   } | null>(null);
-  const availableText = doc?.text ?? reference.content;
+  const [localText, setLocalText] = useState<string | null>(null);
+  useEffect(() => {
+    let active = true;
+    setLocalText(null);
+    void readLocalCopy(reference.id)
+      .then((copy) => {
+        if (active && copy)
+          setLocalText(copy.item.originalText || copy.item.text);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [reference.id]);
+  const availableText = doc?.text ?? localText ?? reference.content;
   const version = doc?.version;
   const image = directImageUrl(reference.url),
     pdf = reference.url && /\.pdf$/i.test(new URL(reference.url).pathname);

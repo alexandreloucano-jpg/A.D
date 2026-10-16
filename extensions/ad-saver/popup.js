@@ -23,3 +23,5 @@ document
 document
   .querySelector("#history")
   .addEventListener("click", () => void start(true));
+
+document.querySelector("#import-x").addEventListener("click", () => chrome.runtime.openOptionsPage());

@@ -4,13 +4,17 @@
   const nonce = new URLSearchParams(location.hash.split("?")[1] || "").get(
     "capture",
   );
-  if (!nonce) return;
+
   let delivered = false;
   async function deliver() {
-    if (delivered) return;
+    if (delivered || !nonce) return;
     const data = await chrome.runtime
       .sendMessage({ type: "READ_CAPTURE", nonce })
       .catch(() => null);
+    if (data?.ok && data.confirmed) {
+      delivered = true;
+      return;
+    }
     if (data?.ok) {
       window.postMessage(
         { type: "AD_SAVER_CAPTURE", nonce, items: data.items },
@@ -24,6 +28,39 @@
     if (event.data?.type === "AD_SAVER_READY") {
       delivered = false;
       void deliver();
+    }
+    if (
+      event.data?.type === "AD_SAVER_MEDIA_REQUEST" &&
+      /^[a-f0-9-]{36}$/i.test(event.data.nonce || "") &&
+      /^[a-f0-9-]{36}$/i.test(event.data.id || "")
+    ) {
+      const { id, url, nonce: mediaNonce } = event.data;
+      void chrome.runtime
+        .sendMessage({ type: "FETCH_MEDIA", nonce: mediaNonce, url })
+        .then((result) =>
+          window.postMessage(
+            {
+              type: "AD_SAVER_MEDIA_RESULT",
+              id,
+              nonce: mediaNonce,
+              ...(result?.ok
+                ? { mime: result.mime, base64: result.base64 }
+                : { error: result?.error || "Média non disponible" }),
+            },
+            location.origin,
+          ),
+        )
+        .catch(() =>
+          window.postMessage(
+            {
+              type: "AD_SAVER_MEDIA_RESULT",
+              id,
+              nonce: mediaNonce,
+              error: "Extension indisponible",
+            },
+            location.origin,
+          ),
+        );
     }
     if (
       event.data?.type === "AD_SAVER_CAPTURE_SAVED" &&

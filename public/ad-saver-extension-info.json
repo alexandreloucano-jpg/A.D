@@ -1,10 +1,15 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "distribution": "development-zip",
   "permissions": [
     "activeTab",
     "scripting",
-    "storage"
+    "storage",
+    "cookies",
+    "webRequest",
+    "declarativeNetRequestWithHostAccess",
+    "downloads",
+    "unlimitedStorage"
   ],
   "recordsOnlyAfterOwnerApproval": true
 }

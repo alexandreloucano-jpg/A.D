@@ -8,6 +8,7 @@ import {
   normalizeIntake,
   type IntakeItem,
 } from "./model";
+import { saveLocalCopies, downloadLocalMedia } from "./local-archive";
 import { parseBookmarkFile } from "./parse";
 const DRAFT = "ad.intake.draft.v1";
 type Draft = {
@@ -20,7 +21,12 @@ export function IntakePanel({
   remote,
   groups,
   onSaved,
+  onLocalImport,
 }: {
+  onLocalImport: (
+    items: IntakeItem[],
+    preferredIds?: string[],
+  ) => Promise<string[]>;
   remote: RemoteSaver;
   groups: { id: string; name: string }[];
   onSaved: (ids: string[], group: string) => Promise<boolean>;
@@ -35,6 +41,7 @@ export function IntakePanel({
     [busy, setBusy] = useState(false),
     [progress, setProgress] = useState(0),
     [visible, setVisible] = useState(30);
+  const [localOnly, setLocalOnly] = useState(true);
   const pendingNonce = useRef<string | undefined>(undefined);
   const locked = useRef(false),
     file = useRef<HTMLInputElement>(null);
@@ -142,7 +149,7 @@ export function IntakePanel({
     }
   }
   async function save() {
-    if (locked.current || !draft || !remote.connected) return;
+    if (locked.current || !draft) return;
     locked.current = true;
     setBusy(true);
     setError("");
@@ -151,6 +158,13 @@ export function IntakePanel({
       const chosen = draft.items.filter((i) => selected.has(i.url));
       if (!chosen.length) throw Error("Sélectionnez au moins une référence.");
       const todo = chosen.filter((i) => !next.receipts[i.url]);
+      if (localOnly || !remote.connected) {
+        const ids = await onLocalImport(todo);
+        for (let i = 0; i < todo.length; i++)
+          next.receipts[todo[i].url] = ids[i];
+        remember(next);
+        todo.length = 0;
+      }
       while (todo.length) {
         const batch: IntakeItem[] = [];
         while (todo.length && batch.length < 20) {
@@ -198,26 +212,34 @@ export function IntakePanel({
           );
       }
       const ids = chosen.map((i) => next.receipts[i.url]);
+      if (!localOnly && remote.connected) await onLocalImport(chosen, ids);
+      await saveLocalCopies(chosen, ids, next.nonce);
+      void downloadLocalMedia(ids).catch(() =>
+        setNotice(
+          "Le texte est conservé. La copie des médias a été interrompue ; utilisez Reprendre sur les cartes concernées.",
+        ),
+      );
+
       if (!(await onSaved(ids, group)))
         throw Error(
           "Les références sont enregistrées ; le classement n’a pas été confirmé. Réessayez sans créer de nouvelles copies.",
         );
-      if (next.nonce)
-        window.postMessage(
-          { type: "AD_SAVER_CAPTURE_SAVED", nonce: next.nonce },
-          location.origin,
-        );
       const remaining = next.items.filter((i) => !selected.has(i.url));
       if (remaining.length) {
-        remember({ ...next, items: remaining, receipts: {}, nonce: undefined });
+        remember({ ...next, items: remaining, receipts: {} });
         setSelected(new Set(remaining.map((i) => i.url)));
       } else {
         sessionStorage.removeItem(DRAFT);
+        if (next.nonce)
+          window.postMessage(
+            { type: "AD_SAVER_CAPTURE_SAVED", nonce: next.nonce },
+            location.origin,
+          );
         setDraft(null);
       }
-      await remote.refresh();
+      if (remote.connected && !localOnly) await remote.refresh();
       setNotice(
-        `${ids.length} référence(s) enregistrée(s) avec UUID et relecture serveur. Vos annotations et groupes existants sont conservés.`,
+        `${ids.length} référence(s) conservée(s) avec UUID et relecture. Le texte est local ; la conservation des fichiers média est suivie sur chaque carte. Vos annotations et groupes existants sont conservés.`,
       );
       setProgress(0);
     } catch (e) {
@@ -226,7 +248,7 @@ export function IntakePanel({
           ? e.message
           : "Import interrompu. La capture est conservée.",
       );
-      await remote.refresh();
+      if (remote.connected && !localOnly) await remote.refresh();
     } finally {
       locked.current = false;
       setBusy(false);
@@ -259,7 +281,8 @@ export function IntakePanel({
           <div className="intake-shell">
             <p>
               Vos références restent dans A.D. L’enregistrement se fait après
-              votre validation, avec relecture serveur et sans doublons.
+              votre validation, avec relecture et sans doublons. Le mode local
+              ne demande aucune connexion.
             </p>
             <details className="intake-inputs" open={!draft}>
               <summary>Ajouter un lien ou un fichier</summary>
@@ -336,11 +359,14 @@ export function IntakePanel({
                   cookies ou des jetons n’est nécessaire.
                 </p>
                 <p>
-                  L’extension A.D collecte uniquement les publications affichées
-                  dans votre onglet X, à votre demande. Elle prépare l’import
-                  ici sans appeler d’API privée. Elle est livrée en ZIP de
-                  développement ; sa distribution en magasin nécessite un compte
-                  éditeur. Ce ZIP ne s’installe pas sur iPhone.
+                  L’extension A.D peut importer les signets X via votre session
+                  navigateur ; elle peut aussi capturer les publications
+                  affichées dans votre onglet X, à votre demande. Elle prépare
+                  l’import ici via l’interface privée de X, sans crédits API
+                  officiels. Les données de connexion restent dans l’extension.
+                  Elle est livrée en ZIP de développement ; sa distribution en
+                  magasin nécessite un compte éditeur. Ce ZIP ne s’installe pas
+                  sur iPhone.
                 </p>
               </details>
             </details>
@@ -440,9 +466,10 @@ export function IntakePanel({
             {!remote.connected && (
               <p>
                 <a className="primary" href="/api/auth/google/login">
-                  Se connecter avec Google pour enregistrer dans Saver
+                  Se connecter avec Google pour la copie cloud (facultatif)
                 </a>{" "}
-                La capture en attente reste dans ce navigateur.
+                L’enregistrement local fonctionne sans connexion. La capture en
+                attente reste dans ce navigateur.
               </p>
             )}
             {error && (
@@ -451,11 +478,21 @@ export function IntakePanel({
               </p>
             )}
             {notice && <p role="status">{notice}</p>}
+            {draft && remote.connected && (
+              <label>
+                <input
+                  type="checkbox"
+                  checked={localOnly}
+                  onChange={(e) => setLocalOnly(e.target.checked)}
+                />{" "}
+                Conserver uniquement sur cet appareil
+              </label>
+            )}
             {draft && (
               <div className="intake-footer">
                 <button
                   className="primary"
-                  disabled={busy || !remote.connected || !selected.size}
+                  disabled={busy || !selected.size}
                   onClick={() => void save()}
                 >
                   {busy

@@ -5,9 +5,12 @@ export const intakeItemSchema = z
     title: z.string().trim().max(10000).default(""),
     text: z.string().max(10000).default(""),
     url: safeUrl,
+    author: z.string().trim().max(200).optional(),
     publishedAt: z.string().datetime().optional(),
     sourceDate: z.string().max(100).optional(),
     images: z.array(safeUrl).max(8).default([]),
+    videos: z.array(safeUrl).max(4).default([]),
+    originalText: z.string().max(200000).optional(),
     notes: z.array(z.string().trim().min(1).max(2000)).max(10).default([]),
     tags: z.array(z.string().trim().min(1).max(100)).max(30).default([]),
   })
@@ -73,6 +76,7 @@ export function normalizeIntake(raw: unknown): IntakeItem {
   row.url = canonicalSource(row.url);
   row.title = row.title || row.text.slice(0, 100) || new URL(row.url).hostname;
   row.images = row.images.filter(publicImage);
+  row.videos = row.videos.filter(publicImage);
   return row;
 }
 export function uniqueIntake(rows: unknown[]): {
@@ -88,6 +92,10 @@ export function uniqueIntake(rows: unknown[]): {
       existing = byUrl.get(row.url);
     if (existing) {
       duplicates++;
+      existing.videos = [...new Set([...existing.videos, ...row.videos])].slice(
+        0,
+        4,
+      );
       const notes = [...new Set([...existing.notes, ...row.notes])];
       if (notes.length > 10)
         throw Error(

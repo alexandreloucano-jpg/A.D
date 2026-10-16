@@ -1,3 +1,9 @@
+import {
+  localOnlyIds,
+  setLocalOnly,
+  searchLocalCopies,
+} from "./intake/local-archive";
+import { canonicalSource, type IntakeItem } from "./intake/model";
 import { AccountSettings } from "./AccountSettings";
 import { parseSharedCapture } from "./share";
 import { useRemoteSaver, RemoteSaverSettings } from "./remote-saver";
@@ -127,8 +133,18 @@ export function App() {
   useEffect(() => {
     if (!remote.connected || autoMigration.current) return;
     const saved = new Set(remote.references.map((row) => row.id));
+    let privateIds: Set<string>;
+    try {
+      privateIds = localOnlyIds();
+    } catch {
+      setAutoSyncError(
+        "Choix local illisible : synchronisation cloud suspendue.",
+      );
+      return;
+    }
     const pending = data.references.filter(
-      (row) => !row.isInternalQA && !saved.has(row.id),
+      (row) =>
+        !row.isInternalQA && !saved.has(row.id) && !privateIds.has(row.id),
     );
     if (!pending.length) {
       setAutoSyncError("");
@@ -269,6 +285,50 @@ export function App() {
       return false;
     }
   }
+  async function importLocal(items: IntakeItem[], preferredIds?: string[]) {
+    const current = repository.read(),
+      references = [...current.references],
+      ids: string[] = [];
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const existing = references.find((r) => {
+        try {
+          return !!r.url && canonicalSource(r.url) === item.url;
+        } catch {
+          return false;
+        }
+      });
+      const id = existing?.id || preferredIds?.[i] || crypto.randomUUID();
+      ids.push(id);
+      if (!existing && !references.some((r) => r.id === id)) {
+        const now = new Date().toISOString();
+        references.push(
+          referenceSchema.parse({
+            id,
+            title: item.title,
+            content: item.text,
+            url: item.url,
+            origin: "human",
+            capturedAt: now,
+            approvedAt: now,
+            revision: 1,
+            isInternalQA: false,
+          }),
+        );
+      }
+    }
+    setLocalOnly(ids, !preferredIds);
+    if (
+      !commit(
+        { ...current, references },
+        "Signets enregistrés sur cet appareil.",
+      )
+    )
+      throw Error(
+        "La sauvegarde locale n’a pas été confirmée. Le lot est conservé.",
+      );
+    return ids;
+  }
   function act(task: Task, action: "accept" | "archive" | "restore") {
     try {
       const updated = transitionTask(task, action, true);
@@ -289,12 +349,32 @@ export function App() {
   }
   const project = data.projects.find((p) => p.id === projectId);
   const now = activeTasks(data);
+  const [localMatches, setLocalMatches] = useState<string[]>([]);
+  useEffect(() => {
+    let active = true;
+    setLocalMatches([]);
+    if (!query.trim()) return;
+    const timer = setTimeout(
+      () =>
+        void searchLocalCopies(query)
+          .then((ids) => {
+            if (active) setLocalMatches(ids);
+          })
+          .catch(() => {}),
+      200,
+    );
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [query, data.references]);
   const refs = rediscover(displayData).filter(
     (r) =>
       (r.title + " " + r.content + " " + (r.url || ""))
         .toLocaleLowerCase()
         .includes(query.toLocaleLowerCase()) ||
-      readerMatches.some((hit) => hit.referenceId === r.id),
+      readerMatches.some((hit) => hit.referenceId === r.id) ||
+      localMatches.includes(r.id),
   );
   const projects = data.projects.filter((p) =>
     p.title.toLocaleLowerCase().includes(query.toLocaleLowerCase()),
@@ -538,6 +618,7 @@ export function App() {
                   >
                     {route === "saver" && (
                       <SaverView
+                        onLocalImport={importLocal}
                         onCapture={() => {
                           setError("");
                           setCaptureContext(null);
