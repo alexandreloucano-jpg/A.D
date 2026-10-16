@@ -1,4 +1,8 @@
-import { downloadLocalMedia } from "../intake/local-archive";
+import {
+  downloadLocalMedia,
+  getMediaProgress,
+  resumeInterruptedMedia,
+} from "../intake/local-archive";
 import { LocalContent } from "../intake/LocalContent";
 import type { IntakeItem } from "../intake/model";
 import { IntakePanel } from "../intake/IntakePanel";
@@ -54,8 +58,26 @@ export function SaverView({
   setFilter: (filter: "all" | "links" | "notes") => void;
 }) {
   const collections = useCollections(remote);
+  const [mediaProgress, setMediaProgress] = useState(getMediaProgress);
   const [mediaRetrying, setMediaRetrying] = useState(false),
     [mediaRetryMessage, setMediaRetryMessage] = useState("");
+  const archiveIds = data.references
+    .map((r) => r.id)
+    .sort()
+    .join(",");
+  useEffect(() => {
+    const update = () => setMediaProgress(getMediaProgress());
+    window.addEventListener("ad-media-progress", update);
+    return () => window.removeEventListener("ad-media-progress", update);
+  }, []);
+  useEffect(() => {
+    if (!archiveIds) return;
+    void resumeInterruptedMedia(archiveIds.split(",")).catch(() =>
+      setMediaRetryMessage(
+        "La reprise automatique a été interrompue. Les fichiers conservés restent intacts.",
+      ),
+    );
+  }, [archiveIds]);
   const [intakeRevision, setIntakeRevision] = useState(0);
   const [intakeMedia, setIntakeMedia] = useState<Record<string, string>>({});
   const [intakeNotes, setIntakeNotes] = useState<Record<string, string[]>>({});
@@ -239,7 +261,7 @@ export function SaverView({
       {data.references.length > 0 && (
         <div className="saver-media-retry">
           <button
-            disabled={mediaRetrying}
+            disabled={mediaRetrying || mediaProgress.running}
             onClick={() => {
               setMediaRetrying(true);
               setMediaRetryMessage(
@@ -254,10 +276,20 @@ export function SaverView({
                 .finally(() => setMediaRetrying(false));
             }}
           >
-            {mediaRetrying
+            {mediaRetrying || mediaProgress.running
               ? "Reprise des médias en cours…"
               : "Reprendre tous les médias locaux"}
           </button>
+          {mediaProgress.total > 0 && (
+            <p role="status">
+              {mediaProgress.running
+                ? "Conservation en cours"
+                : "Passage terminé"}{" "}
+              : {mediaProgress.done}/{mediaProgress.total} fichiers traités ·{" "}
+              {mediaProgress.saved} conservés · {mediaProgress.failed} non
+              récupérés.
+            </p>
+          )}
           {mediaRetryMessage && <p role="status">{mediaRetryMessage}</p>}
         </div>
       )}

@@ -25,6 +25,23 @@ for (const width of [390, 1440])
     const video = (await readFile("tests/fixtures/local-media.mp4")).toString(
       "base64",
     );
+    await page.route("https://pbs.twimg.com/media/fixture.png", (route) =>
+      route.fulfill({
+        contentType: "image/png",
+        headers: { "access-control-allow-origin": "*" },
+        body: Buffer.from(
+          "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j2ioAAAAASUVORK5CYII=",
+          "base64",
+        ),
+      }),
+    );
+    await page.route("https://video.twimg.com/fixture.mp4", (route) =>
+      route.fulfill({
+        contentType: "video/mp4",
+        headers: { "access-control-allow-origin": "*" },
+        body: Buffer.from(video, "base64"),
+      }),
+    );
     await page.addInitScript(
       ({ video }) =>
         window.addEventListener("message", (e) => {
@@ -350,4 +367,108 @@ test("an old extension capture bound to another tab recovers public image bytes 
         .evaluate((n: HTMLImageElement) => n.naturalWidth),
     )
     .toBe(1);
+});
+test("legacy media failures resume automatically in bulk after reload with four workers and a global receipt", async ({
+  page,
+}) => {
+  await page.route("**/api/**", (r) =>
+    r.fulfill({ status: 401, json: { error: "unauthenticated" } }),
+  );
+  let available = false,
+    active = 0,
+    peak = 0,
+    extensionRequests = 0;
+  await page.route("https://pbs.twimg.com/media/bulk-*.png", async (route) => {
+    if (!available) return route.fulfill({ status: 503, body: "Unavailable" });
+    active++;
+    peak = Math.max(peak, active);
+    await new Promise((r) => setTimeout(r, 100));
+    await route.fulfill({
+      contentType: "image/png",
+      headers: { "access-control-allow-origin": "*" },
+      body: Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j2ioAAAAASUVORK5CYII=",
+        "base64",
+      ),
+    });
+    active--;
+  });
+  await page.exposeFunction("unexpectedExtensionRequest", () => {
+    extensionRequests++;
+  });
+  await page.addInitScript(() =>
+    window.addEventListener("message", (e) => {
+      if (e.data?.type === "AD_SAVER_MEDIA_REQUEST")
+        void (
+          window as unknown as { unexpectedExtensionRequest: () => void }
+        ).unexpectedExtensionRequest();
+    }),
+  );
+  await page.goto("/#/saver");
+  await page.evaluate(() =>
+    window.postMessage(
+      {
+        type: "AD_SAVER_CAPTURE",
+        nonce: "ac6ac0b4-2175-4d40-bf45-a2571f957151",
+        items: Array.from({ length: 8 }, (_, i) => ({
+          url: "https://x.com/a/status/" + (4440 + i),
+          title: "Bulk media " + i,
+          text: "Texte conservé " + i,
+          images: ["https://pbs.twimg.com/media/bulk-" + i + ".png"],
+        })),
+      },
+      location.origin,
+    ),
+  );
+  await page
+    .getByRole("button", {
+      name: "Enregistrer 8 référence(s) sélectionnée(s)",
+      exact: true,
+    })
+    .click();
+  await expect
+    .poll(() =>
+      page.evaluate(() => sessionStorage.getItem("ad.intake.draft.v1")),
+    )
+    .toBeNull();
+  await page.getByRole("button", { name: "Fermer", exact: true }).click();
+  await expect(
+    page.getByText(
+      "Passage terminé : 8/8 fichiers traités · 0 conservés · 8 non récupérés.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve, reject) => {
+        const r = indexedDB.open("ad-saver-content-v1");
+        r.onsuccess = () => {
+          const t = r.result.transaction("copies", "readwrite"),
+            store = t.objectStore("copies"),
+            get = store.getAll();
+          get.onsuccess = () => {
+            for (const copy of get.result) {
+              copy.media.forEach(
+                (m: { error: string }) =>
+                  (m.error = "Capture expirée ou réservée à un autre onglet."),
+              );
+              store.put(copy, copy.id);
+            }
+          };
+          t.oncomplete = () => resolve();
+          t.onerror = () => reject(t.error);
+        };
+      }),
+  );
+  available = true;
+  await page.reload();
+  await expect(
+    page.getByText(
+      "Passage terminé : 8/8 fichiers traités · 8 conservés · 0 non récupérés.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  expect(peak).toBeGreaterThan(1);
+  expect(peak).toBeLessThanOrEqual(4);
+  expect(extensionRequests).toBe(0);
 });

@@ -1,4 +1,4 @@
-import { fetchPublicMedia } from "./public-media";
+import { fetchPublicMedia, MediaSourceError } from "./public-media";
 import { normalizeIntake, type IntakeItem } from "./model";
 export type ArchivedMedia = {
   url: string;
@@ -172,7 +172,7 @@ function fromExtension(url: string, nonce: string): Promise<{ blob: Blob }> {
               "Extension absente ou média trop lent. Rouvrez la capture avec l’extension A.D.",
             ),
           ),
-        70000,
+        20000,
       );
     function finish(error?: Error, value?: { blob: Blob }) {
       clearTimeout(timer);
@@ -193,16 +193,10 @@ function fromExtension(url: string, nonce: string): Promise<{ blob: Blob }> {
       if (processing) return;
       processing = true;
       try {
-        if (e.data.error) {
-          try {
-            finish(undefined, { blob: await fetchPublicMedia(url) });
-            return;
-          } catch {
-            throw Error(
-              "Le texte reste conservé. Pour reprendre ce média, mettez à jour l’extension A.D 1.1.1, rechargez A.D puis réessayez. Le lien source peut aussi être devenu inaccessible.",
-            );
-          }
-        }
+        if (e.data.error)
+          throw Error(
+            "Le fichier reste indisponible. La reprise globale continue avec les autres médias.",
+          );
         if (
           ![
             "image/jpeg",
@@ -229,60 +223,156 @@ function fromExtension(url: string, nonce: string): Promise<{ blob: Blob }> {
     );
   });
 }
-let downloading = false;
-const queue = new Set<string>();
-export async function downloadLocalMedia(ids: string[]) {
-  for (const id of ids) queue.add(id);
-  if (downloading) return;
-  downloading = true;
+export type MediaProgress = {
+  running: boolean;
+  total: number;
+  done: number;
+  saved: number;
+  failed: number;
+  references: number;
+};
+let progress: MediaProgress = {
+  running: false,
+  total: 0,
+  done: 0,
+  saved: 0,
+  failed: 0,
+  references: 0,
+};
+export const getMediaProgress = () => ({ ...progress });
+let reportTimer: ReturnType<typeof setTimeout> | undefined;
+function emitProgress() {
+  window.dispatchEvent(
+    new CustomEvent("ad-media-progress", { detail: getMediaProgress() }),
+  );
+}
+function report() {
+  if (!progress.running) {
+    clearTimeout(reportTimer);
+    reportTimer = undefined;
+    emitProgress();
+  } else if (!reportTimer)
+    reportTimer = setTimeout(() => {
+      reportTimer = undefined;
+      emitProgress();
+    }, 250);
+}
+const queue = new Set<string>(),
+  activeIds = new Set<string>();
+let job: Promise<void> | undefined;
+async function mediaBlob(url: string, nonce?: string): Promise<Blob> {
+  const cached = await readLocalAsset(url);
+  if (cached) return cached.blob;
   try {
-    while (queue.size) {
-      const id = queue.values().next().value!;
-      queue.delete(id);
-      const copy = await readLocalCopy(id);
-      if (!copy) continue;
-      for (const media of copy.media) {
-        if (media.state === "saved") continue;
-        try {
-          if (!copy.nonce)
-            throw Error(
-              "Lien conservé ; fichier à récupérer depuis l’extension X.",
-            );
-          const { blob } = await fromExtension(media.url, copy.nonce),
-            hash = await crypto.subtle.digest(
-              "SHA-256",
-              await blob.arrayBuffer(),
-            );
-          await write("assets", media.url, {
-            blob,
-            sha256: Array.from(new Uint8Array(hash), (b) =>
-              b.toString(16).padStart(2, "0"),
-            ).join(""),
-          });
-          const verified = await readLocalAsset(media.url);
-          if (verified?.blob.size !== blob.size)
-            throw Error("Relecture du fichier non confirmée.");
-          media.state = "saved";
-          media.bytes = blob.size;
-          delete media.error;
-        } catch (e) {
-          media.state = "error";
-          media.error =
-            e instanceof Error ? e.message : "Téléchargement non confirmé.";
-        }
-        const latest = await readLocalCopy(id);
-        if (latest) {
-          latest.media = latest.media.map((m) =>
-            m.url === media.url ? { ...media } : m,
-          );
-          await write("copies", id, latest);
-        }
-        changed(id);
-      }
-    }
-  } finally {
-    downloading = false;
+    return await fetchPublicMedia(url);
+  } catch (error) {
+    if (error instanceof MediaSourceError) throw error;
+    return (await fromExtension(url, nonce || crypto.randomUUID())).blob;
   }
+}
+export function downloadLocalMedia(ids: string[]): Promise<void> {
+  ids.forEach((id) => {
+    if (!activeIds.has(id)) queue.add(id);
+  });
+  if (job) return job;
+  if (!queue.size) return Promise.resolve();
+  progress = {
+    running: true,
+    total: 0,
+    done: 0,
+    saved: 0,
+    failed: 0,
+    references: 0,
+  };
+  report();
+  job = (async () => {
+    try {
+      while (queue.size) {
+        const keys = [...queue];
+        queue.clear();
+        keys.forEach((id) => activeIds.add(id));
+        const copies = (await readMany<LocalCopy>("copies", keys)).filter(
+          (c): c is LocalCopy => !!c,
+        );
+        progress.total += copies.reduce(
+          (n, c) => n + c.media.filter((m) => m.state !== "saved").length,
+          0,
+        );
+        report();
+        let cursor = 0;
+        await Promise.all(
+          Array.from({ length: 4 }, async () => {
+            while (cursor < copies.length) {
+              const copy = copies[cursor++];
+              for (const media of copy.media) {
+                if (media.state === "saved") continue;
+                try {
+                  const blob = await mediaBlob(media.url, copy.nonce),
+                    hash = await crypto.subtle.digest(
+                      "SHA-256",
+                      await blob.arrayBuffer(),
+                    );
+                  await write("assets", media.url, {
+                    blob,
+                    sha256: Array.from(new Uint8Array(hash), (b) =>
+                      b.toString(16).padStart(2, "0"),
+                    ).join(""),
+                  });
+                  const verified = await readLocalAsset(media.url);
+                  if (verified?.blob.size !== blob.size)
+                    throw Error("Relecture du fichier non confirmée.");
+                  media.state = "saved";
+                  media.bytes = blob.size;
+                  delete media.error;
+                  progress.saved++;
+                } catch (e) {
+                  media.state = "error";
+                  media.error =
+                    e instanceof Error ? e.message : "Fichier non confirmé.";
+                  progress.failed++;
+                }
+                const latest = await readLocalCopy(copy.id);
+                if (latest) {
+                  latest.media = latest.media.map((m) =>
+                    m.url === media.url ? { ...media } : m,
+                  );
+                  await write("copies", copy.id, latest);
+                }
+                progress.done++;
+                changed(copy.id);
+                report();
+              }
+              progress.references++;
+              activeIds.delete(copy.id);
+            }
+          }),
+        );
+        keys.forEach((id) => activeIds.delete(id));
+      }
+    } finally {
+      progress.running = false;
+      activeIds.clear();
+      job = undefined;
+      report();
+    }
+  })();
+  return job;
+}
+export async function resumeInterruptedMedia(ids: string[]) {
+  const copies = await readMany<LocalCopy>("copies", ids);
+  const pending = copies
+    .filter(
+      (c): c is LocalCopy =>
+        !!c &&
+        c.media.some(
+          (m) =>
+            m.state === "pending" ||
+            (m.state === "error" &&
+              /capture expir|autre onglet/i.test(m.error || "")),
+        ),
+    )
+    .map((c) => c.id);
+  if (pending.length) await downloadLocalMedia(pending);
 }
 const LOCAL_ONLY = "ad.saver.local-only.v1";
 export function localOnlyIds(): Set<string> {

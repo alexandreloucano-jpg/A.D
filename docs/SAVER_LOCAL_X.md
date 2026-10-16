@@ -16,3 +16,7 @@ Validation : tests SQL et protections existants, tests du transfert sans donnée
 ## Correctif de reprise 1.1.1
 
 La copie du contenu est réalisée par transactions de 50 références avec progression réelle et relecture. Les cartes hors écran ne déclenchent pas de lectures de fichiers. La reprise des médias publics via l’extension est indépendante de l’onglet initial ; les contrôles des contenus privés restent inchangés. Avec une ancienne extension, A.D tente une copie directe du CDN public sans cookies si CORS le permet. Le navigateur refuse les autres hôtes, redirections, types et tailles non autorisés. Le texte et les UUID sont conservés lors des échecs.
+
+## Reprise globale des grandes bibliothèques
+
+Les médias publics sont désormais lus directement depuis leur CDN avant tout recours à l’extension. Quatre références au maximum sont traitées en parallèle, avec erreurs isolées, vérification locale et compteur global traité/conservé/non récupéré. Au chargement de Saver, les fichiers en attente et les anciennes erreurs « capture expirée/autre onglet » sont repris automatiquement. Les fichiers déjà confirmés sont ignorés. Aucune nouvelle collecte X ni tâche IA n’est déclenchée. Les erreurs définitives restent visibles et peuvent faire l’objet d’un nouveau passage global volontaire.
