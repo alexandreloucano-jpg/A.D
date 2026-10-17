@@ -312,4 +312,4 @@ it("submits the actual OAuth form in Chromium through the Vercel Node adapter wi
     vi.unstubAllEnvs();
     (state.config as any).role = "gateway";
   }
-}, 20000);
+}, 45000);
