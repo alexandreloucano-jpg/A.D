@@ -4,7 +4,7 @@ for (const width of [390, 1440])
   test("market review and explicit acceptance " + width, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
     const f = parseArticle(
-      '<h1>Dior lance une collection à Paris</h1><time datetime="2026-10-15"></time><article class="article-content">Annonce de collection.</article>',
+      '<h1>Maison Orbe ouvrira un hôtel à Paris 8e</h1><time datetime="2026-10-15"></time><article class="article-content">La marque prépare une ouverture le 20 novembre 2026.</article>',
       "https://www.journalduluxe.fr/fr/mode/qa-fixture",
       new Date("2026-10-16"),
     )!;
@@ -62,7 +62,7 @@ for (const width of [390, 1440])
     );
     await page.goto("/#/explorer");
     await expect(
-      page.getByRole("heading", { name: "Signaux & opportunités" }),
+      page.getByRole("heading", { name: "Où créer de la valeur." }),
     ).toBeVisible();
     await page.getByRole("button", { name: "Examiner", exact: true }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
@@ -89,7 +89,9 @@ for (const width of [390, 1440])
     });
     await page.reload();
     await expect(
-      page.getByRole("heading", { name: "Dior lance une collection à Paris" }),
+      page.getByRole("heading", {
+        name: "Maison Orbe ouvrira un hôtel à Paris 8e",
+      }),
     ).toBeVisible();
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth > innerWidth,

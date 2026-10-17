@@ -2,8 +2,18 @@ import { useRef, useState } from "react";
 import { useScoutMarket } from "./useScoutMarket";
 import { marketRequest } from "./client";
 import { stages, type Finding, type MarketAction } from "./schema";
+import {
+  compareFindings,
+  homepageFinding,
+  existingRelationship,
+} from "./qualification";
 import "./market.css";
 const labels: Record<string, string> = {
+  budget_evidence: "Indices de capacité financière",
+  funding: "Financement",
+  marketing_hire: "Recrutement marketing",
+  expansion: "Expansion",
+  repositioning: "Repositionnement",
   low: "faible",
   medium: "moyenne",
   high: "élevée",
@@ -55,7 +65,7 @@ export function MarketPanel({
 }) {
   const returnFocus = useRef<HTMLElement | null>(null);
   const m = useScoutMarket(query, mode),
-    [view, setView] = useState("Radar"),
+    [view, setView] = useState("Opportunités"),
     [sector, setSector] = useState(""),
     [city, setCity] = useState(""),
     [event, setEvent] = useState(""),
@@ -84,9 +94,10 @@ export function MarketPanel({
     setSelected(f);
     setReason("");
     setDraft(
-      "Vérifier le calendrier, les prestataires et le besoin créatif pour " +
-        f.companyName +
-        ".",
+      f.nextAction ||
+        "Vérifier le calendrier, les prestataires et le besoin créatif pour " +
+          f.companyName +
+          ".",
     );
     try {
       const detail = await marketRequest<{
@@ -126,6 +137,7 @@ export function MarketPanel({
     .filter(
       (f) =>
         (mode !== "pipeline" || f.reviewState === "saved") &&
+        (mode !== "home" || homepageFinding(f)) &&
         (view === "Rejetées" || f.relationshipStatus !== "blocked") &&
         (!sector || f.sector === sector) &&
         (!city || f.city === city) &&
@@ -136,18 +148,28 @@ export function MarketPanel({
         (!f.publishedAt ||
           Date.now() - Date.parse(f.publishedAt) < Number(days) * 86400000) &&
         (mode !== "home" || !["rejected", "snoozed"].includes(f.reviewState)) &&
-        (view === "Rejetées"
-          ? f.reviewState === "rejected" || f.relationshipStatus === "blocked"
-          : view === "Enregistrées"
-            ? f.reviewState === "saved"
-            : view === "À vérifier"
-              ? f.score === null
-              : view === "Opportunités"
-                ? f.score !== null &&
-                  !["rejected", "snoozed"].includes(f.reviewState)
-                : !["rejected", "snoozed"].includes(f.reviewState)),
+        (mode === "pipeline"
+          ? true
+          : view === "Rejetées"
+            ? f.reviewState === "rejected" || f.relationshipStatus === "blocked"
+            : view === "Enregistrées"
+              ? f.reviewState === "saved"
+              : view === "À vérifier"
+                ? f.classification === "commercial" &&
+                  f.qualification === "verify"
+                : view === "Opportunités"
+                  ? f.classification === "commercial" &&
+                    !["rejected", "snoozed"].includes(f.reviewState)
+                  : view === "Signaux culturels"
+                    ? f.classification === "cultural" &&
+                      !["rejected", "snoozed"].includes(f.reviewState)
+                    : !["rejected", "snoozed"].includes(f.reviewState)),
     )
-    .sort((a, b) => (b.score || 0) - (a.score || 0));
+    .sort(compareFindings);
+  const displayed =
+    mode === "home" || (mode === "explorer" && view === "Opportunités")
+      ? items.slice(0, 5)
+      : items;
   if (mode === "home" && !m.status?.enabled) return null;
   if (!m.loading && !m.status?.enabled)
     return mode === "home" ? null : (
@@ -170,14 +192,14 @@ export function MarketPanel({
               ? "LE MARCHÉ AUJOURD’HUI"
               : mode === "pipeline"
                 ? "PIPELINE PRIVÉ"
-                : "RADAR · PARIS / ÎLE-DE-FRANCE"}
+                : "RADAR · BUSINESS CRÉATIF"}
           </p>
           <h2>
             {mode === "home"
               ? "À examiner."
               : mode === "pipeline"
                 ? "Opportunités enregistrées"
-                : "Signaux & opportunités"}
+                : "Où créer de la valeur."}
           </h2>
         </div>
         {mode === "explorer" && m.status?.enabled && (
@@ -205,7 +227,10 @@ export function MarketPanel({
       {m.status?.enabled && mode !== "home" && (
         <details className="market-scan-details">
           <summary>
-            {m.items.length} opportunités ·{" "}
+            {m.items.filter((f) => f.classification === "commercial").length}{" "}
+            opportunités ·{" "}
+            {m.items.filter((f) => f.classification === "cultural").length}{" "}
+            signaux culturels ·{" "}
             {m.status.lastRun?.status === "partial"
               ? "scan partiel"
               : m.status.lastRun?.status === "failed"
@@ -226,12 +251,58 @@ export function MarketPanel({
           </p>
         </details>
       )}
+      {mode === "explorer" && m.sources.length > 0 && (
+        <details className="market-source-registry">
+          <summary>Sources et état réel des connexions</summary>
+          {(["commercial", "strategic"] as const).map((purpose) => (
+            <section key={purpose}>
+              <h3>
+                {purpose === "commercial"
+                  ? "Détection commerciale"
+                  : "Intelligence stratégique / Taste"}
+              </h3>
+              {m.sources
+                .filter((s) => s.purpose === purpose)
+                .map((s) => (
+                  <article key={s.id}>
+                    <a href={s.url} target="_blank" rel="noreferrer">
+                      {s.name} ↗
+                    </a>
+                    <strong>
+                      {" "}
+                      ·{" "}
+                      {s.connected
+                        ? "Collecte et extraction confirmées"
+                        : s.enabled
+                          ? "Collecteur activé · extraction non confirmée"
+                          : s.accessStatus === "permission_required"
+                            ? "Autorisation nécessaire"
+                            : s.accessStatus === "endpoint_unverified"
+                              ? "Adresse / accès non vérifié"
+                              : "Référence · non connectée"}
+                    </strong>
+                    <p>{s.accessNote}</p>
+                    {s.lastIngestedAt && (
+                      <p>
+                        Dernière extraction persistée : {date(s.lastIngestedAt)}
+                      </p>
+                    )}
+                  </article>
+                ))}
+            </section>
+          ))}
+          <p>
+            Aucune référence stratégique ne confirme automatiquement une
+            préférence Taste.
+          </p>
+        </details>
+      )}
       {mode === "explorer" && (
         <>
           <nav aria-label="Sections du radar" className="market-tabs">
             {[
-              "Radar",
               "Opportunités",
+              "Signaux culturels",
               "À vérifier",
               "Enregistrées",
               "Rejetées",
@@ -317,13 +388,35 @@ export function MarketPanel({
         <p>PROCHAINE ACTION · NOW acceptée : {m.actions[0].proposalText}</p>
       )}
       <div className="market-findings">
-        {(mode === "home" ? items.slice(0, 3) : items).map((f) => (
+        {displayed.map((f) => (
           <article className="market-finding" key={f.id}>
             <span className="eyebrow">
               {f.companyName} · {f.city || "Zone à vérifier"}
             </span>
+            <p className="market-meta">
+              {f.classification === "commercial"
+                ? "OPPORTUNITÉ COMMERCIALE"
+                : "SIGNAL CULTUREL / TREND"}
+              {f.relationshipStatus === "existing"
+                ? " · relation existante"
+                : ""}
+              {f.arrondissement ? " · " + f.arrondissement : ""}
+              {f.qualification === "verify"
+                ? " · à qualifier"
+                : f.qualification === "past"
+                  ? " · événement passé"
+                  : ""}
+            </p>
             <h3>{f.headline}</h3>
             <p>{f.whyNow}</p>
+            {f.classification === "commercial" && (
+              <>
+                <p>{f.potentialNeed}</p>
+                <p className="market-next">
+                  <strong>À examiner :</strong> {f.nextAction}
+                </p>
+              </>
+            )}
             <p className="market-meta">
               Rapporté · {f.publisher} · publié le {date(f.publishedAt)} · fait
               : {date(f.eventDate)} · collecté le {date(f.firstSeenAt)}
@@ -331,9 +424,10 @@ export function MarketPanel({
               {label(f.eventType)} · {f.sourceCount} source · confiance{" "}
               {label(f.confidence)} · {label(f.reviewState)}
               <br />
-              Pertinence {f.score === null ? "à vérifier" : f.score + "/100"} ·
-              couverture {Math.round(f.coverage * 100)} % · aucune probabilité
-              de signature.
+              Score documenté{" "}
+              {f.score === null ? "à vérifier" : f.score + "/100"} · couverture{" "}
+              {Math.round(f.coverage * 100)} % · aucune probabilité de
+              signature.
             </p>
             <a href={f.canonicalUrl} target="_blank" rel="noreferrer">
               Source originale ↗
@@ -342,9 +436,16 @@ export function MarketPanel({
           </article>
         ))}
       </div>
+      {items.length > displayed.length && (
+        <p className="market-meta">
+          Les cinq premières opportunités sont priorisées. Les filtres
+          permettent de cibler un autre secteur ou événement.
+        </p>
+      )}
       {!m.loading && m.status?.enabled && !items.length && (
         <p>
-          Aucun résultat réel dans cette sélection.{" "}
+          Aucune opportunité suffisamment qualifiée dans cette sélection.
+          Consultez les signaux culturels ou actualisez les sources.{" "}
           {m.status.lastRun
             ? "Les résultats précédents restent conservés."
             : "Lancez une collecte publique."}
@@ -399,8 +500,20 @@ export function MarketPanel({
             <p>Prestations envisageables : {selected.services.join(", ")}</p>
             <p>{selected.creativeAngle}</p>
             <p>
-              Budget, concurrence, identité créative et contacts : non établis.
+              {selected.budgetBasis ||
+                "Budget créatif non établi ; aucun montant inventé."}
             </p>
+            <h3>Interlocuteur à qualifier</h3>
+            <p>
+              {selected.contactApproach?.department ||
+                "Aucun interlocuteur identifié."}{" "}
+              ·{" "}
+              {selected.contactApproach?.basis === "reported_role"
+                ? "fonction citée dans la source ; accessibilité non vérifiée"
+                : "hypothèse de service à approcher, aucun contact personnel vérifié"}
+            </p>
+            <h3>Prochaine action à examiner</h3>
+            <p>{selected.nextAction}</p>
             <h3>Questions inconnues</h3>
             <ul>
               {selected.knownUnknowns.map((q) => (
@@ -498,7 +611,9 @@ export function MarketPanel({
             <h3>Relation et exclusions</h3>
             <p>
               Relation : {label(selected.relationshipStatus || "unknown")}.
-              Aucune relation existante n’est déduite automatiquement.
+              {existingRelationship(selected.companyName)
+                ? "Relation existante déclarée par vous : aucune approche à froid."
+                : "Aucune relation existante n’est déduite automatiquement."}
             </p>
             <div className="market-buttons">
               {[
@@ -508,7 +623,12 @@ export function MarketPanel({
                 ["blocked", "Exclure cette entreprise"],
               ].map(([status, label]) => (
                 <button
-                  disabled={m.busy}
+                  disabled={
+                    m.busy ||
+                    (existingRelationship(selected.companyName) &&
+                      status !== "existing" &&
+                      status !== "blocked")
+                  }
                   key={status}
                   onClick={() =>
                     void operation(

@@ -119,19 +119,56 @@ export async function publicFetch(
   }
   throw new ServiceError(502, "market_redirect_limit");
 }
-export function robotsAllows(text: string, path: string) {
-  // Conservative: deny any matching Disallow, regardless of user-agent; allow never broadens a denial.
-  return !text.split("\n").some((line) => {
-    const p = /^\s*Disallow:\s*([^#\s]+)/i.exec(line)?.[1];
-    if (!p) return false;
-    const re = new RegExp(
-      "^" +
-        p
-          .split("*")
-          .map((x) => x.replace(/[.+?^{}()|[\]\\]/g, "\\$&"))
-          .join(".*")
-          .replace(/\$$/, "$"),
+export function robotsAllows(text: string, path: string, agent = "AD-Market") {
+  const groups: {
+    agents: string[];
+    rules: { allow: boolean; path: string }[];
+  }[] = [];
+  let current = {
+    agents: [] as string[],
+    rules: [] as { allow: boolean; path: string }[],
+  };
+  let hasRules = false;
+  for (const line of text.split(/\r?\n/)) {
+    const m = /^\s*(user-agent|allow|disallow):\s*([^#]*)/i.exec(line);
+    if (!m) continue;
+    const key = m[1].toLowerCase(),
+      value = m[2].trim();
+    if (key === "user-agent") {
+      if (hasRules) {
+        groups.push(current);
+        current = { agents: [], rules: [] };
+        hasRules = false;
+      }
+      current.agents.push(value.toLowerCase());
+    } else if (current.agents.length) {
+      hasRules = true;
+      if (value) current.rules.push({ allow: key === "allow", path: value });
+    }
+  }
+  if (current.agents.length) groups.push(current);
+  const specificity = (g: typeof current) =>
+    Math.max(
+      -1,
+      ...g.agents.map((a) =>
+        a === "*" ? 0 : agent.toLowerCase().includes(a) ? a.length : -1,
+      ),
     );
-    return re.test(path);
-  });
+  const best = Math.max(-1, ...groups.map(specificity));
+  const rules = groups
+    .filter((g) => specificity(g) === best)
+    .flatMap((g) => g.rules)
+    .filter((r) => {
+      const pattern = r.path
+        .split("*")
+        .map((p) => p.replace(/[.+?^{}()|[\]\\]/g, "\\$&"))
+        .join(".*")
+        .replace(/\$$/, "$");
+      return new RegExp("^" + pattern).test(path);
+    })
+    .sort(
+      (a, b) =>
+        b.path.length - a.path.length || Number(b.allow) - Number(a.allow),
+    );
+  return !rules.length || rules[0].allow;
 }

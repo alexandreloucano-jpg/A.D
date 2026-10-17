@@ -4,13 +4,19 @@ import { owner, type Config } from "./security.js";
 import { ServiceError, type Store } from "./store.js";
 import { MarketRepository } from "./market/repository.js";
 import { scan } from "./market/jobs.js";
-import { SOURCES } from "./market/sources.js";
+import { SOURCES, SOURCE_REGISTRY } from "./market/sources.js";
 import {
   listQuery,
   stageSchema,
   type MarketAction,
   type ScanRun,
 } from "../src/scout-market/schema.js";
+import {
+  compareFindings,
+  homepageFinding,
+  RADAR_VERSION,
+  existingRelationship,
+} from "../src/scout-market/qualification.js";
 const uuid = z.string().uuid();
 async function resumableRun(
   s: Store,
@@ -84,14 +90,25 @@ export async function marketRoute(r: Request, s: Store, c: Config) {
         costEur: 0,
       },
     });
-  if (path === "/sources" && r.method === "GET")
+  if (path === "/sources" && r.method === "GET") {
+    const saved = await s.query(
+      "SELECT source_id,data FROM ad_market_sources WHERE owner_id=$1",
+      [session.owner],
+    );
     return json({
-      items: (
-        await s.query("SELECT data FROM ad_market_sources WHERE owner_id=$1", [
-          session.owner,
-        ])
-      ).map((r) => r.data),
+      items: SOURCE_REGISTRY.map((source) => {
+        const record = saved.find((r) => r.source_id === source.id)?.data as
+          Record<string, unknown> | undefined;
+        const { articlePattern, ...publicSource } = source;
+        return {
+          ...record,
+          ...publicSource,
+          connected: !!(source.enabled && record?.ingestionVerifiedAt),
+          lastIngestedAt: record?.ingestionVerifiedAt || null,
+        };
+      }),
     });
+  }
   if (
     (path === "/runs" || /^\/runs\/[a-f0-9-]+\/resume$/.test(path)) &&
     r.method === "POST"
@@ -137,8 +154,12 @@ export async function marketRoute(r: Request, s: Store, c: Config) {
         (!f.publishedAt ||
           Date.now() - Date.parse(f.publishedAt) <= q.days * 86400000),
     );
+    items.sort(compareFindings);
     const totalApprox = items.length;
-    items = items.filter((f) => !q.after || f.id > q.after);
+    if (q.after) {
+      const index = items.findIndex((f) => f.id === q.after);
+      items = index >= 0 ? items.slice(index + 1) : [];
+    }
     const page = items.slice(0, q.limit);
     return json({
       items: page,
@@ -148,18 +169,8 @@ export async function marketRoute(r: Request, s: Store, c: Config) {
   }
   if (path === "/brief/today" && r.method === "GET") {
     const items = (await repository.findings())
-      .filter(
-        (f) =>
-          !["rejected", "snoozed"].includes(f.reviewState) &&
-          f.relationshipStatus !== "blocked" &&
-          f.publishedAt &&
-          Date.now() - Date.parse(f.publishedAt) < 45 * 86400000,
-      )
-      .sort(
-        (a, b) =>
-          (b.score || 0) - (a.score || 0) ||
-          b.firstSeenAt.localeCompare(a.firstSeenAt),
-      );
+      .filter(homepageFinding)
+      .sort(compareFindings);
     const actions = (
       await s.query(
         "SELECT data FROM ad_market_actions WHERE owner_id=$1 AND data->>'lane'='NOW' ORDER BY id",
@@ -181,7 +192,7 @@ export async function marketRoute(r: Request, s: Store, c: Config) {
       generatedAt:
         (brief?.data as { generatedAt?: string } | undefined)?.generatedAt ||
         null,
-      topOpportunityIds: items.slice(0, 3).map((f) => f.id),
+      topOpportunityIds: items.slice(0, 5).map((f) => f.id),
       observations: items.slice(0, 5),
       decisionsToReview: items.filter((f) => f.reviewState === "new").length,
       acceptedNowActions: actions,
@@ -215,6 +226,12 @@ export async function marketRoute(r: Request, s: Store, c: Config) {
         })
         .strict()
         .parse(await r.json());
+      if (
+        existingRelationship((company.data as { name: string }).name) &&
+        b.status !== "existing" &&
+        b.status !== "blocked"
+      )
+        throw new ServiceError(409, "market_existing_relationship_protected");
       const [row] = await s.query(
         "UPDATE ad_market_companies SET data=data||$3::jsonb WHERE owner_id=$1 AND id=$2 RETURNING data",
         [
@@ -270,7 +287,7 @@ export async function marketRoute(r: Request, s: Store, c: Config) {
       confirmedOutcomes: outcomes.filter((e) =>
         ["won", "lost"].includes(e.event),
       ).length,
-      scoringVersion: "ADOpportunityScoreV1",
+      scoringVersion: RADAR_VERSION,
       weightsChanged: false,
       automaticLearning: false,
       note: "Aucun ajustement de poids sans validation humaine et jeu d’issues suffisant.",

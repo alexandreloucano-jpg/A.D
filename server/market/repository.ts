@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { digest, type Store } from "../store.js";
 import type { Finding } from "../../src/scout-market/schema.js";
+import { qualifyFinding } from "../../src/scout-market/qualification.js";
 export class MarketRepository {
   constructor(
     readonly store: Store,
@@ -12,14 +13,14 @@ export class MarketRepository {
         "SELECT o.data||jsonb_build_object('relationshipStatus',c.data->>'relationshipStatus') AS data FROM ad_market_opportunities o JOIN ad_market_companies c ON c.owner_id=o.owner_id AND c.id=o.company_id WHERE o.owner_id=$1 ORDER BY o.id",
         [this.owner],
       )
-    ).map((r) => r.data as unknown as Finding);
+    ).map((r) => qualifyFinding(r.data as unknown as Finding));
   }
   async get(id: string) {
     const [r] = await this.store.query(
       "SELECT o.data||jsonb_build_object('relationshipStatus',c.data->>'relationshipStatus') AS data FROM ad_market_opportunities o JOIN ad_market_companies c ON c.owner_id=o.owner_id AND c.id=o.company_id WHERE o.owner_id=$1 AND o.id=$2",
       [this.owner, id],
     );
-    return r?.data as unknown as Finding | undefined;
+    return r?.data ? qualifyFinding(r.data as unknown as Finding) : undefined;
   }
   async ingest(f: Finding) {
     const now = new Date().toISOString();
@@ -57,6 +58,7 @@ export class MarketRepository {
         f.companyName.toLocaleLowerCase("fr"),
         JSON.stringify({
           name: f.companyName,
+          entityType: f.entityType || "company",
           relationshipStatus: "unknown",
           websiteUrl: null,
           createdAt: now,

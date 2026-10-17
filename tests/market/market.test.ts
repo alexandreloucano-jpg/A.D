@@ -73,7 +73,8 @@ it("preserves unknown fields, publication versus fact dates, and treats hostile 
   const f = fixture();
   expect(f.eventDate).toBeNull();
   expect(f.publishedAt).toContain("2026-10-15");
-  expect(f.factors.taste_fit.value).toBeNull();
+  expect(f.factors.budget_evidence.value).toBeNull();
+  expect(f.classification).toBe("cultural");
   expect(f.budgetMaxEur).toBeNull();
   expect(f.stage).toBe("discovered");
   expect(f.confidence).toBe("low");
@@ -95,7 +96,8 @@ it("does not zero unknown score factors or produce a score on insufficient cover
     ]),
   );
   expect(scoreFactors(f)).toEqual({ score: null, coverage: 0 });
-  expect(fixture().coverage).toBe(0.8);
+  expect(fixture().score).toBeNull();
+  expect(fixture().factors.time_relevance.value).toBeNull();
 });
 it("persists, deduplicates, preserves source UUIDs and isolates owners", async () => {
   const r = new MarketRepository(s, c.owner),
@@ -295,4 +297,42 @@ it("offers a persisted cursor for a killed serverless slice after its SQL lease 
   expect(result.status).toBe("partial");
   expect(result.paused).toBe(true);
   expect(result.cursor).toBe(3);
+});
+it("keeps declared existing relationships protected from cold reclassification while honoring exclusions", async () => {
+  const f = {
+    ...fixture(),
+    companyName: "Schiaparelli",
+    canonicalUrl:
+      "https://www.journalduluxe.fr/fr/mode/schiaparelli-relation-fixture",
+  };
+  await new MarketRepository(s, c.owner).ingest(f);
+  const companyId = (await new MarketRepository(s, c.owner).get(f.id))!
+    .companyId;
+  expect(
+    (
+      await handle(
+        req("/companies/" + companyId + "/relationship", {
+          status: "cold",
+          humanApproval: true,
+        }),
+        s,
+        c,
+      )
+    ).status,
+  ).toBe(409);
+  expect(
+    (
+      await handle(
+        req("/companies/" + companyId + "/relationship", {
+          status: "blocked",
+          humanApproval: true,
+        }),
+        s,
+        c,
+      )
+    ).status,
+  ).toBe(200);
+  expect(
+    (await new MarketRepository(s, c.owner).get(f.id))!.relationshipStatus,
+  ).toBe("blocked");
 });

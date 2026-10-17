@@ -58,6 +58,22 @@ export interface Finding {
   coverage: number;
   factors: Record<string, Factor>;
   confidence: "low" | "medium" | "high";
+  entityType?: "company" | "market_signal";
+  classification?: "commercial" | "cultural";
+  qualification?: "actionable" | "verify" | "past" | "excluded";
+  targetPriority?:
+    "emerging" | "paris" | "business_model" | "established" | "outside";
+  arrondissement?: string | null;
+  timing?: "upcoming" | "ongoing" | "past" | "unknown";
+  scoringVersion?: string;
+  analysisText?: string;
+  contactApproach?: {
+    department: string;
+    basis: "reported_role" | "role_hypothesis";
+    name: string | null;
+  };
+  budgetBasis?: string;
+  nextAction?: string;
   budgetMinEur: null;
   budgetMaxEur: null;
   reviewState: z.infer<typeof reviewSchema>;

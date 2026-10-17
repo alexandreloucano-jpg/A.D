@@ -6,7 +6,11 @@ import { MarketRepository } from "./repository.js";
 import { parseArticle, canonical } from "./analyze.js";
 import { publicFetch, robotsAllows } from "./fetch.js";
 import { SOURCES } from "./sources.js";
-type Job = ScanRun & { urls: string[] };
+type Job = ScanRun & {
+  urls: string[];
+  sourceCursor?: number;
+  discoveryDone?: boolean;
+};
 export async function scan(s: Store, owner: string, resume?: string) {
   const lease = randomUUID();
   const locked = await s.query(
@@ -31,7 +35,7 @@ export async function scan(s: Store, owner: string, resume?: string) {
       job = r.data as unknown as Job;
       if (!job.paused && job.status === "succeeded") return job;
     }
-    if (!job || job.urls.length === 0) {
+    if (!job || job.discoveryDone === false || job.urls.length === 0) {
       if (!job) await s.quota("market-scan:" + owner, 1, 900);
       job = job || {
         id: randomUUID(),
@@ -48,24 +52,32 @@ export async function scan(s: Store, owner: string, resume?: string) {
         paused: false,
         costEstimateEur: 0,
         urls: [],
+        sourceCursor: 0,
+        discoveryDone: false,
       };
       await save();
-      for (const source of SOURCES) {
+      for (const source of SOURCES.slice(
+        job.sourceCursor || 0,
+        (job.sourceCursor || 0) + 1,
+      )) {
         try {
           const robots = await publicFetch(
             new URL("/robots.txt", source.url).href,
           );
-          if (
-            !robotsAllows(robots.text, "/fr/mode/") ||
-            !robotsAllows(robots.text, "/")
-          )
+          if (!robotsAllows(robots.text, new URL(source.url).pathname))
             throw new ServiceError(403, "market_robots_denied");
           const [cached] = await s.query(
             "SELECT data FROM ad_market_sources WHERE owner_id=$1 AND source_id=$2",
             [owner, source.id],
           );
           const previous = cached?.data as
-            { etag?: string; modified?: string; urls?: string[] } | undefined;
+            | {
+                etag?: string;
+                modified?: string;
+                urls?: string[];
+                ingestionVerifiedAt?: string;
+              }
+            | undefined;
           const headers: Record<string, string> = {};
           if (previous?.etag) headers["if-none-match"] = previous.etag;
           else if (previous?.modified)
@@ -75,7 +87,7 @@ export async function scan(s: Store, owner: string, resume?: string) {
             listing = await publicFetch(source.url);
           if (listing.status === 304)
             job.urls.push(
-              ...previous!.urls!.filter((u) => {
+              ...previous!.urls!.slice(0, 4).filter((u) => {
                 try {
                   const p = new URL(u);
                   return (
@@ -91,6 +103,19 @@ export async function scan(s: Store, owner: string, resume?: string) {
           const { document } = parseHTML(listing.text);
           job.urls.push(
             ...[...document.querySelectorAll("a[href]")]
+              .sort(
+                (a, b) =>
+                  Number(
+                    /paris|ouverture|ouvre|renov|levée|beauté|lancement|concept|marketing/i.test(
+                      b.textContent + " " + b.getAttribute("href"),
+                    ),
+                  ) -
+                  Number(
+                    /paris|ouverture|ouvre|renov|levée|beauté|lancement|concept|marketing/i.test(
+                      a.textContent + " " + a.getAttribute("href"),
+                    ),
+                  ),
+              )
               .map((a) => {
                 try {
                   return new URL(a.getAttribute("href")!, source.url);
@@ -105,7 +130,9 @@ export async function scan(s: Store, owner: string, resume?: string) {
                   source.articlePattern.test(u.pathname) &&
                   robotsAllows(robots.text, u.pathname),
               )
-              .map((u) => canonical(u.href)),
+              .map((u) => canonical(u.href))
+              .filter((u, i, all) => all.indexOf(u) === i)
+              .slice(0, 4),
           );
           job.urls = [...new Set(job.urls)].slice(0, 30);
           await s.query(
@@ -124,7 +151,10 @@ export async function scan(s: Store, owner: string, resume?: string) {
                 policyUrl: source.policyUrl,
                 etag: listing.etag || previous?.etag || null,
                 modified: listing.modified || previous?.modified || null,
-                urls: job.urls,
+                ingestionVerifiedAt: previous?.ingestionVerifiedAt || null,
+                urls: job.urls.filter(
+                  (u) => new URL(u).hostname === source.domain,
+                ),
               }),
             ],
           );
@@ -153,7 +183,9 @@ export async function scan(s: Store, owner: string, resume?: string) {
           });
         }
       }
-      if (!job.urls.length) {
+      job.sourceCursor = Math.min(SOURCES.length, (job.sourceCursor || 0) + 1);
+      job.discoveryDone = job.sourceCursor >= SOURCES.length;
+      if (!job.urls.length && job.discoveryDone) {
         job.status = "failed";
         job.paused = true;
         job.finishedAt = new Date().toISOString();
@@ -162,7 +194,7 @@ export async function scan(s: Store, owner: string, resume?: string) {
       }
       await save();
       // Listing and robots consume the first bounded slice. A persisted cursor is resumed explicitly.
-      if (job.urls.length) {
+      if (!job.discoveryDone || job.urls.length) {
         job.status = "partial";
         job.paused = true;
         job.finishedAt = new Date().toISOString();
@@ -197,6 +229,14 @@ export async function scan(s: Store, owner: string, resume?: string) {
         job.insertedCount++;
         job.analyzedCount++;
       } else job.deduplicatedCount++;
+      await s.query(
+        "UPDATE ad_market_sources SET data=data||$3::jsonb WHERE owner_id=$1 AND source_id=$2",
+        [
+          owner,
+          f.sourceId,
+          JSON.stringify({ ingestionVerifiedAt: new Date().toISOString() }),
+        ],
+      );
     }
     job.cursor += urls.length;
     job.paused = job.cursor < job.urls.length;

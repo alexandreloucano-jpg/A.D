@@ -197,3 +197,19 @@
     align-self: flex-start;
   }
 }
+.market-source-registry {
+  margin: 14px 0;
+}
+.market-source-registry article {
+  padding: 12px 0;
+  border-top: 1px solid #aebcc2;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.market-source-registry strong {
+  font-weight: 500;
+}
+.market-next {
+  padding-left: 12px;
+  border-left: 2px solid #aebcc2;
+}

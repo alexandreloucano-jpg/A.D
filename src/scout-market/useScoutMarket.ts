@@ -1,6 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Finding, MarketAction, ScanRun } from "./schema";
 import { marketRequest } from "./client";
+export interface RadarSource {
+  id: string;
+  name: string;
+  url: string;
+  purpose: "commercial" | "strategic";
+  enabled: boolean;
+  connected: boolean;
+  accessStatus: string;
+  accessNote: string;
+  lastIngestedAt: string | null;
+}
 export interface MarketStatus {
   enabled: boolean;
   sourceCount: number;
@@ -8,6 +19,7 @@ export interface MarketStatus {
   stale: boolean;
 }
 export function useScoutMarket(query = "", view = "") {
+  const [sources, setSources] = useState<RadarSource[]>([]);
   const [items, setItems] = useState<Finding[]>([]),
     [status, setStatus] = useState<MarketStatus | null>(null),
     [actions, setActions] = useState<MarketAction[]>([]),
@@ -20,7 +32,7 @@ export function useScoutMarket(query = "", view = "") {
       const st = await marketRequest<MarketStatus>("/status");
       setStatus(st);
       if (st.enabled) {
-        const [list, brief] = await Promise.all([
+        const [list, brief, registry] = await Promise.all([
           marketRequest<{ items: Finding[] }>(
             "/opportunities?q=" + encodeURIComponent(query),
           ),
@@ -28,7 +40,11 @@ export function useScoutMarket(query = "", view = "") {
             acceptedNowActions: MarketAction[];
             observations?: Finding[];
           }>("/brief/today"),
+          marketRequest<{ items: RadarSource[] }>("/sources").catch(() => ({
+            items: [],
+          })),
         ]);
+        setSources(registry.items || []);
         setItems(list.items);
         setActions(brief.acceptedNowActions);
         setObservations(brief.observations || []);
@@ -53,7 +69,7 @@ export function useScoutMarket(query = "", view = "") {
       let path = status?.lastRun?.paused
         ? "/runs/" + status.lastRun.id + "/resume"
         : "/runs";
-      for (let slice = 0; slice < 12; slice++) {
+      for (let slice = 0; slice < 24; slice++) {
         const run = await marketRequest<ScanRun>(path, { mode: "manual" });
         setStatus((previous) =>
           previous ? { ...previous, lastRun: run } : previous,
@@ -94,6 +110,7 @@ export function useScoutMarket(query = "", view = "") {
     }
   }
   return {
+    sources,
     items,
     status,
     error,
