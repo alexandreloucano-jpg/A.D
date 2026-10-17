@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { LookalikeAssessment } from "./lookalike.js";
 export const stages = [
   "discovered",
   "qualified",
@@ -26,6 +27,8 @@ export type Factor = {
   assessedAt: string;
 };
 export interface Finding {
+  /** Derived from source evidence; nullable scores are not a probability. */
+  lookalike?: LookalikeAssessment;
   id: string;
   companyId: string;
   signalId: string;
