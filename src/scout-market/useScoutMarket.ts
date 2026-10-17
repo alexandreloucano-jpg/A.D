@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Finding, MarketAction, ScanRun } from "./schema";
 import { marketRequest } from "./client";
+import { assessLookalike } from "./lookalike";
 export interface RadarSource {
   id: string;
   name: string;
@@ -46,9 +47,9 @@ export function useScoutMarket(query = "", view = "") {
           })),
         ]);
         setSources(registry.items || []);
-        setItems(list.items);
+        setItems(list.items.map((f) => ({ ...f, lookalike: f.lookalike ?? assessLookalike(f) })));
         setActions(brief.acceptedNowActions);
-        setObservations(brief.observations || []);
+        setObservations((brief.observations || []).map((f) => ({ ...f, lookalike: f.lookalike ?? assessLookalike(f) })));
       }
       setError("");
     } catch (e) {
