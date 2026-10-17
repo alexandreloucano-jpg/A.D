@@ -89,11 +89,13 @@ type Input = Pick<Finding,
   | "selfPromotional" | "relationshipStatus" | "contactApproach"
 >;
 export function assessLookalike(f: Input): LookalikeAssessment {
-  const text = clean([f.headline, f.reportedFact, f.excerpt, f.analysisText || "", f.sector].join(" "));
+  // Sector taxonomy alone is NOT evidence of a venue’s aesthetic, people or rituals.
+  const text = clean([f.headline, f.reportedFact, f.excerpt, f.analysisText || ""].join(" "));
+  const sector = clean(f.sector);
   const paris = f.city === "Paris" || !!f.arrondissement ||
     /\bparis\b|\b750(?:0\d|1\d|20)\b/.test(text);
-  const venue = has(text, hospitality);
-  const independent = has(text, /\b(independant|fondateur|fondatrice|associes|proprietaire|nouveaux exploitants|petit groupe|maison familiale)\b/);
+  const venue = has(text + " " + sector, hospitality);
+  const independent = has(text, /\b(independant|fondateurs?|fondatrices?|associes?|proprietaires?|nouveaux exploitants|petit groupe|maison familiale)\b/);
   const global = giants.test(f.companyName) ||
     has(text, /\b(multinationale|groupe international|palace|leader mondial)\b/);
   const seed = (id: ArchetypeId, pattern: typeof cache) => {
@@ -153,7 +155,7 @@ export function assessLookalike(f: Input): LookalikeAssessment {
     archetypeLabel: best
       ? REFERENCE_ARCHETYPES.find((a) => a.id === best.id)!.label
       : null,
-    observedMatches: best?.output.reasons || [],
+    observedMatches: selected.score !== null ? best?.output.reasons || [] : [],
     differences: best ? [difference] : [],
     missingEvidence: [
       ...(selected.score === null ? ["Similarité encore insuffisamment documentée"] : []),
