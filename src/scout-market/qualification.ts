@@ -327,7 +327,7 @@ export function compareFindings(a: Finding, b: Finding) {
     const gate = f.lookalike?.gate;
     return (
       (f.relationshipStatus === "blocked" || gate === "reference_only" ? -1000 : 0) +
-      (gate === "prospect_review" ? 200 : gate === "verify" ? 80 : gate === "lookalike_watchlist" ? 45 : 0) +
+      (gate === "prospect_review" ? 200 : gate === "lookalike_watchlist" ? 100 : gate === "verify" ? (f.lookalike?.archetype ? 75 : 25) : 0) +
       (f.classification === "commercial" ? 35 : 0) +
       (f.qualification === "actionable" ? 20 : 0) +
       (f.targetPriority === "paris" ? 15 : f.targetPriority === "emerging" ? 6 : 0)
