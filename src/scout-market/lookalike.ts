@@ -95,6 +95,7 @@ export function assessLookalike(f: Input): LookalikeAssessment {
   const paris = f.city === "Paris" || !!f.arrondissement ||
     /\bparis\b|\b750(?:0\d|1\d|20)\b/.test(text);
   const venue = has(text + " " + sector, hospitality);
+  const emergingCreative = /\b(fashion|mode|pret.a.porter|jeune marque|independant|beauty|beaute|cosmet|parfum|boutique|concept.store|lifestyle|skincare)\b/.test(text + " " + sector);
   const independent = has(text, /\b(independant|fondateurs?|fondatrices?|associes?|proprietaires?|nouveaux exploitants|petit groupe|maison familiale)\b/);
   const global = giants.test(f.companyName) ||
     has(text, /\b(multinationale|groupe international|palace|leader mondial)\b/);
@@ -140,8 +141,8 @@ export function assessLookalike(f: Input): LookalikeAssessment {
   let gate: LookalikeAssessment["gate"] = "cultural";
   if (reference) gate = "reference_only";
   else if (timing === "past" || f.qualification === "past") gate = "past";
-  else if (!commercial || !venue || global) gate = "cultural";
-  else if (!upcoming || !trigger) gate = best ? "lookalike_watchlist" : "verify";
+  else if (!commercial || global || (!venue && !emergingCreative)) gate = "cultural";
+  else if (!upcoming || !trigger) gate = best || emergingCreative ? "lookalike_watchlist" : "verify";
   else if (match && solo.score !== null && !f.selfPromotional &&
     (f.status === "corroborated" || !!f.corroboratingPrimarySource) &&
     (contactCited || independent)) gate = "prospect_review";
@@ -172,6 +173,8 @@ export function assessLookalike(f: Input): LookalikeAssessment {
         ? "Hypothèse : portraits du lieu et de ses hôtes, films courts de rituel, lancement d'une programmation."
         : venue && best?.id === "maison-francois-1er"
           ? "Hypothèse : série photographique du service et des espaces, film d'atmosphère, contenus de lancement."
-          : null,
+          : emergingCreative && !venue
+            ? "Hypothèse : direction artistique et images de lancement pour une jeune marque de mode, beauté ou lifestyle ; périmètre et acheteur à vérifier."
+            : null,
   };
 }
