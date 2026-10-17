@@ -14,6 +14,12 @@ const labels: Record<string, string> = {
   marketing_hire: "Recrutement marketing",
   expansion: "Expansion",
   repositioning: "Repositionnement",
+  public_excerpt_verified: "extrait public vérifié",
+  public_listing_verified: "page publique vérifiée",
+  historical_source_receipt: "preuve historique conservée",
+  permission_required: "autorisation de l’éditeur nécessaire",
+  access_blocked: "accès bloqué",
+  market_source_http_403: "accès refusé par la source (403)",
   low: "faible",
   medium: "moyenne",
   high: "élevée",
@@ -238,6 +244,8 @@ export function MarketPanel({
             opportunités ·{" "}
             {m.items.filter((f) => f.classification === "cultural").length}{" "}
             signaux culturels ·{" "}
+            {m.items.filter((f) => f.classification === "strategic").length}{" "}
+            analyses stratégiques ·{" "}
             {m.status.lastRun?.status === "partial"
               ? "scan partiel"
               : m.status.lastRun?.status === "failed"
@@ -573,8 +581,10 @@ export function MarketPanel({
             ))}
             <p>
               Accès à la source :{" "}
-              {selected.sourceAccessStatus || "reçu historique"} · Source
-              primaire :{" "}
+              {label(
+                selected.sourceAccessStatus || "historical_source_receipt",
+              )}{" "}
+              · Source primaire :{" "}
               {selected.corroboratingPrimarySource ? (
                 <a
                   href={selected.corroboratingPrimarySource}
