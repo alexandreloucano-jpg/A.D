@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { execFileSync } from "node:child_process";
 it("loads the compiled shared intake model in the real Node ESM runtime", async () => {
+  await mkdir(resolve("artifacts"), { recursive: true });
   const root = await mkdtemp(resolve("artifacts/intake-node-"));
   try {
     await mkdir(root + "/src/intake", { recursive: true });
