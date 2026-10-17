@@ -71,7 +71,8 @@ export function MarketPanel({
 }) {
   const returnFocus = useRef<HTMLElement | null>(null);
   const m = useScoutMarket(query, mode),
-    [view, setView] = useState("Opportunités"),
+    [view, setView] = useState("Nouveaux clients"),
+    [referenceFilter, setReferenceFilter] = useState(""),
     [sector, setSector] = useState(""),
     [city, setCity] = useState(""),
     [event, setEvent] = useState(""),
@@ -146,6 +147,7 @@ export function MarketPanel({
         (mode !== "home" || homepageFinding(f)) &&
         (view === "Rejetées" || f.relationshipStatus !== "blocked") &&
         (!sector || f.sector === sector) &&
+        (!referenceFilter || f.lookalike?.archetype === referenceFilter) &&
         (!city || f.city === city) &&
         (!event || f.eventType === event) &&
         (!confidence || f.confidence === confidence) &&
@@ -165,10 +167,14 @@ export function MarketPanel({
               : view === "À vérifier"
                 ? f.classification === "commercial" &&
                   f.qualification === "verify"
-                : view === "Opportunités"
+                : view === "Nouveaux clients"
                   ? f.classification === "commercial" &&
+                    !["reference_only", "cultural", "past"].includes(f.lookalike?.gate || "") &&
                     !["rejected", "snoozed"].includes(f.reviewState)
-                  : view === "Analyses stratégiques"
+                  : view === "À surveiller"
+                    ? f.lookalike?.gate === "lookalike_watchlist" &&
+                      !["rejected", "snoozed"].includes(f.reviewState)
+                    : view === "Analyses stratégiques"
                     ? f.classification === "strategic" &&
                       !["rejected", "snoozed"].includes(f.reviewState)
                     : view === "Recherche manuelle"
@@ -180,7 +186,7 @@ export function MarketPanel({
     )
     .sort(compareFindings);
   const displayed =
-    mode === "home" || (mode === "explorer" && view === "Opportunités")
+    mode === "home" || (mode === "explorer" && view === "Nouveaux clients")
       ? items.slice(0, 5)
       : items;
   if (mode === "home" && !m.status?.enabled) return null;
@@ -205,14 +211,14 @@ export function MarketPanel({
               ? "LE MARCHÉ AUJOURD’HUI"
               : mode === "pipeline"
                 ? "PIPELINE PRIVÉ"
-                : "RADAR · BUSINESS CRÉATIF"}
+                : "PARIS · RADAR POUR DA INDÉPENDANT"}
           </p>
           <h2>
             {mode === "home"
               ? "À examiner."
               : mode === "pipeline"
                 ? "Opportunités enregistrées"
-                : "Où créer de la valeur."}
+                : "Vos prochains clients."}
           </h2>
         </div>
         {mode === "explorer" && m.status?.enabled && (
@@ -265,6 +271,12 @@ export function MarketPanel({
             {m.status.stale ? " · résultats à actualiser" : ""}
           </p>
         </details>
+      )}
+      {mode === "explorer" && (
+        <p className="market-positioning">
+          Des lieux et des marques à votre échelle, comparés à <strong>Caché</strong> et
+          <strong> Maison François 1er</strong>. Ressemblance ≠ besoin confirmé.
+        </p>
       )}
       {mode === "explorer" && m.sources.length > 0 && (
         <details className="market-source-registry">
@@ -330,7 +342,8 @@ export function MarketPanel({
         <>
           <nav aria-label="Sections du radar" className="market-tabs">
             {[
-              "Opportunités",
+              "Nouveaux clients",
+              "À surveiller",
               "Analyses stratégiques",
               "Signaux culturels",
               "Recherche manuelle",
@@ -347,8 +360,13 @@ export function MarketPanel({
               </button>
             ))}
           </nav>
+          <div className="market-reference-picker" role="group" aria-label="Référence de comparaison">
+            <button aria-pressed={!referenceFilter} onClick={() => setReferenceFilter("")}>Toutes les références</button>
+            <button aria-pressed={referenceFilter === "cache-paris"} onClick={() => setReferenceFilter("cache-paris")}>Similaires à Caché</button>
+            <button aria-pressed={referenceFilter === "maison-francois-1er"} onClick={() => setReferenceFilter("maison-francois-1er")}>Similaires à François 1er</button>
+          </div>
           <details>
-            <summary>Filtrer le marché</summary>
+            <summary>Filtrer davantage</summary>
             <div className="market-filters">
               {[
                 {
@@ -438,9 +456,20 @@ export function MarketPanel({
       <div className="market-findings">
         {displayed.map((f) => (
           <article className="market-finding" key={f.id}>
-            <span className="eyebrow">
-              {f.companyName} · {f.city || "Zone à vérifier"}
-            </span>
+            <div className="market-card-head">
+              <h3>{f.companyName}</h3>
+              <span className="market-card-location">{f.city || "Zone inconnue"}{f.arrondissement ? " · " + f.arrondissement : ""}</span>
+            </div>
+            {f.lookalike?.archetypeLabel && (
+              <div className="market-lookalike">
+                <strong>Proche de {f.lookalike.archetypeLabel}</strong>
+                <span>
+                  Similarité {f.lookalike.similarity.score === null ? "à documenter" : f.lookalike.similarity.score + "/100"}
+                  {" · "}
+                  Faisabilité commerciale {f.lookalike.soloOpportunity.score === null ? "à vérifier" : f.lookalike.soloOpportunity.score + "/100"}
+                </span>
+              </div>
+            )}
             <p className="market-meta">
               {f.classification === "commercial"
                 ? "OPPORTUNITÉ COMMERCIALE"
@@ -459,16 +488,19 @@ export function MarketPanel({
                   ? " · événement passé"
                   : ""}
             </p>
-            <h3>{f.headline}</h3>
-            <p>{f.whyNow}</p>
+            <p className="market-event"><strong>Signal :</strong> {f.headline}</p>
+            <p><strong>Pourquoi maintenant :</strong> {f.whyNow}</p>
             {f.classification === "commercial" && (
               <>
-                <p>{f.potentialNeed}</p>
+                <p className="market-offer">{f.lookalike?.serviceHypothesis || f.potentialNeed}</p>
                 <p className="market-next">
                   <strong>À examiner :</strong> {f.nextAction}
                 </p>
               </>
             )}
+            {f.lookalike?.observedMatches?.length ? (
+              <p className="market-meta">Ressemblance documentée : {f.lookalike.observedMatches.slice(0, 2).join(" · ")}.</p>
+            ) : null}
             <p className="market-meta">
               Rapporté · {f.publisher} · publié le {date(f.publishedAt)} · fait
               : {date(f.eventDate)} · collecté le {date(f.firstSeenAt)}
@@ -539,6 +571,27 @@ export function MarketPanel({
               Fermer
             </button>
             <h2>{selected.companyName}</h2>
+            {selected.lookalike && (
+              <section className="market-dossier-summary">
+                <h3>Correspondance pour un DA indépendant</h3>
+                <p><strong>Référence :</strong> {selected.lookalike.archetypeLabel || "Aucune correspondance suffisamment documentée"}</p>
+                <p><strong>Statut :</strong> {({
+                  reference_only: "Référence seulement — pas un prospect",
+                  prospect_review: "Prospect à examiner",
+                  verify: "Informations à vérifier",
+                  lookalike_watchlist: "Lieu similaire à surveiller",
+                  cultural: "Inspiration / signal culturel",
+                  past: "Événement passé",
+                } as const)[selected.lookalike.gate]}</p>
+                <p><strong>Similarité :</strong> {selected.lookalike.similarity.score === null ? "Non calculable" : selected.lookalike.similarity.score + "/100"} · preuves {Math.round(selected.lookalike.similarity.coverage * 100)} %</p>
+                <p><strong>Potentiel solo :</strong> {selected.lookalike.soloOpportunity.score === null ? "Non calculable" : selected.lookalike.soloOpportunity.score + "/100"} · preuves {Math.round(selected.lookalike.soloOpportunity.coverage * 100)} %</p>
+                {selected.lookalike.observedMatches.map((v) => <p key={v}>• {v}</p>)}
+                {selected.lookalike.differences.map((v) => <p key={v}><strong>Différence à vérifier :</strong> {v}</p>)}
+                {selected.lookalike.serviceHypothesis && <p><strong>Mission proportionnée :</strong> {selected.lookalike.serviceHypothesis}</p>}
+                <details><summary>Preuves manquantes</summary><ul>{selected.lookalike.missingEvidence.map((x) => <li key={x}>{x}</li>)}</ul></details>
+                <p className="market-meta">Ces indices sont extraits de textes sourcés. Aucun visuel privé, budget ni contact n'a été supposé.</p>
+              </section>
+            )}
             <h3>Faits et preuves</h3>
             <p>{selected.reportedFact}</p>
             <blockquote>{selected.excerpt}</blockquote>
