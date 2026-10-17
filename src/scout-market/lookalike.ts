@@ -49,7 +49,7 @@ const clean = (s: string) =>
 const has = (s: string, re: RegExp) => re.test(s);
 const references = new Set([
   "cache", "cache paris", "maison francois 1er", "francois 1er",
-  "francois ier", "hotel francois 1er", "schiaparelli",
+  "francois ier", "schiaparelli",
 ]);
 export const isReferenceOnly = (name: string) =>
   references.has(clean(name).replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ").trim());
