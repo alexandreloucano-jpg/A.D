@@ -1,4 +1,3 @@
-import { parseHTML } from "linkedom";
 import { randomUUID } from "node:crypto";
 import { ServiceError, type Store } from "../store.js";
 import type { ScanRun } from "../../src/scout-market/schema.js";
@@ -6,6 +5,7 @@ import { MarketRepository } from "./repository.js";
 import { parseArticle, canonical } from "./analyze.js";
 import { publicFetch, robotsAllows } from "./fetch.js";
 import { SOURCES } from "./sources.js";
+import { discoverUrls, DISCOVERY_VERSION } from "./discover.js";
 type Job = ScanRun & {
   urls: string[];
   sourceCursor?: number;
@@ -76,11 +76,16 @@ export async function scan(s: Store, owner: string, resume?: string) {
                 modified?: string;
                 urls?: string[];
                 ingestionVerifiedAt?: string;
+                discoveryVersion?: string;
               }
             | undefined;
           const headers: Record<string, string> = {};
-          if (previous?.etag) headers["if-none-match"] = previous.etag;
-          else if (previous?.modified)
+          if (previous?.etag && previous.discoveryVersion === DISCOVERY_VERSION)
+            headers["if-none-match"] = previous.etag;
+          else if (
+            previous?.modified &&
+            previous.discoveryVersion === DISCOVERY_VERSION
+          )
             headers["if-modified-since"] = previous.modified;
           let listing = await publicFetch(source.url, headers);
           if (listing.status === 304 && !previous?.urls?.length)
@@ -100,40 +105,7 @@ export async function scan(s: Store, owner: string, resume?: string) {
                 }
               }),
             );
-          const { document } = parseHTML(listing.text);
-          job.urls.push(
-            ...[...document.querySelectorAll("a[href]")]
-              .sort(
-                (a, b) =>
-                  Number(
-                    /paris|ouverture|ouvre|renov|levée|beauté|lancement|concept|marketing/i.test(
-                      b.textContent + " " + b.getAttribute("href"),
-                    ),
-                  ) -
-                  Number(
-                    /paris|ouverture|ouvre|renov|levée|beauté|lancement|concept|marketing/i.test(
-                      a.textContent + " " + a.getAttribute("href"),
-                    ),
-                  ),
-              )
-              .map((a) => {
-                try {
-                  return new URL(a.getAttribute("href")!, source.url);
-                } catch {
-                  return null;
-                }
-              })
-              .filter(
-                (u): u is URL =>
-                  !!u &&
-                  u.hostname === source.domain &&
-                  source.articlePattern.test(u.pathname) &&
-                  robotsAllows(robots.text, u.pathname),
-              )
-              .map((u) => canonical(u.href))
-              .filter((u, i, all) => all.indexOf(u) === i)
-              .slice(0, 4),
-          );
+          job.urls.push(...discoverUrls(listing.text, source, robots.text));
           job.urls = [...new Set(job.urls)].slice(0, 30);
           await s.query(
             "INSERT INTO ad_market_sources(owner_id,source_id,data) VALUES($1,$2,$3::jsonb) ON CONFLICT(owner_id,source_id) DO UPDATE SET data=excluded.data",
@@ -152,6 +124,7 @@ export async function scan(s: Store, owner: string, resume?: string) {
                 etag: listing.etag || previous?.etag || null,
                 modified: listing.modified || previous?.modified || null,
                 ingestionVerifiedAt: previous?.ingestionVerifiedAt || null,
+                discoveryVersion: DISCOVERY_VERSION,
                 urls: job.urls.filter(
                   (u) => new URL(u).hostname === source.domain,
                 ),

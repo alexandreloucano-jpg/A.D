@@ -38,6 +38,7 @@ export interface Finding {
   headline: string;
   reportedFact: string;
   canonicalUrl: string;
+  originalUrl?: string;
   publisher: string;
   sourceId: string;
   publishedAt: string | null;
@@ -58,8 +59,42 @@ export interface Finding {
   coverage: number;
   factors: Record<string, Factor>;
   confidence: "low" | "medium" | "high";
+  sourcePurpose?: "commercial" | "strategic" | "cultural" | "research";
+  sourceAccessStatus?: string;
+  sourceQuality?: string;
+  sourceError?: string | null;
+  selfPromotional?: boolean;
+  ownerEventWindow?: { start: string; end: string; basis: "owner_registry" };
+  eventStart?: string | null;
+  eventEnd?: string | null;
+  corroboratingPrimarySource?: string | null;
+  metricCautions?: string[];
+  relatedDevelopments?: {
+    eventType: string;
+    claim: string;
+    timing: "unknown";
+    commercialNeed: null;
+  }[];
+  assessment?: {
+    original_url: string;
+    publisher: string;
+    discovered_at: string;
+    published_at: string | null;
+    event_start: string | null;
+    event_end: string | null;
+    subject_company: string | null;
+    factual_trigger: string;
+    source_access_status: string;
+    corroborating_primary_source: string | null;
+    commercial_need_hypothesis: string | null;
+    decision_maker_status: string;
+    budget_evidence: string | null;
+    source_quality: string;
+    urgency_reason: string;
+    confidence: string;
+  };
   entityType?: "company" | "market_signal";
-  classification?: "commercial" | "cultural";
+  classification?: "commercial" | "strategic" | "cultural" | "research";
   qualification?: "actionable" | "verify" | "past" | "excluded";
   targetPriority?:
     "emerging" | "paris" | "business_model" | "established" | "outside";

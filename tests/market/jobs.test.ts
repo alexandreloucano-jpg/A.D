@@ -51,7 +51,8 @@ it("bounds discovery per source, resumes all thematic collectors, and marks conn
     run = await scan(s, "fixture-owner", run.id);
     expect(state.articleCalls).toBe(0);
   }
-  run = await scan(s, "fixture-owner", run.id);
+  for (let slice = 0; slice < 4 && run.paused; slice++)
+    run = await scan(s, "fixture-owner", run.id);
   expect(run.paused).toBe(false);
   expect(run.status).toBe("succeeded");
   expect(state.articleCalls).toBe(2);

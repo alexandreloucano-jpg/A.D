@@ -99,7 +99,7 @@ export async function marketRoute(r: Request, s: Store, c: Config) {
       items: SOURCE_REGISTRY.map((source) => {
         const record = saved.find((r) => r.source_id === source.id)?.data as
           Record<string, unknown> | undefined;
-        const { articlePattern, ...publicSource } = source;
+        const { articlePattern, focusPattern, ...publicSource } = source;
         return {
           ...record,
           ...publicSource,

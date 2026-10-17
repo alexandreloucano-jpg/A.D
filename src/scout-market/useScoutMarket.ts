@@ -5,7 +5,7 @@ export interface RadarSource {
   id: string;
   name: string;
   url: string;
-  purpose: "commercial" | "strategic";
+  purpose: "commercial" | "strategic" | "cultural" | "research";
   enabled: boolean;
   connected: boolean;
   accessStatus: string;

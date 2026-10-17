@@ -1,7 +1,18 @@
 import { randomUUID } from "node:crypto";
 import { digest, type Store } from "../store.js";
 import type { Finding } from "../../src/scout-market/schema.js";
+import { SOURCE_REGISTRY } from "./sources.js";
 import { qualifyFinding } from "../../src/scout-market/qualification.js";
+function effectiveFinding(f: Finding) {
+  const source = SOURCE_REGISTRY.find((s) => s.id === f.sourceId);
+  return qualifyFinding({
+    ...f,
+    sourcePurpose: source?.purpose || f.sourcePurpose,
+    sourceAccessStatus:
+      f.sourceError || source?.accessStatus || f.sourceAccessStatus,
+    ownerEventWindow: source?.ownerEventWindow || f.ownerEventWindow,
+  });
+}
 export class MarketRepository {
   constructor(
     readonly store: Store,
@@ -10,17 +21,17 @@ export class MarketRepository {
   async findings() {
     return (
       await this.store.query(
-        "SELECT o.data||jsonb_build_object('relationshipStatus',c.data->>'relationshipStatus') AS data FROM ad_market_opportunities o JOIN ad_market_companies c ON c.owner_id=o.owner_id AND c.id=o.company_id WHERE o.owner_id=$1 ORDER BY o.id",
+        "SELECT o.data||jsonb_build_object('relationshipStatus',c.data->>'relationshipStatus','sourceError',src.data->>'errorCode') AS data FROM ad_market_opportunities o JOIN ad_market_companies c ON c.owner_id=o.owner_id AND c.id=o.company_id LEFT JOIN ad_market_sources src ON src.owner_id=o.owner_id AND src.source_id=o.data->>'sourceId' WHERE o.owner_id=$1 ORDER BY o.id",
         [this.owner],
       )
-    ).map((r) => qualifyFinding(r.data as unknown as Finding));
+    ).map((r) => effectiveFinding(r.data as unknown as Finding));
   }
   async get(id: string) {
     const [r] = await this.store.query(
-      "SELECT o.data||jsonb_build_object('relationshipStatus',c.data->>'relationshipStatus') AS data FROM ad_market_opportunities o JOIN ad_market_companies c ON c.owner_id=o.owner_id AND c.id=o.company_id WHERE o.owner_id=$1 AND o.id=$2",
+      "SELECT o.data||jsonb_build_object('relationshipStatus',c.data->>'relationshipStatus','sourceError',src.data->>'errorCode') AS data FROM ad_market_opportunities o JOIN ad_market_companies c ON c.owner_id=o.owner_id AND c.id=o.company_id LEFT JOIN ad_market_sources src ON src.owner_id=o.owner_id AND src.source_id=o.data->>'sourceId' WHERE o.owner_id=$1 AND o.id=$2",
       [this.owner, id],
     );
-    return r?.data ? qualifyFinding(r.data as unknown as Finding) : undefined;
+    return r?.data ? effectiveFinding(r.data as unknown as Finding) : undefined;
   }
   async ingest(f: Finding) {
     const now = new Date().toISOString();
@@ -28,11 +39,15 @@ export class MarketRepository {
       JSON.stringify([
         f.companyName.toLocaleLowerCase("fr"),
         f.eventType,
-        f.headline
-          .normalize("NFKD")
-          .replace(/[^a-z0-9]/gi, "")
-          .toLowerCase(),
-        f.publishedAt?.slice(0, 10) || null,
+        f.eventStart ||
+          f.eventDate ||
+          f.headline
+            .normalize("NFKD")
+            .replace(/[^a-z0-9]/gi, "")
+            .toLowerCase(),
+        f.eventStart || f.eventDate
+          ? f.eventEnd || null
+          : f.publishedAt?.slice(0, 10) || null,
       ]),
     );
     const [previous] = await this.store.query(
@@ -51,7 +66,7 @@ export class MarketRepository {
    ON CONFLICT(owner_id,url) DO NOTHING RETURNING id
   ) INSERT INTO ad_market_opportunities(owner_id,id,company_id,signal_id,data)
    SELECT $1,$11,company_id,id,$12::jsonb||jsonb_build_object('companyId',company_id,'signalId',id) FROM signal
-   ON CONFLICT(owner_id,signal_id) DO UPDATE SET data=ad_market_opportunities.data||jsonb_build_object('lastSeenAt',$13::text,'sourceCount',(SELECT count(*) FROM ad_market_evidence WHERE owner_id=$1 AND signal_id=excluded.signal_id)+(SELECT count(*) FROM evidence)) RETURNING id,(xmax=0) AS inserted`,
+   ON CONFLICT(owner_id,signal_id) DO UPDATE SET data=ad_market_opportunities.data||jsonb_build_object('lastSeenAt',$13::text,'sourceCount',(SELECT count(*) FROM ad_market_evidence WHERE owner_id=$1 AND signal_id=excluded.signal_id)+(SELECT count(*) FROM evidence),'corroboratingPrimarySource',coalesce(ad_market_opportunities.data->>'corroboratingPrimarySource',$14::text)) RETURNING id,(xmax=0) AS inserted`,
       [
         this.owner,
         f.companyId,
@@ -83,6 +98,7 @@ export class MarketRepository {
         f.id,
         JSON.stringify(f),
         now,
+        f.sourceClass === "official" ? f.canonicalUrl : null,
       ],
     );
     return rows[0]?.inserted === true;

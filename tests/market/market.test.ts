@@ -358,3 +358,31 @@ it("never calls a failed or strategic source connected even if a historical inge
       .every((x: { connected: boolean }) => !x.connected),
   ).toBe(true);
 });
+it("deduplicates an explicitly dated event across publishers, keeps both citations and preserves decisions while adding primary corroboration", async () => {
+  const stamp = new Date().toISOString(),
+    html = `<h1>Maison Orbe ouvrira un hôtel à Paris 8e</h1><time datetime="${stamp}"></time><article>La marque hospitality prépare une ouverture le 20 novembre 2026 au 75008 Paris.</article>`;
+  const first = parseArticle(
+    html,
+    "https://www.journalduluxe.fr/fr/business/maison-orbe-evidence",
+  )!;
+  const primary = parseArticle(
+    html,
+    "https://wsn-events.com/blog/article/maison-orbe-evidence",
+  )!;
+  const repository = new MarketRepository(s, c.owner);
+  expect(await repository.ingest(first)).toBe(true);
+  await repository.patch(first.id, { reviewState: "saved" }, "accepted");
+  expect(await repository.ingest(primary)).toBe(false);
+  const result = (await repository.get(first.id))!;
+  expect(result.reviewState).toBe("saved");
+  expect(result.sourceCount).toBe(2);
+  expect(result.corroboratingPrimarySource).toBe(primary.canonicalUrl);
+  expect(
+    (
+      await s.query(
+        "SELECT * FROM ad_market_evidence WHERE owner_id=$1 AND signal_id=$2",
+        [c.owner, result.signalId],
+      )
+    ).length,
+  ).toBe(2);
+});

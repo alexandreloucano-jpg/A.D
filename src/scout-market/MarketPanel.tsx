@@ -162,10 +162,15 @@ export function MarketPanel({
                 : view === "Opportunités"
                   ? f.classification === "commercial" &&
                     !["rejected", "snoozed"].includes(f.reviewState)
-                  : view === "Signaux culturels"
-                    ? f.classification === "cultural" &&
+                  : view === "Analyses stratégiques"
+                    ? f.classification === "strategic" &&
                       !["rejected", "snoozed"].includes(f.reviewState)
-                    : !["rejected", "snoozed"].includes(f.reviewState)),
+                    : view === "Recherche manuelle"
+                      ? f.classification === "research"
+                      : view === "Signaux culturels"
+                        ? f.classification === "cultural" &&
+                          !["rejected", "snoozed"].includes(f.reviewState)
+                        : !["rejected", "snoozed"].includes(f.reviewState)),
     )
     .sort(compareFindings);
   const displayed =
@@ -256,45 +261,57 @@ export function MarketPanel({
       {mode === "explorer" && m.sources.length > 0 && (
         <details className="market-source-registry">
           <summary>Sources et état réel des connexions</summary>
-          {(["commercial", "strategic"] as const).map((purpose) => (
-            <section key={purpose}>
-              <h3>
-                {purpose === "commercial"
-                  ? "Détection commerciale"
-                  : "Intelligence stratégique / Taste"}
-              </h3>
-              {m.sources
-                .filter((s) => s.purpose === purpose)
-                .map((s) => (
-                  <article key={s.id}>
-                    <a href={s.url} target="_blank" rel="noreferrer">
-                      {s.name} ↗
-                    </a>
-                    <strong>
-                      {" "}
-                      ·{" "}
-                      {s.errorCode
-                        ? "Collecte en erreur"
-                        : s.connected
-                          ? "Collecte et extraction confirmées"
-                          : s.enabled
-                            ? "Collecteur activé · extraction non confirmée"
-                            : s.accessStatus === "permission_required"
-                              ? "Autorisation nécessaire"
-                              : s.accessStatus === "endpoint_unverified"
-                                ? "Adresse / accès non vérifié"
-                                : "Référence · non connectée"}
-                    </strong>
-                    <p>{s.accessNote}</p>
-                    {s.lastIngestedAt && (
-                      <p>
-                        Dernière extraction persistée : {date(s.lastIngestedAt)}
-                      </p>
-                    )}
-                  </article>
-                ))}
-            </section>
-          ))}
+          {(["commercial", "strategic", "cultural", "research"] as const).map(
+            (purpose) => (
+              <section key={purpose}>
+                <h3>
+                  {
+                    {
+                      commercial: "Détection commerciale",
+                      strategic: "Intelligence stratégique / Taste",
+                      cultural: "Sources culturelles et partenaires",
+                      research: "Recherche manuelle",
+                    }[purpose]
+                  }
+                </h3>
+                {m.sources
+                  .filter((s) => s.purpose === purpose)
+                  .map((s) => (
+                    <article key={s.id}>
+                      <a href={s.url} target="_blank" rel="noreferrer">
+                        {s.name} ↗
+                      </a>
+                      <strong>
+                        {" "}
+                        ·{" "}
+                        {s.errorCode
+                          ? "Collecte en erreur"
+                          : s.connected
+                            ? "Collecte et extraction confirmées"
+                            : s.enabled
+                              ? "Collecteur préparé · extraction non confirmée"
+                              : s.accessStatus === "permission_required"
+                                ? "Autorisation nécessaire"
+                                : s.accessStatus === "endpoint_unverified"
+                                  ? "Adresse / accès non vérifié"
+                                  : s.accessStatus === "access_blocked"
+                                    ? "Accès bloqué"
+                                    : s.accessStatus === "manual_research_only"
+                                      ? "Recherche manuelle · sans collecte"
+                                      : "Référence · non connectée"}
+                      </strong>
+                      <p>{s.accessNote}</p>
+                      {s.lastIngestedAt && (
+                        <p>
+                          Dernière extraction persistée :{" "}
+                          {date(s.lastIngestedAt)}
+                        </p>
+                      )}
+                    </article>
+                  ))}
+              </section>
+            ),
+          )}
           <p>
             Aucune référence stratégique ne confirme automatiquement une
             préférence Taste.
@@ -306,7 +323,9 @@ export function MarketPanel({
           <nav aria-label="Sections du radar" className="market-tabs">
             {[
               "Opportunités",
+              "Analyses stratégiques",
               "Signaux culturels",
+              "Recherche manuelle",
               "À vérifier",
               "Enregistrées",
               "Rejetées",
@@ -391,6 +410,23 @@ export function MarketPanel({
       {mode === "home" && m.actions[0] && (
         <p>PROCHAINE ACTION · NOW acceptée : {m.actions[0].proposalText}</p>
       )}
+      {mode === "explorer" && view === "Recherche manuelle" && (
+        <div>
+          <p>
+            Recherche documentaire à ouvrir volontairement ; aucun scraping ni
+            papier scientifique supposé vérifié.
+          </p>
+          {m.sources
+            .filter((s) => s.purpose === "research")
+            .map((s) => (
+              <p key={s.id}>
+                <a href={s.url} target="_blank" rel="noreferrer">
+                  {s.name} ↗
+                </a>
+              </p>
+            ))}
+        </div>
+      )}
       <div className="market-findings">
         {displayed.map((f) => (
           <article className="market-finding" key={f.id}>
@@ -400,7 +436,11 @@ export function MarketPanel({
             <p className="market-meta">
               {f.classification === "commercial"
                 ? "OPPORTUNITÉ COMMERCIALE"
-                : "SIGNAL CULTUREL / TREND"}
+                : f.classification === "strategic"
+                  ? "ANALYSE STRATÉGIQUE"
+                  : f.classification === "research"
+                    ? "RECHERCHE MANUELLE"
+                    : "SIGNAL CULTUREL / TREND"}
               {f.relationshipStatus === "existing"
                 ? " · relation existante"
                 : ""}
@@ -446,15 +486,20 @@ export function MarketPanel({
           permettent de cibler un autre secteur ou événement.
         </p>
       )}
-      {!m.loading && m.status?.enabled && !items.length && (
-        <p>
-          Aucune opportunité suffisamment qualifiée dans cette sélection.
-          Consultez les signaux culturels ou actualisez les sources.{" "}
-          {m.status.lastRun
-            ? "Les résultats précédents restent conservés."
-            : "Lancez une collecte publique."}
-        </p>
-      )}
+      {!m.loading &&
+        m.status?.enabled &&
+        !items.length &&
+        view !== "Recherche manuelle" && (
+          <p>
+            {mode === "home"
+              ? "Aucune opportunité actuelle corroborée à faire remonter."
+              : "Aucune opportunité suffisamment qualifiée dans cette sélection."}
+            Consultez les signaux culturels ou actualisez les sources.{" "}
+            {m.status.lastRun
+              ? "Les résultats précédents restent conservés."
+              : "Lancez une collecte publique."}
+          </p>
+        )}
       {selected && (
         <div
           className="market-overlay"
@@ -496,6 +541,43 @@ export function MarketPanel({
               Publié : {date(selected.publishedAt)} · Fait :{" "}
               {date(selected.eventDate)} · Collecté :{" "}
               {date(selected.firstSeenAt)}
+            </p>
+            <h3>Calendrier de l’événement</h3>
+            <p>
+              Début : {date(selected.eventStart || selected.eventDate)} · Fin :{" "}
+              {date(selected.eventEnd || null)}
+            </p>
+            {selected.ownerEventWindow && (
+              <p>
+                Dates corrigées selon le registre fourni par le propriétaire.
+              </p>
+            )}
+            {selected.relatedDevelopments?.map((r, i) => (
+              <p key={i}>
+                Développement distinct à examiner : {r.claim} Aucun besoin
+                acheté confirmé.
+              </p>
+            ))}
+            {selected.metricCautions?.map((c) => (
+              <p role="note" key={c}>
+                {c}
+              </p>
+            ))}
+            <p>
+              Accès à la source :{" "}
+              {selected.sourceAccessStatus || "reçu historique"} · Source
+              primaire :{" "}
+              {selected.corroboratingPrimarySource ? (
+                <a
+                  href={selected.corroboratingPrimarySource}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Consulter ↗
+                </a>
+              ) : (
+                "non corroborée"
+              )}
             </p>
             <h3>Pourquoi maintenant</h3>
             <p>{selected.whyNow}</p>

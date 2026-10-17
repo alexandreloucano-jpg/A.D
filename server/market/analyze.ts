@@ -53,7 +53,14 @@ export function parseArticle(
       .querySelector('meta[property="article:published_time"]')
       ?.getAttribute("content") ||
     entities.find((x) => x.datePublished)?.datePublished;
-  const date = rawDate ? new Date(rawDate) : null;
+  const bylineDate = /Published:\s*(\d{1,2})-([A-Za-z]{3})-(20\d{2})/.exec(
+    d.querySelector(".article-byline")?.textContent || "",
+  );
+  const fallbackDate = bylineDate
+    ? `${bylineDate[3]}-${String(["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].findIndex((m) => m.toLowerCase() === bylineDate[2].toLowerCase()) + 1).padStart(2, "0")}-${bylineDate[1].padStart(2, "0")}T00:00:00Z`
+    : null;
+  const date =
+    rawDate || fallbackDate ? new Date(rawDate || fallbackDate!) : null;
   const publishedAt =
     date && !isNaN(+date) && +date <= +now + 86400000
       ? date.toISOString()
@@ -71,7 +78,7 @@ export function parseArticle(
           .includes(x.name.toLocaleLowerCase("fr")),
     );
   const lead =
-    /^(?:La marque |Le groupe |La maison |L’hôtel |L'hôtel |Le restaurant |La startup |La start-up )?(.{2,70}?)\s+(?:lève|leve|annonce|recrute|prépare|prepare|ouvrira|ouvre|va ouvrir|se lance|lance|dévoile|devoile|présente|presente|s’installe|s'installe|accélère|accelere|s’étend|s'etend|étend|etend|inaugure|réinvente|reinvente|rénove|renove|change|nomme|signe|développe|developpe)\b/i.exec(
+    /^(?:La marque |Le groupe |La maison |L’hôtel |L'hôtel |Le restaurant |La startup |La start-up )?(.{2,70}?)\s+(?:lève|leve|annonce|recrute|prépare|prepare|ouvrira|ouvre|va ouvrir|se lance|lance|relance|dévoile|devoile|présente|presente|s’installe|s'installe|accélère|accelere|s’étend|s'etend|étend|etend|inaugure|réinvente|reinvente|rénove|renove|change|nomme|signe|développe|developpe)\b/i.exec(
       headline,
     )?.[1];
   const colon = /^([\p{Lu}\d][\p{L}\p{N} ’'&.\-]{1,55})\s*[:：]/u.exec(
@@ -84,6 +91,13 @@ export function parseArticle(
   let companyName = clean(
     about?.name || lead?.split("…").at(-1) || colon || comma || "",
   );
+  if (
+    source.subjectCompany &&
+    (headline + " " + text)
+      .toLocaleLowerCase()
+      .includes(source.subjectCompany.toLocaleLowerCase())
+  )
+    companyName = source.subjectCompany;
   const marketSignal =
     !companyName &&
     /nouveaux? (mod[eè]les?|concepts?|comportements?)|business model|nouvelle cat[eé]gorie|consommation|tendances? (food|beaut[eé]|retail)|abonnement/i.test(
@@ -96,6 +110,8 @@ export function parseArticle(
     ) ||
     companyName.split(/\s+/).length > 7
   )
+    companyName = "Signal de marché";
+  if (!companyName && source.purpose !== "commercial")
     companyName = "Signal de marché";
   if (
     !companyName ||
@@ -148,6 +164,34 @@ export function parseArticle(
     signalId: randomUUID(),
     evidenceId: randomUUID(),
     companyName,
+    sourcePurpose: source.purpose,
+    sourceAccessStatus: source.accessStatus,
+    sourceQuality: source.selfPromotional
+      ? "agency_self_promotion"
+      : source.sourceClass === "official"
+        ? "official_statement"
+        : "publisher_report",
+    selfPromotional: !!source.selfPromotional,
+    ownerEventWindow: source.ownerEventWindow,
+    corroboratingPrimarySource:
+      source.sourceClass === "official" ? canonical(url) : null,
+    metricCautions: /earned.media.value|\bEMV\b|media impact value/i.test(text)
+      ? [
+          "EMV : estimation d’exposition par un prestataire, ni ventes, ni revenus, ni ROI prouvé.",
+        ]
+      : [],
+    relatedDevelopments:
+      source.id === "cosmetics-business" && /europe|Sephora/i.test(text)
+        ? [
+            {
+              eventType: "expansion",
+              claim:
+                "Distribution européenne chez Sephora rapportée par la source ; calendrier et besoins restants à qualifier.",
+              timing: "unknown",
+              commercialNeed: null,
+            },
+          ]
+        : [],
     entityType:
       companyName === "Signal de marché" ? "market_signal" : "company",
     sector: /hotel|restaurant|hospitality|palace|immobilier|club privé/i.test(
@@ -168,6 +212,7 @@ export function parseArticle(
     headline,
     reportedFact: headline,
     canonicalUrl: canonical(url),
+    originalUrl: source.registeredUrl || url,
     publisher: source.name,
     sourceId: source.id,
     publishedAt,

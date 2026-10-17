@@ -1,6 +1,6 @@
 import type { Finding, Factor } from "./schema.js";
 import { scoreFactors, weights } from "./scoring.js";
-export const RADAR_VERSION = "creative-business-v2";
+export const RADAR_VERSION = "creative-business-v3";
 const normalize = (s: string) =>
   s
     .normalize("NFD")
@@ -25,15 +25,23 @@ const established =
   /\b(chanel|dior|lvmh|kering|louis vuitton|hermes|schiaparelli|l'oreal|sephora|audemars piguet)\b/i;
 export function qualifyFinding(original: Finding, now = new Date()): Finding {
   const f = { ...original };
+  if (f.ownerEventWindow) {
+    f.eventStart = f.ownerEventWindow.start + "T00:00:00.000Z";
+    f.eventEnd = f.ownerEventWindow.end + "T23:59:59.999Z";
+    f.eventDate = f.eventStart;
+  } else {
+    f.eventStart = f.eventStart || f.eventDate;
+    f.eventEnd = f.eventEnd || null;
+  }
   const headline = normalize(f.headline),
     text = normalize(f.headline + " " + (f.analysisText || f.excerpt));
   const hospitality =
-    /hotel|hospitality|restaurant|restauration|club prive|immobilier|residence|palace|boutique|retail/.test(
+    /hotel|hospitality|restaurant|restauration|club prive|immobilier|residence|palace/.test(
       text,
     );
   const sectorFit =
     hospitality ||
-    /\bmode\b|fashion|beaute|beauty|cosmet|parfum|lifestyle|consumer|aliment|nutrition|boisson|wellness|joaill/.test(
+    /\bmode\b|fashion|beaute|beauty|cosmet|parfum|lifestyle|consumer|aliment|nutrition|boisson|wellness|joaill|retail|boutique/.test(
       normalize(f.sector) + " " + text,
     );
   const arrondissement =
@@ -50,7 +58,10 @@ export function qualifyFinding(original: Finding, now = new Date()): Finding {
     );
   let trigger: string | null = null;
   const rules: [RegExp, string][] = [
-    [/levee? de fonds|leve [\d]|funding|serie [ab]|tour de table/, "funding"],
+    [
+      /levee? de fonds|leve [\d]|funding|serie [ab]|tour de table.{0,60}(?:financ|million|invest)/,
+      "funding",
+    ],
     [
       /recrut\w*.{0,65}(marketing|communication|brand|creati)|(?:marketing|communication).{0,40}recrut/,
       "marketing_hire",
@@ -110,7 +121,9 @@ export function qualifyFinding(original: Finding, now = new Date()): Finding {
     !datedCurrentEvent &&
     (publicationAge === null || publicationAge > 45 || publicationAge < -1);
   const timing: NonNullable<Finding["timing"]> =
-    past || (eventAge !== null && eventAge > 14)
+    (f.eventEnd && Date.parse(f.eventEnd) < +now) ||
+    past ||
+    (eventAge !== null && eventAge > 14)
       ? "past"
       : future || (eventAge !== null && eventAge < 0)
         ? "upcoming"
@@ -134,7 +147,9 @@ export function qualifyFinding(original: Finding, now = new Date()): Finding {
     !!trigger &&
     timing !== "past" &&
     !expired &&
-    f.entityType !== "market_signal";
+    f.entityType !== "market_signal" &&
+    (!f.sourcePurpose || f.sourcePurpose === "commercial") &&
+    (!f.selfPromotional || !!f.corroboratingPrimarySource);
   const relation =
     f.relationshipStatus === "blocked"
       ? "blocked"
@@ -224,12 +239,18 @@ export function qualifyFinding(original: Finding, now = new Date()): Finding {
       },
     ]),
   );
-  return {
+  const result: Finding = {
     ...f,
     relationshipStatus: relation,
     eventType: trigger || f.eventType,
     city: paris ? "Paris" : f.city === "Paris" ? null : f.city,
-    classification: commercial ? "commercial" : "cultural",
+    classification: commercial
+      ? "commercial"
+      : f.sourcePurpose === "strategic"
+        ? "strategic"
+        : f.sourcePurpose === "research"
+          ? "research"
+          : "cultural",
     qualification:
       relation === "blocked"
         ? "excluded"
@@ -275,6 +296,29 @@ export function qualifyFinding(original: Finding, now = new Date()): Finding {
       ]),
     ],
   };
+  result.assessment = {
+    original_url: result.originalUrl || result.canonicalUrl,
+    publisher: result.publisher,
+    discovered_at: result.firstSeenAt,
+    published_at: result.publishedAt,
+    event_start: result.eventStart || null,
+    event_end: result.eventEnd || null,
+    subject_company:
+      result.entityType === "market_signal" ? null : result.companyName,
+    factual_trigger: result.reportedFact,
+    source_access_status:
+      result.sourceAccessStatus || "historical_source_receipt",
+    corroborating_primary_source: result.corroboratingPrimarySource || null,
+    commercial_need_hypothesis: commercial ? result.potentialNeed : null,
+    decision_maker_status: reportedRole
+      ? "reported_role_not_verified"
+      : "unknown",
+    budget_evidence: budgetKnown ? fundingQuote : null,
+    source_quality: result.sourceQuality || result.sourceClass,
+    urgency_reason: result.whyNow,
+    confidence: result.confidence,
+  };
+  return result;
 }
 export function compareFindings(a: Finding, b: Finding) {
   const priority = (f: Finding) =>
@@ -299,6 +343,8 @@ export function homepageFinding(f: Finding) {
   return (
     f.classification === "commercial" &&
     f.qualification === "actionable" &&
+    !!f.corroboratingPrimarySource &&
+    !f.sourceError &&
     f.relationshipStatus !== "blocked" &&
     !["rejected", "snoozed"].includes(f.reviewState)
   );

@@ -1,3 +1,4 @@
+import ownerRegistry from "../../docs/radar-user-sources-2026-10-17.json" with { type: "json" };
 // Public research with short cited excerpts only; no paywall or login traversal.
 // Source-specific robots checked on every discovery slice. Reviewed 2026-10-17.
 const newsSources = [
@@ -65,12 +66,20 @@ export type SourceEntry = {
   policyUrl: string;
   sectorTags: string[];
   articlePattern: RegExp;
-  purpose: "commercial" | "strategic";
-  connector: "news" | "directory" | "reference";
+  focusPattern?: RegExp;
+  purpose: "commercial" | "strategic" | "cultural" | "research";
+  connector: "news" | "article" | "directory" | "reference";
   enabled: boolean;
   accessStatus: string;
   accessNote: string;
   reviewedAt: string;
+  userSupplied?: boolean;
+  registeredUrl?: string;
+  lanes?: string[];
+  cautions?: string[];
+  subjectCompany?: string;
+  ownerEventWindow?: { start: string; end: string; basis: "owner_registry" };
+  selfPromotional?: boolean;
 };
 const candidate = (
   id: string,
@@ -96,7 +105,7 @@ const candidate = (
   accessNote,
   reviewedAt: "2026-10-17",
 });
-export const SOURCE_REGISTRY: SourceEntry[] = [
+const existingRegistry: SourceEntry[] = [
   {
     id: "do-it-paris",
     name: "Do It In Paris",
@@ -106,6 +115,8 @@ export const SOURCE_REGISTRY: SourceEntry[] = [
     policyUrl: "https://www.doitinparis.com/fr/mentions-legales.html",
     sectorTags: ["Paris", "ouvertures", "concepts"],
     articlePattern: /^\/fr\/[^/]+-\d+$/,
+    focusPattern:
+      /restaurant|brasserie|bistrot|table|boutique|concept|hôtel|hotel|adresse|ouverture|bar[- ]|mode|beaute|beauté|parfum|marque|boulanger|cafe|café|shopping/i,
     purpose: "commercial",
     connector: "news",
     enabled: true,
@@ -208,6 +219,108 @@ export const SOURCE_REGISTRY: SourceEntry[] = [
     "Étude de positionnement et de modèle consumer ; le site e-commerce n’est ni un flux daté de signaux ni une preuve de besoin créatif.",
   ),
 ];
+
+const ownerSources: SourceEntry[] = ownerRegistry.sources.map((entry) => {
+  const purpose =
+    entry.id === "scholar-rhode"
+      ? "research"
+      : entry.id === "fashion-pr-firm"
+        ? "cultural"
+        : entry.id === "glossy-luxury" || entry.id === "cosmetics-business"
+          ? "strategic"
+          : "commercial";
+  const enabled = ["glossy-luxury", "cosmetics-business"].includes(entry.id);
+  const reasons: Record<string, string> = {
+    "fashion-pr-firm":
+      "Page publique lisible, mais les conditions Shopify interdisent spider/crawl/scrape. Collecteur désactivé sans autorisation ; contenu promotionnel non assimilé à un prospect.",
+    "bof-paris":
+      "HTTP 403 confirmé. Aucun contournement de paywall ; accès autorisé ou flux sous licence nécessaire.",
+    "fashionnetwork-fr":
+      "Accès variable : page lisible lors d’un contrôle externe, mais HTTP 403 depuis le collecteur Vercel. Source bloquée ; aucun contournement antibot.",
+    "glossy-luxury":
+      "Article précis accessible, robots autorisant la lecture publique. Extraits brefs et métadonnées uniquement ; EMV estimé par un prestataire ≠ ventes, revenus ou ROI.",
+    "cosmetics-business":
+      "Article précis : métadonnées et extrait public seulement, sans accès abonné. Pop-up Rhode terminé le 4 octobre 2026 ; distribution européenne distincte, aucun achat créatif confirmé.",
+    "scholar-rhode":
+      "Lien de recherche manuelle uniquement ; aucun scraping Scholar. Un article scientifique nécessite auteur, année et DOI vérifiés.",
+  };
+  const regression = ownerRegistry.regression_cases.find(
+    (c) => c.reference === entry.id,
+  );
+  const dates = regression?.fact.match(/20\d{2}-\d{2}-\d{2}/g);
+  return {
+    id: entry.id,
+    name: (
+      {
+        "fashion-pr-firm": "Fashion PR Firm",
+        "bof-paris": "Business of Fashion — Paris",
+        "fashionnetwork-fr": "FashionNetwork — source propriétaire",
+        "glossy-luxury": "Glossy — étude Dior / Fashion Week",
+        "cosmetics-business": "Cosmetics Business — étude Rhode",
+        "scholar-rhode": "Google Scholar — recherche Rhode",
+      } as Record<string, string>
+    )[entry.id],
+    url: entry.url,
+    registeredUrl: entry.url,
+    domain: new URL(entry.url).hostname,
+    sourceClass: "press",
+    policyUrl:
+      entry.id === "fashion-pr-firm"
+        ? "https://www.fashionprfirm.com/policies/terms-of-service"
+        : entry.id === "glossy-luxury"
+          ? "https://www.glossy.co/terms-conditions/"
+          : entry.url,
+    sectorTags: [],
+    articlePattern: new RegExp(
+      "^" +
+        new URL(entry.url).pathname.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") +
+        "$",
+    ),
+    purpose,
+    connector: enabled ? "article" : "reference",
+    enabled,
+    accessStatus: enabled
+      ? "public_excerpt_verified"
+      : entry.id === "fashion-pr-firm"
+        ? "permission_required"
+        : entry.id === "scholar-rhode"
+          ? "manual_research_only"
+          : "access_blocked",
+    accessNote: reasons[entry.id],
+    reviewedAt: ownerRegistry.created_on,
+    userSupplied: true,
+    lanes: entry.lanes,
+    cautions: entry.cautions,
+    subjectCompany:
+      entry.id === "cosmetics-business"
+        ? "Rhode"
+        : entry.id === "glossy-luxury"
+          ? "Dior"
+          : undefined,
+    ownerEventWindow:
+      dates && dates.length === 2
+        ? { start: dates[0], end: dates[1], basis: "owner_registry" }
+        : undefined,
+    selfPromotional: entry.id === "fashion-pr-firm",
+  };
+});
+export const SOURCE_REGISTRY: SourceEntry[] = [
+  ...existingRegistry.map((source) =>
+    source.id === "fashion-network"
+      ? {
+          ...source,
+          enabled: false,
+          accessStatus: "access_blocked",
+          accessNote:
+            "HTTP 403 constaté depuis Vercel ; conservée et désactivée, sans contournement antibot.",
+        }
+      : source,
+  ),
+  ...ownerSources,
+];
 export const SOURCES = SOURCE_REGISTRY.filter(
-  (s) => s.enabled && s.connector === "news" && s.purpose === "commercial",
+  (s) =>
+    s.enabled &&
+    ["news", "article"].includes(s.connector) &&
+    s.purpose !== "research",
 );

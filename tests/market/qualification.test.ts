@@ -43,7 +43,13 @@ it("finds an unseen premium brand and a future Paris opening without a hardcoded
   expect(f.eventDate).toBe("2026-11-20T00:00:00.000Z");
   expect(f.targetPriority).toBe("paris");
   expect(f.arrondissement).toBe("75008");
-  expect(homepageFinding(f)).toBe(true);
+  expect(homepageFinding(f)).toBe(false);
+  expect(
+    homepageFinding({
+      ...f,
+      corroboratingPrimarySource: "https://issuer.example/press/fixture",
+    }),
+  ).toBe(true);
   expect(f.contactApproach?.basis).toBe("role_hypothesis");
   expect(f.budgetMinEur).toBeNull();
   expect(f.services).toContain("storytelling architectural");
@@ -106,9 +112,9 @@ it("respects known relationships, human blocks, and excludes cultural signals fr
 });
 it("keeps strategic sources and unlicensed press releases out of commercial collection", () => {
   expect(SOURCE_REGISTRY.filter((s) => s.purpose === "strategic")).toHaveLength(
-    5,
+    7,
   );
-  expect(SOURCES.every((s) => s.purpose === "commercial" && s.enabled)).toBe(
+  expect(SOURCES.every((s) => s.enabled && s.purpose !== "research")).toBe(
     true,
   );
   expect(SOURCE_REGISTRY.find((s) => s.id === "pr-newswire")?.enabled).toBe(
@@ -169,5 +175,36 @@ it("keeps an old announcement when its explicit event date is still upcoming", (
   expect(f).not.toBeNull();
   expect(f.timing).toBe("upcoming");
   expect(f.classification).toBe("commercial");
-  expect(homepageFinding(f)).toBe(true);
+  expect(homepageFinding(f)).toBe(false);
+  expect(
+    homepageFinding({
+      ...f,
+      corroboratingPrimarySource: "https://issuer.example/press/fixture",
+    }),
+  ).toBe(true);
+});
+it("does not mistake a champagne tour de table for fundraising or a fashion boutique for a hotel", () => {
+  const dinner = fixture(
+    "Ruinart relance son tour de table chez Cheval Blanc Paris",
+    "La Maison de Champagne s’installe au palace pour des déjeuners et diners exclusifs.",
+  );
+  expect(dinner.eventType).not.toBe("funding");
+  expect(homepageFinding(dinner)).toBe(false);
+  const designer = fixture(
+    "Kim Jones ouvrira la boutique de sa marque de mode",
+    "Sa marque de mode ouvrira une boutique à Hong Kong.",
+  );
+  expect(designer.contactApproach?.department).toBe(
+    "Direction de marque / marketing",
+  );
+  expect(designer.services).not.toContain("storytelling architectural");
+});
+it("discovers thematic articles instead of navigation and unrelated culture pages", async () => {
+  const { discoverUrls } = await import("../../server/market/discover");
+  const source = SOURCES.find((s) => s.id === "do-it-paris")!;
+  const html =
+    '<nav><a href="/fr/restaurant-guide-111">Guide restaurant</a></nav><a href="/fr/musee-222">Musée à Paris</a><a href="/fr/petit-brochant-333">Le Petit Brochant : nouvelle brasserie préférée</a><a href="https://evil.example/fr/restaurant-444">Restaurant</a>';
+  expect(discoverUrls(html, source, "User-agent: *\nAllow: /")).toEqual([
+    "https://www.doitinparis.com/fr/petit-brochant-333",
+  ]);
 });
