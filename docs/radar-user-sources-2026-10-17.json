@@ -1,0 +1,181 @@
+{
+  "schema_version": "1.0.0",
+  "created_on": "2026-10-17",
+  "source": "Six URLs directly supplied by owner for A.D Scout",
+  "note": "Candidate registry only; none of these additions constitutes proof of a deployed or working ingester.",
+  "preserve_existing_registry": true,
+  "source_registry_file": "server/market/sources.ts",
+  "sources": [
+    {
+      "id": "fashion-pr-firm",
+      "url": "https://www.fashionprfirm.com",
+      "example_section": "https://www.fashionprfirm.com/blogs/news",
+      "kind": "agency_editorial",
+      "lanes": [
+        "cultural_signals",
+        "partner_prospects"
+      ],
+      "priority": "medium",
+      "status": "candidate",
+      "access": "homepage_and_newsroom_readable",
+      "cautions": [
+        "agency_self_promotion",
+        "verify_events_and_facts",
+        "no_automatic_leads"
+      ]
+    },
+    {
+      "id": "bof-paris",
+      "url": "https://www.businessoffashion.com/tags/locations/france/paris/",
+      "kind": "industry_press",
+      "lanes": [
+        "commercial_opportunities",
+        "strategic_intelligence"
+      ],
+      "priority": "high",
+      "status": "access_blocked",
+      "access": "403_at_review",
+      "cautions": [
+        "no_paywall_bypass",
+        "licensed_feed_or_metadata_only",
+        "verify_primary_source"
+      ]
+    },
+    {
+      "id": "fashionnetwork-fr",
+      "url": "https://fr.fashionnetwork.com",
+      "kind": "industry_press",
+      "lanes": [
+        "commercial_opportunities",
+        "strategic_intelligence"
+      ],
+      "priority": "high",
+      "status": "access_blocked",
+      "access": "403_at_review",
+      "cautions": [
+        "no_antibot_bypass",
+        "seek_permitted_feed",
+        "not_just_runway_news"
+      ]
+    },
+    {
+      "id": "glossy-luxury",
+      "url": "https://www.glossy.co/fashion/luxury/luxury-briefing-dior-drove-paris-fashion-weeks-record-buzz/",
+      "kind": "industry_press_case_study",
+      "lanes": [
+        "strategic_intelligence",
+        "marketing_benchmarks"
+      ],
+      "priority": "high",
+      "status": "candidate",
+      "access": "article_readable",
+      "cautions": [
+        "estimated_earned_media_value_is_not_sales",
+        "article_date_is_not_buying_intent",
+        "verify_reported_vendor_metrics"
+      ]
+    },
+    {
+      "id": "cosmetics-business",
+      "url": "https://cosmeticsbusiness.com/rhode-lands-sephora-europe-cafe-rhode-popup",
+      "kind": "beauty_press_case_study",
+      "lanes": [
+        "commercial_opportunities",
+        "strategic_intelligence"
+      ],
+      "priority": "high",
+      "status": "candidate",
+      "access": "specific_article_readable_with_subscription_limits",
+      "cautions": [
+        "rhode_paris_pop_up_ended_2026-10-04",
+        "wider_european_distribution_may_still_be_relevant",
+        "no_budget_or_procurement_claim"
+      ]
+    },
+    {
+      "id": "scholar-rhode",
+      "url": "https://scholar.google.fr/scholar?q=rhode+business+model+marketing&hl=fr&as_sdt=0&as_vis=1&oi=scholart",
+      "kind": "academic_search_query",
+      "lanes": [
+        "manual_research",
+        "strategic_intelligence"
+      ],
+      "priority": "research",
+      "status": "manual_research_only",
+      "access": "not_a_verified_automated_feed",
+      "cautions": [
+        "no_bulk_scraping_scholar",
+        "verify_paper_doi_and_year",
+        "consider_authorised_crossref_metadata"
+      ]
+    }
+  ],
+  "classify_separately": [
+    "commercial_opportunities",
+    "strategic_intelligence",
+    "cultural_signals",
+    "manual_research"
+  ],
+  "required_fields": [
+    "original_url",
+    "publisher",
+    "discovered_at",
+    "published_at",
+    "event_start",
+    "event_end",
+    "subject_company",
+    "factual_trigger",
+    "source_access_status",
+    "corroborating_primary_source",
+    "commercial_need_hypothesis",
+    "decision_maker_status",
+    "budget_evidence",
+    "source_quality",
+    "urgency_reason",
+    "confidence"
+  ],
+  "ranking_rules": [
+    "Recency of publication is not urgency of the business event.",
+    "A brand mentioned in the news is not automatically a prospect.",
+    "An expired popup is historical market intelligence, not a future activation.",
+    "Unknown needs, budget and decision makers remain null; never fabricate.",
+    "Promotional agency copy must be flagged and corroborated.",
+    "EMV is a vendor-estimated exposure metric, not revenue, sales or marketing ROI.",
+    "Only corroborated source events may drive prospect alerts; no autonomous outreach or NOW tasks."
+  ],
+  "integration": [
+    "Inspect latest branch HEAD and live source adapters before editing.",
+    "Verify legal access, robots.txt and applicable terms before enabling each feed.",
+    "Keep unavailable websites as explicit blocked/metadata-only entries.",
+    "Connect permitted news sections or feeds, not unverified homepages.",
+    "Deduplicate same event across publishers; retain original citations.",
+    "Make publication date distinct from event date and deadline.",
+    "Preserve all old Sources, Saver, Taste, OAuth and Grok gateway boundaries.",
+    "Test using real permitted fetches, persistent storage and explainable ranking."
+  ],
+  "regression_cases": [
+    {
+      "reference": "cosmetics-business",
+      "fact": "Rhode Café pop-up Paris ran 2026-09-30 to 2026-10-04",
+      "as_of": "2026-10-17",
+      "expected": "popup expired; European Sephora expansion possibly ongoing, not a confirmed procurement need"
+    },
+    {
+      "reference": "glossy-luxury",
+      "fact": "Paris Fashion Week earned-media value analytics; published 2026-10-16",
+      "expected": "marketing intelligence, NOT proof of Dior sales or an available client contract"
+    },
+    {
+      "reference": "scholar-rhode",
+      "fact": "Google Scholar search query",
+      "expected": "manual research bookmark, not a scrappable news feed"
+    }
+  ],
+  "definition_of_done": [
+    "All six exact URLs registered as user supplied.",
+    "No feed marked active without successful authorised fetch and persistent evidence.",
+    "Explorer ranks actual triggers instead of news freshness.",
+    "Accueil references qualified current opportunities but never creates NOW automatically.",
+    "Blocked feeds transparently labelled; no fictional article or lead."
+  ]
+}
