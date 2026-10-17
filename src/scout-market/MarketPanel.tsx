@@ -544,8 +544,16 @@ export function MarketPanel({
             </p>
             <h3>Calendrier de l’événement</h3>
             <p>
-              Début : {date(selected.eventStart || selected.eventDate)} · Fin :{" "}
-              {date(selected.eventEnd || null)}
+              Début :{" "}
+              {date(
+                selected.ownerEventWindow?.start ||
+                  selected.eventStart ||
+                  selected.eventDate,
+              )}{" "}
+              · Fin :{" "}
+              {date(
+                selected.ownerEventWindow?.end || selected.eventEnd || null,
+              )}
             </p>
             {selected.ownerEventWindow && (
               <p>

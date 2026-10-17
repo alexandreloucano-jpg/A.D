@@ -140,3 +140,48 @@ for (const width of [390, 1440])
       await page.screenshot({ path: `artifacts/radar-home-${width}.png` });
     },
   );
+test("Rhode closing date remains October 4 in the Paris timezone", async ({
+  browser,
+  baseURL,
+}) => {
+  const context = await browser.newContext({
+      timezoneId: "Europe/Paris",
+      viewport: { width: 390, height: 844 },
+    }),
+    page = await context.newPage();
+  const source = SOURCE_REGISTRY.find((s) => s.id === "cosmetics-business")!,
+    f = parseArticle(
+      '<h1>Rhode lands in Sephora Europe with Café Rhode pop-up</h1><byline class="article-byline">Published: 30-Sep-2026</byline><article>Rhode enters Sephora Europe. Café Rhode runs from 30 September to 4 October.</article>',
+      source.url,
+      new Date("2026-10-17"),
+    )!;
+  await context.route("**/api/market/**", async (r) => {
+    const path = new URL(r.request().url()).pathname;
+    const data = path.endsWith("/status")
+      ? { enabled: true, sourceCount: 1, lastRun: null, stale: false }
+      : path.endsWith("/opportunities")
+        ? { items: [f] }
+        : path.endsWith("/brief/today")
+          ? { observations: [], acceptedNowActions: [] }
+          : path.endsWith("/sources")
+            ? { items: [] }
+            : { opportunity: f, actions: [], timeline: [] };
+    await r.fulfill({ json: data });
+  });
+  await page.goto(baseURL + "/#/explorer");
+  await page
+    .getByRole("button", { name: "Analyses stratégiques", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Examiner", exact: true }).click();
+  await expect(
+    page
+      .getByRole("dialog")
+      .getByText("Début : 30/09/2026 · Fin : 04/10/2026", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page
+      .getByRole("dialog")
+      .getByText("Événement passé : pas de priorité urgente.", { exact: true }),
+  ).toBeVisible();
+  await context.close();
+});
