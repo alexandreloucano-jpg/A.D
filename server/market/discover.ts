@@ -2,7 +2,7 @@ import { parseHTML } from "linkedom";
 import type { SourceEntry } from "./sources.js";
 import { robotsAllows } from "./fetch.js";
 import { canonical } from "./analyze.js";
-export const DISCOVERY_VERSION = "creative-topics-v2.1";
+export const DISCOVERY_VERSION = "paris-solo-da-opportunity-v3";
 export function discoverUrls(
   html: string,
   source: SourceEntry,
@@ -14,8 +14,19 @@ export function discoverUrls(
       : [];
   const { document } = parseHTML(html);
   document.querySelectorAll("header,footer,nav").forEach((n) => n.remove());
-  const relevant =
-    /ouverture|ouvre|renov|levée|beauté|lancement|concept|marketing|brasserie|restaurant/i;
+  // Place-first discovery: the source list remains permission-gated. A title
+  // about an upcoming indie restaurant is more useful than global runway buzz.
+  const headlinePriority = (caption: string) => {
+    const t = caption.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    let score = 0;
+    if (/restaurant|brasserie|bistrot|bar a vin|cocktail|nightlife|club prive|hotel|hotellerie|chef/.test(t)) score += 5;
+    if (/paris|marais|pigalle|saint.germain|champs.elysees|montmartre|bastille|oberkampf/.test(t)) score += 3;
+    if (/ouvrira|ouverture|s.installe|nouvelle adresse|nouveau lieu|nouvelle table|renovation|reprise|nouveaux associes/.test(t)) score += 5;
+    if (/programmation|residence|chef|supper club|soiree|lancement|popup|pop.up/.test(t)) score += 2;
+    if (/nouvelle marque|premiere boutique|jeune creat|designer emergent/.test(t)) score += 2;
+    if (/defile|fashion week|campagne deja|record buzz|collection printemps|replay/.test(t)) score -= 7;
+    return score;
+  };
   const urls = [...document.querySelectorAll("a[href]")]
     .filter(
       (a) =>
@@ -24,8 +35,8 @@ export function discoverUrls(
     )
     .sort(
       (a, b) =>
-        Number(relevant.test(b.textContent + " " + b.getAttribute("href"))) -
-        Number(relevant.test(a.textContent + " " + a.getAttribute("href"))),
+        headlinePriority(b.textContent + " " + b.getAttribute("href")) -
+        headlinePriority(a.textContent + " " + a.getAttribute("href")),
     )
     .flatMap((a) => {
       try {
@@ -42,5 +53,5 @@ export function discoverUrls(
         return [];
       }
     });
-  return [...new Set(urls)].slice(0, 4);
+  return [...new Set(urls)].slice(0, source.id === "do-it-paris" || source.id === "sortir-paris" ? 6 : 4);
 }
