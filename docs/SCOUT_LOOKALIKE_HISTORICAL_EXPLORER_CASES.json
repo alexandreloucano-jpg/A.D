@@ -1,0 +1,281 @@
+{
+  "version": "1.0.0",
+  "compiled_at": "2026-10-17",
+  "classification_as_of": "2026-10-17",
+  "origin": "Ten HISTORICAL A.D Scout records read in 2026; source URLs preserved. These are examples, not fresh findings or evidence of access to the production site.",
+  "policy": "NON_PRODUCTION_QA_ONLY. Never copy records into live Explorer or claim their facts have been re-verified this morning.",
+  "source_seed_profiles": [
+    {
+      "id": "cache-paris",
+      "name": "Caché",
+      "classification": "REFERENCE_ONLY",
+      "public_url": "https://www.cache-paris.com/",
+      "address": "13 Villa Riberolle, 75020 Paris",
+      "official_evidence": [
+        "restaurant-bar",
+        "fish and seafood",
+        "courtyard in old industrial site",
+        "night service"
+      ],
+      "hypothesized_creative_lens": [
+        "ritual",
+        "music",
+        "social destination",
+        "chef as protagonist"
+      ],
+      "warning": "Oyster Social Club was a creative concept proposal, not necessarily a live programme."
+    },
+    {
+      "id": "maison-francois-1er-paris",
+      "name": "Maison François 1er",
+      "classification": "REFERENCE_ONLY",
+      "public_url": "https://maisonfrancois1er.fr/",
+      "address": "64 rue François 1er, 75008 Paris",
+      "official_evidence": [
+        "French brasserie",
+        "warm wood interiors",
+        "all-day and late evening activity"
+      ],
+      "hypothesized_creative_lens": [
+        "table as community",
+        "service portraits",
+        "chic without corporate coldness"
+      ],
+      "warning": "Do not infer client status, revenue, creative budgets or actual agency contacts."
+    }
+  ],
+  "historical_signals": [
+    {
+      "id": "hiromi-asai-paris-2026-10-05",
+      "company": "HIROMI ASAI",
+      "sector": "Fashion emerging",
+      "location": "Paris 8e",
+      "signalDate": "2026-10-05",
+      "reportedSignal": "Présentation SS27 homme le 7 octobre 2026 au Hôtel Le Marois",
+      "sourceUrl": "https://www.prnewswire.com/news-releases/hiromi-asais-new-collection-akatsuki-before-the-dawn-arrives-in-paris-302897977.html",
+      "scannedAtHistorical": true,
+      "referenceOnly": true,
+      "expected": {
+        "gate": "PAST_EVENT_VERIFY_NEXT_SEASON",
+        "comparisonAxis": "emerging-fashion",
+        "reason": "La présentation parisienne est passée. Vérifier un projet éditorial ou commercial FUTUR plutôt que proposer le shooting d'un événement terminé.",
+        "solodaBudget": null,
+        "decisionMaker": null,
+        "needConfirmed": false,
+        "productionOffer": "Only after new evidence of a current brief"
+      }
+    },
+    {
+      "id": "paris-b-montmorency-2026-10-10",
+      "company": "PARIS-B",
+      "sector": "Gallery art/culture",
+      "location": "Paris 3e",
+      "signalDate": "2026-10-10",
+      "reportedSignal": "Ouverture de la galerie au 42 rue de Montmorency le 10 octobre ; exposition jusqu'au 14 novembre 2026",
+      "sourceUrl": "https://www.paris-b.com/",
+      "scannedAtHistorical": true,
+      "referenceOnly": true,
+      "expected": {
+        "gate": "VERIFY_SMALL_SCALE",
+        "comparisonAxis": "cache-architecture-adjacent",
+        "reason": "Très bonne échelle locale et lieu avec récit spatial; mais galerie ≠ restauration. Vérifier budget, décisionnaire et prestation réellement utile.",
+        "solodaBudget": null,
+        "decisionMaker": null,
+        "needConfirmed": false,
+        "productionOffer": "Only after new evidence of a current brief"
+      }
+    },
+    {
+      "id": "meet-your-seoul-paris-2026-10-06",
+      "company": "Meet Your Seoul · Galeries Lafayette × KOCCA × Hyundai",
+      "sector": "Emerging fashion pop-up",
+      "location": "Paris 9e",
+      "signalDate": "2026-10-06",
+      "reportedSignal": "Pop-up du 6 au 27 octobre présentant cinq marques coréennes",
+      "sourceUrl": "https://haussmann.galerieslafayette.com/zh-hans/meet-your-seoul/",
+      "scannedAtHistorical": true,
+      "referenceOnly": true,
+      "expected": {
+        "gate": "VERIFY_DESIGNERS_INDIVIDUALLY",
+        "comparisonAxis": "emerging-fashion",
+        "reason": "Les organisateurs de grande taille ne constituent pas des acheteurs indépendants accessibles. Examiner chaque marque et ses prochains besoins distincts du pop-up en cours.",
+        "solodaBudget": null,
+        "decisionMaker": null,
+        "needConfirmed": false,
+        "productionOffer": "Only after new evidence of a current brief"
+      }
+    },
+    {
+      "id": "dua-by-ab-palais-royal-2026-10-06",
+      "company": "DUA by AB · Augustinus Bader",
+      "sector": "Beauty / retail international",
+      "location": "Paris 1er",
+      "signalDate": "2026-10-06",
+      "reportedSignal": "Annonce le 6 octobre d'un premier espace permanent parisien dans une boutique Augustinus Bader",
+      "sourceUrl": "https://www.journalduluxe.fr/fr/beaute/boutique-paris-dua-by-ab-augustinus-bader-dua-lipa",
+      "scannedAtHistorical": true,
+      "referenceOnly": true,
+      "expected": {
+        "gate": "CULTURAL_OR_VERIFY_ACCESS",
+        "comparisonAxis": "beauty-retail",
+        "reason": "Intérêt retail pertinent mais groupe international et achats locaux inconnus. N'inférer aucun budget ni mandat de production.",
+        "solodaBudget": null,
+        "decisionMaker": null,
+        "needConfirmed": false,
+        "productionOffer": "Only after new evidence of a current brief"
+      }
+    },
+    {
+      "id": "guerlain-lheure-bleue-maison-68-2026-10-06",
+      "company": "Guerlain · Maison 68",
+      "sector": "Beauty global luxury",
+      "location": "Paris 8e",
+      "signalDate": "2026-10-06",
+      "reportedSignal": "Expérience Maison 68 annoncée jusqu'au 20 octobre 2026",
+      "sourceUrl": "https://www.guerlain.com/fr/fr-fr/c/evenement-maison-68.html",
+      "scannedAtHistorical": true,
+      "referenceOnly": true,
+      "expected": {
+        "gate": "CULTURAL_ONLY",
+        "comparisonAxis": "global-luxury-not-solo-buyer",
+        "reason": "Événement non terminé, mais marque internationale probablement structurée. Ne pas confondre proximité et accès à un mandat solo.",
+        "solodaBudget": null,
+        "decisionMaker": null,
+        "needConfirmed": false,
+        "productionOffer": "Only after new evidence of a current brief"
+      }
+    },
+    {
+      "id": "ritz-frame-charlotte-lawrence-2026-10-09",
+      "company": "Ritz Paris × FRAME",
+      "sector": "Luxury hospitality / fashion",
+      "location": "Paris 1er",
+      "signalDate": "2026-10-09",
+      "reportedSignal": "Campagne de collaboration annoncée le 9 octobre ; pop-up du 9 au 11 octobre",
+      "sourceUrl": "https://www.ritzparis.com/about-ritz/ritz-paris-x-frame-24-hours-with-charlotte-lawrence",
+      "scannedAtHistorical": true,
+      "referenceOnly": true,
+      "expected": {
+        "gate": "PAST_CULTURAL",
+        "comparisonAxis": "creative-inspiration",
+        "reason": "Une campagne déjà produite et un pop-up terminé ne sont pas des besoins commerciaux ouverts. Excellent mécanisme culturel à étudier.",
+        "solodaBudget": null,
+        "decisionMaker": null,
+        "needConfirmed": false,
+        "productionOffer": "Only after new evidence of a current brief"
+      }
+    },
+    {
+      "id": "pointe-des-arts-2026-09-29",
+      "company": "La Pointe des Arts · Ardian × Emerige",
+      "sector": "Mixed hospitality culture real estate",
+      "location": "Boulogne-Billancourt",
+      "signalDate": "2026-09-29",
+      "reportedSignal": "Centre d'art Large annoncé pour le 17 octobre ; restaurants et Hyde France annoncés pour début 2027",
+      "sourceUrl": "https://www.ardian.com/fr/actualites-perspectives/communiques-de-presse/la-pointe-des-arts-saffirme-comme-une-nouvelle",
+      "scannedAtHistorical": true,
+      "referenceOnly": true,
+      "expected": {
+        "gate": "VERIFY_SUBVENUES_FUTURE",
+        "comparisonAxis": "hospitality-new-openings",
+        "reason": "Ne pas vendre une campagne globale de grand promoteur au solo DA. Chercher l'exploitant et la communication d'un lieu individuel avec fenêtre 2027.",
+        "solodaBudget": null,
+        "decisionMaker": null,
+        "needConfirmed": false,
+        "productionOffer": "Only after new evidence of a current brief"
+      }
+    },
+    {
+      "id": "ann-demeulemeester-paris-2026-09-30",
+      "company": "Ann Demeulemeester Paris",
+      "sector": "Fashion / premium retail",
+      "location": "Paris 1er",
+      "signalDate": "2026-09-30",
+      "reportedSignal": "Boutique Palais-Royal inaugurée le 30 septembre",
+      "sourceUrl": "https://www.fhcm.paris/en/house/ann-demeulemeester",
+      "scannedAtHistorical": true,
+      "referenceOnly": true,
+      "expected": {
+        "gate": "PAST_EVENT_WATCHLIST",
+        "comparisonAxis": "fashion-editorial",
+        "reason": "Ouverture passée et prestataires de lancement possiblement en place. Si un nouveau déclencheur survient, réévaluer.",
+        "solodaBudget": null,
+        "decisionMaker": null,
+        "needConfirmed": false,
+        "productionOffer": "Only after new evidence of a current brief"
+      }
+    },
+    {
+      "id": "a-bunch-of-designers-2026-09-29",
+      "company": "A Bunch of Designers · AZ Academy",
+      "sector": "Emerging fashion / collective",
+      "location": "Paris 3e",
+      "signalDate": "2026-09-29",
+      "reportedSignal": "Pop-up du 30 septembre au 17 octobre, six designers",
+      "sourceUrl": "https://www.richemont.com/news-media/press-releases-news/a-bunch-of-designers-launches-three-week-pop-up-in-le-marais-alongside-paris-fashion-week/",
+      "scannedAtHistorical": true,
+      "referenceOnly": true,
+      "expected": {
+        "gate": "ENDING_TODAY_WATCH_DESIGNERS",
+        "comparisonAxis": "emerging-fashion",
+        "reason": "La fin du pop-up ne doit pas créer une urgence factice. Identifier les six labels, leurs prochaines collections et leur accessibilité individuelle.",
+        "solodaBudget": null,
+        "decisionMaker": null,
+        "needConfirmed": false,
+        "productionOffer": "Only after new evidence of a current brief"
+      }
+    },
+    {
+      "id": "schiaparelli-going-clear-2026-10-01",
+      "company": "Schiaparelli",
+      "sector": "Luxury global fashion",
+      "location": "Paris 1er",
+      "signalDate": "2026-10-01",
+      "reportedSignal": "Collection prêt-à-porter SS27 Going Clear présentée le 1 octobre",
+      "sourceUrl": "https://schiaparelli.com/en/",
+      "scannedAtHistorical": true,
+      "referenceOnly": true,
+      "expected": {
+        "gate": "REFERENCE_ONLY",
+        "comparisonAxis": "taste-fashion-not-market-buyer",
+        "reason": "Doit servir de repère de DA, pas de prospect froid. Collection publiée ≠ appel d'offre.",
+        "solodaBudget": null,
+        "decisionMaker": null,
+        "needConfirmed": false,
+        "productionOffer": "Only after new evidence of a current brief"
+      }
+    }
+  ],
+  "mandatory_negative_tests": [
+    {
+      "given": "2026-10-16 media-coverage story about Dior PFW buzz",
+      "expected": "CULTURAL_STRATEGIC; no confirmed buying window or direct prospect"
+    },
+    {
+      "given": "Schiaparelli collection story",
+      "expected": "REFERENCE_ONLY; not a new cold lead"
+    },
+    {
+      "given": "A brand advertises a completed pop-up",
+      "expected": "PAST_OR_WATCHLIST; no fabricated urgency"
+    },
+    {
+      "given": "A newly announced independent Paris restaurant with reliable future opening, published owner contact, solo-size photo/film potential",
+      "expected": "PROSPECT_REVIEW outranks global luxury press"
+    },
+    {
+      "given": "A place looks visually similar to Caché but has no verifiable current event",
+      "expected": "LOOKALIKE_WATCHLIST, not HOT_NOW"
+    },
+    {
+      "given": "Two publishers describe same address opening",
+      "expected": "ONE prospect entity; TWO evidence citations"
+    },
+    {
+      "given": "No real current market findings obtained due source blocking",
+      "expected": "0 findings, clear health errors; not these historical test fixtures"
+    }
+  ],
+  "required_user_feedback": "The owner may revise similarity anchors and mark each candidate relevant/not relevant. Use this recorded feedback without claiming model weight training.",
+  "do_not_autopublish_private_data": true
+}
