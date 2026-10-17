@@ -336,3 +336,25 @@ it("keeps declared existing relationships protected from cold reclassification w
     (await new MarketRepository(s, c.owner).get(f.id))!.relationshipStatus,
   ).toBe("blocked");
 });
+it("never calls a failed or strategic source connected even if a historical ingestion receipt exists", async () => {
+  await s.query(
+    "INSERT INTO ad_market_sources(owner_id,source_id,data) VALUES($1,'do-it-paris',$2::jsonb)",
+    [
+      c.owner,
+      JSON.stringify({
+        ingestionVerifiedAt: new Date().toISOString(),
+        errorCode: "market_source_http_403",
+      }),
+    ],
+  );
+  const r = await handle(req("/sources"), s, c);
+  const result = await r.json();
+  expect(
+    result.items.find((x: { id: string }) => x.id === "do-it-paris").connected,
+  ).toBe(false);
+  expect(
+    result.items
+      .filter((x: { purpose: string }) => x.purpose === "strategic")
+      .every((x: { connected: boolean }) => !x.connected),
+  ).toBe(true);
+});

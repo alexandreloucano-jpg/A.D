@@ -104,10 +104,11 @@ export function qualifyFinding(original: Finding, now = new Date()): Finding {
   const publicationAge = f.publishedAt
     ? (+now - Date.parse(f.publishedAt)) / 86400000
     : null;
+  const datedCurrentEvent =
+    eventAge !== null && eventAge >= -365 && eventAge <= 14;
   const expired =
-    publicationAge === null
-      ? !(eventAge !== null && eventAge < 0 && eventAge >= -365)
-      : publicationAge > 45 || publicationAge < -1;
+    !datedCurrentEvent &&
+    (publicationAge === null || publicationAge > 45 || publicationAge < -1);
   const timing: NonNullable<Finding["timing"]> =
     past || (eventAge !== null && eventAge > 14)
       ? "past"
@@ -232,7 +233,10 @@ export function qualifyFinding(original: Finding, now = new Date()): Finding {
     qualification:
       relation === "blocked"
         ? "excluded"
-        : timing === "past" || (publicationAge !== null && publicationAge > 45)
+        : timing === "past" ||
+            (!datedCurrentEvent &&
+              publicationAge !== null &&
+              publicationAge > 45)
           ? "past"
           : commercial && (timing === "upcoming" || timing === "ongoing")
             ? "actionable"

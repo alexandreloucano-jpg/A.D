@@ -58,8 +58,7 @@ export function parseArticle(
     date && !isNaN(+date) && +date <= +now + 86400000
       ? date.toISOString()
       : null;
-  if (publishedAt && +now - Date.parse(publishedAt) > 45 * 86400000)
-    return null;
+
   const about = entities
     .flatMap((x) => (Array.isArray(x.about) ? x.about : [x.about]))
     .find(
@@ -133,6 +132,16 @@ export function parseArticle(
         ),
       ).toISOString()
     : null;
+  if (
+    publishedAt &&
+    +now - Date.parse(publishedAt) > 45 * 86400000 &&
+    !(
+      eventDate &&
+      Date.parse(eventDate) >= +now - 14 * 86400000 &&
+      Date.parse(eventDate) <= +now + 365 * 86400000
+    )
+  )
+    return null;
   const f: Finding = {
     id: randomUUID(),
     companyId: randomUUID(),
@@ -172,7 +181,7 @@ export function parseArticle(
       d.querySelector('meta[name="description"]')?.getAttribute("content") ||
         text,
     ).slice(0, 320),
-    analysisText: text.slice(0, 5000),
+    analysisText: text.slice(0, 1000),
     contentHash: digest(text),
     whyNow: "Chronologie à qualifier.",
     potentialNeed: "Besoin non confirmé.",

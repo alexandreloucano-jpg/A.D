@@ -145,7 +145,9 @@ export function MarketPanel({
         (!confidence || f.confidence === confidence) &&
         (!stage || f.stage === stage) &&
         (!coverage || f.coverage >= Number(coverage)) &&
-        (!f.publishedAt ||
+        ((f.eventDate &&
+          Date.parse(f.eventDate) >= Date.now() - 14 * 86400000) ||
+          !f.publishedAt ||
           Date.now() - Date.parse(f.publishedAt) < Number(days) * 86400000) &&
         (mode !== "home" || !["rejected", "snoozed"].includes(f.reviewState)) &&
         (mode === "pipeline"
@@ -271,15 +273,17 @@ export function MarketPanel({
                     <strong>
                       {" "}
                       ·{" "}
-                      {s.connected
-                        ? "Collecte et extraction confirmées"
-                        : s.enabled
-                          ? "Collecteur activé · extraction non confirmée"
-                          : s.accessStatus === "permission_required"
-                            ? "Autorisation nécessaire"
-                            : s.accessStatus === "endpoint_unverified"
-                              ? "Adresse / accès non vérifié"
-                              : "Référence · non connectée"}
+                      {s.errorCode
+                        ? "Collecte en erreur"
+                        : s.connected
+                          ? "Collecte et extraction confirmées"
+                          : s.enabled
+                            ? "Collecteur activé · extraction non confirmée"
+                            : s.accessStatus === "permission_required"
+                              ? "Autorisation nécessaire"
+                              : s.accessStatus === "endpoint_unverified"
+                                ? "Adresse / accès non vérifié"
+                                : "Référence · non connectée"}
                     </strong>
                     <p>{s.accessNote}</p>
                     {s.lastIngestedAt && (

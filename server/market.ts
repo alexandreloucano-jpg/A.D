@@ -103,7 +103,13 @@ export async function marketRoute(r: Request, s: Store, c: Config) {
         return {
           ...record,
           ...publicSource,
-          connected: !!(source.enabled && record?.ingestionVerifiedAt),
+          connected: !!(
+            source.enabled &&
+            record?.ingestionVerifiedAt &&
+            !record?.errorCode &&
+            Date.parse(String(record.ingestionVerifiedAt)) >=
+              Date.now() - 45 * 86400000
+          ),
           lastIngestedAt: record?.ingestionVerifiedAt || null,
         };
       }),
@@ -151,7 +157,9 @@ export async function marketRoute(r: Request, s: Store, c: Config) {
           (f.companyName + " " + f.headline + " " + f.potentialNeed)
             .toLocaleLowerCase("fr")
             .includes(q.q.toLocaleLowerCase("fr"))) &&
-        (!f.publishedAt ||
+        ((f.eventDate &&
+          Date.parse(f.eventDate) >= Date.now() - 14 * 86400000) ||
+          !f.publishedAt ||
           Date.now() - Date.parse(f.publishedAt) <= q.days * 86400000),
     );
     items.sort(compareFindings);

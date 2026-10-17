@@ -160,3 +160,14 @@ it("does not turn marketing language or historical collaborations into future ev
   );
   expect(tech.classification).toBe("cultural");
 });
+it("keeps an old announcement when its explicit event date is still upcoming", () => {
+  const f = fixture(
+    "Maison Orbe ouvrira un hôtel à Paris 8e",
+    "L’ouverture du lieu est prévue : ouverture le 20 novembre 2026 au 75008 Paris.",
+    "2026-06-01",
+  );
+  expect(f).not.toBeNull();
+  expect(f.timing).toBe("upcoming");
+  expect(f.classification).toBe("commercial");
+  expect(homepageFinding(f)).toBe(true);
+});

@@ -9,6 +9,7 @@ export interface RadarSource {
   enabled: boolean;
   connected: boolean;
   accessStatus: string;
+  errorCode?: string;
   accessNote: string;
   lastIngestedAt: string | null;
 }
