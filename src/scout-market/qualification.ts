@@ -1,6 +1,7 @@
 import type { Finding, Factor } from "./schema.js";
 import { scoreFactors, weights } from "./scoring.js";
-export const RADAR_VERSION = "creative-business-v3";
+import { assessLookalike, isReferenceOnly } from "./lookalike.js";
+export const RADAR_VERSION = "solo-da-lookalike-v4";
 const normalize = (s: string) =>
   s
     .normalize("NFD")
@@ -15,7 +16,7 @@ const knownRelations = new Set([
   "schiaparelli",
 ]);
 export function existingRelationship(name: string) {
-  return knownRelations.has(
+  return isReferenceOnly(name) || knownRelations.has(
     normalize(name)
       .replace(/[^a-z0-9 ]/g, "")
       .trim(),
@@ -318,22 +319,24 @@ export function qualifyFinding(original: Finding, now = new Date()): Finding {
     urgency_reason: result.whyNow,
     confidence: result.confidence,
   };
+  result.lookalike = assessLookalike(result);
   return result;
 }
 export function compareFindings(a: Finding, b: Finding) {
-  const priority = (f: Finding) =>
-    (f.relationshipStatus === "blocked" ? -1000 : 0) +
-    (f.classification === "commercial" ? 100 : 0) +
-    (f.qualification === "actionable" ? 25 : 0) +
-    (f.targetPriority === "paris"
-      ? f.arrondissement
-        ? 20
-        : 15
-      : f.targetPriority === "emerging"
-        ? 10
-        : 0);
+  const priority = (f: Finding) => {
+    const gate = f.lookalike?.gate;
+    return (
+      (f.relationshipStatus === "blocked" || gate === "reference_only" ? -1000 : 0) +
+      (gate === "prospect_review" ? 200 : gate === "verify" ? 80 : gate === "lookalike_watchlist" ? 45 : 0) +
+      (f.classification === "commercial" ? 35 : 0) +
+      (f.qualification === "actionable" ? 20 : 0) +
+      (f.targetPriority === "paris" ? 15 : f.targetPriority === "emerging" ? 6 : 0)
+    );
+  };
   return (
     priority(b) - priority(a) ||
+    (b.lookalike?.soloOpportunity.score ?? -1) - (a.lookalike?.soloOpportunity.score ?? -1) ||
+    (b.lookalike?.similarity.score ?? -1) - (a.lookalike?.similarity.score ?? -1) ||
     (b.score ?? -1) - (a.score ?? -1) ||
     b.firstSeenAt.localeCompare(a.firstSeenAt) ||
     a.id.localeCompare(b.id)
@@ -343,6 +346,7 @@ export function homepageFinding(f: Finding) {
   return (
     f.classification === "commercial" &&
     f.qualification === "actionable" &&
+    !["reference_only", "past", "cultural"].includes(f.lookalike?.gate || "") &&
     !!f.corroboratingPrimarySource &&
     !f.sourceError &&
     f.relationshipStatus !== "blocked" &&
