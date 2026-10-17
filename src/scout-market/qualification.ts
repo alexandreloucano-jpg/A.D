@@ -11,7 +11,6 @@ const knownRelations = new Set([
   "cache",
   "francois 1er",
   "francois ier",
-  "hotel francois 1er",
   "s chiaparelli",
   "schiaparelli",
 ]);
