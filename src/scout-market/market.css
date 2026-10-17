@@ -213,3 +213,89 @@
   padding-left: 12px;
   border-left: 2px solid #aebcc2;
 }
+
+/* Solo-DA prospect discovery: useful identity and decisive evidence above the fold. */
+.market-positioning {
+  font-size: 14px;
+  line-height: 1.5;
+  max-width: 64ch;
+  color: #405466;
+  margin: 8px 0 18px;
+}
+.market-positioning strong { color: #20313d; font-weight: 600; }
+.market-reference-picker {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 12px 0 18px;
+}
+.market-reference-picker button {
+  min-height: 44px;
+  background: transparent;
+  border: 1px solid #adb8bc;
+  border-radius: 999px;
+  padding: 8px 13px;
+  font-size: 13px;
+}
+.market-reference-picker [aria-pressed="true"] {
+  background: #20313d;
+  border-color: #20313d;
+  color: #fff;
+}
+.market-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.market-finding .market-card-head h3 {
+  margin: 0;
+  font-family: "Bodoni Moda", Georgia, serif;
+  font-size: clamp(23px, 2.2vw, 29px);
+  line-height: 1.2;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+.market-card-location {
+  color: #60717c;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.market-lookalike {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 10px 0 12px;
+  padding: 10px 12px;
+  border-left: 2px solid #486774;
+  background: #f3f2eb;
+  line-height: 1.45;
+}
+.market-lookalike strong { font-size: 13px; font-weight: 600; }
+.market-lookalike span { font-size: 12px; color: #405466; }
+.market-finding .market-event { margin-top: 8px; }
+.market-finding .market-offer { margin-top: 12px; }
+.market-dossier-summary {
+  padding: 14px 16px;
+  border: 1px solid #c3ccce;
+  border-radius: 4px;
+  background: #f2f1e9;
+}
+.market-dossier-summary h3 { margin: 0 0 12px; }
+.market-dossier-summary p { line-height: 1.5; }
+.market-detail { padding-bottom: max(30px, env(safe-area-inset-bottom)); }
+@media (max-width: 600px) {
+  .market-reference-picker {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    padding-bottom: 4px;
+  }
+  .market-reference-picker button { flex: 0 0 auto; }
+  .market-findings { gap: 12px; grid-template-columns: minmax(0, 1fr); }
+  .market-finding .market-card-head h3 { font-size: 25px; }
+  .market-card-head { align-items: start; }
+  .market-card-location { white-space: normal; text-align: right; }
+  .market-detail { padding: 18px 16px max(28px, env(safe-area-inset-bottom)); }
+  .market-finding { padding: 14px 0 19px; }
+}
