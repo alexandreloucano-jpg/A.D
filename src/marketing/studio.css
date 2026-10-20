@@ -1,0 +1,194 @@
+/* Public A.D Studio landing — scoped so Saver and the private workspace are unchanged. */
+.ad-landing {
+  --ad-ink: #191919;
+  --ad-paper: #f7f6f3;
+  --ad-line: #d8d6d1;
+  --ad-accent: #8c8982;
+  font-family: Inter, Arial, sans-serif;
+  color: var(--ad-ink);
+  background: var(--ad-paper);
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}
+.ad-landing * { box-sizing: border-box; }
+.ad-landing a { color: inherit; text-decoration: none; }
+.ad-landing h1,.ad-landing h2,.ad-landing h3,.ad-landing p { margin: 0; }
+.ad-landing h1,.ad-landing h2 { font-family: "Bodoni Moda", Georgia, serif; font-weight: 400; }
+.ad-landing em { font-style: italic; font-weight: 400; }
+.ad-landing .ad-skip { position: absolute; left: 16px; top: -200px; z-index: 100; padding: 12px 16px; background: white; color: black; }
+.ad-landing .ad-skip:focus { top: 14px; }
+.ad-landing .ad-nav {
+  height: 82px; padding: 0 clamp(22px, 5.5vw, 96px); display: flex; align-items: center;
+  gap: 28px; background: var(--ad-paper); border-bottom: 1px solid var(--ad-line);
+  position: relative; z-index: 11;
+}
+.ad-landing .ad-logotype { font-family: "Bodoni Moda", Georgia, serif; font-size: 42px; letter-spacing: -.09em; line-height: 1; font-weight: 400; white-space: nowrap; }
+.ad-landing .ad-logo-mark { font: 500 10px Inter, sans-serif; vertical-align: top; letter-spacing: 0; margin-left: 6px; }
+.ad-landing .ad-nav-descriptor { color: #55534e; font-size: 10px; letter-spacing: .11em; font-weight: 500; }
+.ad-landing .ad-links { margin-left: auto; display: flex; align-items: center; gap: clamp(16px, 2.7vw, 46px); }
+.ad-landing .ad-links a { font-size: 12px; font-weight: 500; transition: opacity .2s ease; }
+.ad-landing .ad-links a:hover { opacity: .5; }
+.ad-landing .ad-nav-contact { display: inline-flex; align-items: center; gap: 7px; padding-bottom: 6px; border-bottom: 1px solid; }
+.ad-landing .ad-menu-toggle { display: none; min-height: 40px; min-width: 40px; background: transparent; border: 0; padding: 5px; color: var(--ad-ink); }
+.ad-landing .ad-hero {
+  background: #1c1c1b; color: #f8f7f2; min-height: min(790px, 94dvh);
+  padding: 27px clamp(22px, 5.5vw, 96px) 33px; display: flex; flex-direction: column;
+  justify-content: space-between; position: relative; isolation: isolate; overflow: hidden;
+}
+.ad-landing .ad-hero:before {
+  content: ""; position: absolute; z-index: -2; width: 94vw; height: 94vw; border-radius: 50%;
+  background: radial-gradient(circle at 60% 40%, rgba(255,255,255,.065), transparent 59%);
+  top: -50vw; right: -24vw;
+}
+.ad-landing .ad-hero-top,.ad-landing .ad-hero-bottom { display: flex; justify-content: space-between; align-items: center; gap: 20px; font-size: 10px; letter-spacing: .17em; color: #c4c1b9; }
+.ad-landing .ad-hero-bottom span:last-child { display: flex; gap: 8px; align-items: center; }
+.ad-landing .ad-hero-core { max-width: 1040px; padding: 85px 0 100px; position: relative; z-index: 1; }
+.ad-landing .ad-eyebrow { font: 500 11px Inter, sans-serif; text-transform: uppercase; letter-spacing: .19em; margin-bottom: 28px; color: #c4c1b9; }
+.ad-landing .ad-hero h1 { font-size: clamp(49px, 6.3vw, 99px); letter-spacing: -.047em; line-height: 1.055; max-width: 1100px; }
+.ad-landing .ad-hero h1 em { color: #c6c3bb; }
+.ad-landing .ad-hero-description { color: #c6c4bd; max-width: 620px; line-height: 1.72; font-size: clamp(14px,1.1vw,17px); margin-top: 33px; }
+.ad-landing .ad-hero-actions { display: flex; gap: 37px; flex-wrap: wrap; align-items: center; margin-top: 35px; }
+.ad-landing .ad-button {
+  display: inline-flex; justify-content: space-between; align-items: center; gap: 30px; border-radius: 0;
+  font: 600 12px Inter, Arial, sans-serif; letter-spacing: .01em; min-height: 55px;
+  padding: 15px 21px; transition: background .18s, color .18s, transform .18s; border: 1px solid transparent;
+}
+.ad-landing .ad-button:hover { transform: translateY(-2px); }
+.ad-landing .ad-button-light { background: #f7f6f3; color: #191919; }
+.ad-landing .ad-button-light:hover { background: #d8d6d1; }
+.ad-landing .ad-button-dark { background: #20201e; color: #f7f6f3; width: 100%; cursor: pointer; }
+.ad-landing .ad-button-dark:hover { background: #44413e; }
+.ad-landing .ad-text-link { display: inline-flex; gap: 13px; align-items: center; border-bottom: 1px solid #817e78; padding-bottom: 8px; font-size: 12px; }
+.ad-landing .ad-hero-watermark {
+  position: absolute; z-index: -1; font-family: "Bodoni Moda", Georgia, serif;
+  font-size: clamp(240px, 47vw, 830px); line-height: 1; letter-spacing: -.13em;
+  bottom: -17vw; right: -5vw; color: rgba(255,255,255,.025); pointer-events: none; white-space: nowrap;
+}
+.ad-landing .ad-section { padding: clamp(68px, 9vw, 150px) clamp(22px, 8vw, 138px); border-bottom: 1px solid var(--ad-line); }
+.ad-landing .ad-section-label { display: flex; justify-content: space-between; align-items: center; gap: 14px; font-size: 10px; font-weight: 500; letter-spacing: .13em; color: #74716d; margin-bottom: 63px; }
+.ad-landing .ad-statement { padding-bottom: clamp(83px, 11vw, 170px); }
+.ad-landing .ad-statement h2 { font-size: clamp(52px, 7.2vw, 112px); letter-spacing: -.048em; line-height: 1.04; max-width: 1200px; }
+.ad-landing .ad-statement h2 em { color: #7b7872; }
+.ad-landing .ad-statement-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 70px; margin-left: 32%; margin-top: 66px; }
+.ad-landing .ad-statement-grid p { color: #484640; font-size: clamp(14px, 1.2vw, 17px); line-height: 1.75; }
+.ad-landing .ad-small-title { font-family: Inter, Arial, sans-serif!important; font-size: clamp(24px, 3vw, 42px); letter-spacing: -.04em; max-width: 660px; line-height: 1.27; font-weight: 400; }
+.ad-landing .ad-friction-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; margin-top: 64px; }
+.ad-landing .ad-friction-grid article { border-top: 1px solid #2a2a2a; padding-top: 21px; }
+.ad-landing .ad-friction-grid span { font-size: 12px; color: #77736e; }
+.ad-landing .ad-friction-grid h3 { font: 400 clamp(22px, 2.1vw, 30px) "Bodoni Moda", Georgia, serif; line-height: 1.2; letter-spacing: -.025em; margin-top: 26px; max-width: 270px; }
+.ad-landing .ad-friction-grid p { font-size: 14px; color: #66635f; line-height: 1.68; margin-top: 15px; max-width: 270px; }
+.ad-landing .ad-section-heading { display: flex; align-items: end; justify-content: space-between; gap: 60px; }
+.ad-landing .ad-section-heading h2, .ad-landing .ad-method h2, .ad-landing .ad-focus h2, .ad-landing .ad-contact h2 { font-size: clamp(49px, 5.2vw, 82px); line-height: 1.09; letter-spacing: -.047em; }
+.ad-landing .ad-section-heading h2 { max-width: 750px; }
+.ad-landing .ad-section-heading h2 em { color: #77736e; }
+.ad-landing .ad-section-heading>p { max-width: 360px; color: #605d58; font-size: 14px; line-height: 1.8; padding-bottom: 9px; }
+.ad-landing .ad-offer-list { margin-top: 84px; border-top: 1px solid var(--ad-ink); }
+.ad-landing .ad-offer { display: grid; grid-template-columns: 70px minmax(180px,1fr) minmax(250px,1.2fr) 35px; gap: 25px; align-items: start; padding: 36px 0 42px; border-bottom: 1px solid var(--ad-line); }
+.ad-landing .ad-offer-number { font-size: 12px; color: #75726c; padding-top: 5px; }
+.ad-landing .ad-offer-kicker { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: #77736e; margin-bottom: 12px; }
+.ad-landing .ad-offer h3 { font: 400 clamp(28px, 3.3vw, 50px) "Bodoni Moda",Georgia,serif; letter-spacing: -.04em; }
+.ad-landing .ad-offer div:nth-child(3)>p { font-size: 14px; line-height: 1.72; color: #4a4945; margin-bottom: 20px; max-width: 440px; }
+.ad-landing .ad-offer-detail { color: #77736e; font-size: 12px; }
+.ad-landing .ad-offer>a { align-self: start; display: flex; justify-content: flex-end; }
+.ad-landing .ad-method { color: #f6f5f1; background: #232322; }
+.ad-landing .ad-method .ad-section-label { color: #aca9a2; }
+.ad-landing .ad-method-layout { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(42px, 10vw, 140px); }
+.ad-landing .ad-method h2 em { color: #bbb8b2; }
+.ad-landing .ad-method-layout>div>p { max-width: 420px; color: #bebbb4; font-size: 15px; line-height: 1.8; margin-top: 40px; }
+.ad-landing .ad-method-steps { margin: 0; padding: 0; list-style: none; border-top: 1px solid #77746e; }
+.ad-landing .ad-method-steps li { display: flex; gap: 40px; padding: 29px 0; border-bottom: 1px solid #55534e; }
+.ad-landing .ad-method-steps li>span { font-size: 12px; color: #a7a39b; padding-top: 5px; }
+.ad-landing .ad-method-steps h3 { font: 400 35px "Bodoni Moda", Georgia,serif; }
+.ad-landing .ad-method-steps p { color: #b7b3ac; font-size: 13px; line-height: 1.75; margin-top: 13px; }
+.ad-landing .ad-focus h2 { max-width: 1050px; }
+.ad-landing .ad-focus h2 em { color: #77736e; }
+.ad-landing .ad-focus-row { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 73px; border-top: 1px solid #333; border-bottom: 1px solid var(--ad-line); }
+.ad-landing .ad-focus-row span { font-size: 11px; letter-spacing: .095em; padding: 25px 10px 25px 0; }
+.ad-landing .ad-focus-row span+span { padding-left: 28px; border-left: 1px solid var(--ad-line); }
+.ad-landing .ad-focus>p { font-size: 15px; max-width: 650px; line-height: 1.8; color: #54524e; margin-top: 35px; }
+.ad-landing .ad-contact-grid { display: grid; grid-template-columns: .9fr 1.1fr; gap: clamp(50px,8vw,150px); }
+.ad-landing .ad-contact-heading h2 em { color: #77736e; }
+.ad-landing .ad-contact-heading>p { margin-top: 31px; max-width: 460px; line-height: 1.75; font-size: 15px; color: #65615d; }
+.ad-landing .ad-contact-footnote { display: flex; align-items: center; gap: 10px; margin-top: 44px; color: #56534e; font-size: 12px; }
+.ad-landing .ad-inquiry-form { display: flex; flex-direction: column; gap: 22px; }
+.ad-landing .ad-inquiry-form label { font-size: 11px; color: #44423f; font-weight: 500; display: flex; flex-direction: column; gap: 9px; }
+.ad-landing .ad-form-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.ad-landing .ad-inquiry-form input,.ad-landing .ad-inquiry-form textarea,.ad-landing .ad-inquiry-form select {
+  border: 1px solid #c8c6c0; border-radius: 0; background: transparent;
+  min-height: 51px; padding: 14px 12px; font-family: Inter, sans-serif;
+  font-size: 14px; color: #1c1c1c; width: 100%;
+}
+.ad-landing .ad-inquiry-form textarea { resize: vertical; min-height: 110px; max-height: none; }
+.ad-landing .ad-inquiry-form input:focus,.ad-landing .ad-inquiry-form textarea:focus,.ad-landing .ad-inquiry-form select:focus { outline: 2px solid #333; outline-offset: 2px; }
+.ad-landing .ad-inquiry-form input::placeholder,.ad-landing .ad-inquiry-form textarea::placeholder { color: #93908a; }
+.ad-landing .ad-inquiry-form select { appearance: auto; }
+.ad-landing .ad-inquiry-form button { margin-top: 4px; }
+.ad-landing .ad-form-note,.ad-landing .ad-form-status { font-size: 11px; line-height: 1.7; color: #6e6a64; }
+.ad-landing .ad-form-status { color: #262626; border-left: 2px solid #2c2c2c; padding: 6px 0 6px 12px; }
+.ad-landing .ad-faq-grid { display: grid; grid-template-columns: .75fr 1.25fr; gap: 60px; }
+.ad-landing .ad-faq h2 { font-size: clamp(47px, 6vw, 90px); line-height: 1.07; letter-spacing: -.05em; }
+.ad-landing .ad-faq h2 em { color: #77736e; }
+.ad-landing .ad-faq details { border-top: 1px solid #b9b6b0; }
+.ad-landing .ad-faq details:last-child { border-bottom: 1px solid #b9b6b0; }
+.ad-landing .ad-faq summary { list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 18px; padding: 23px 0; font-size: 14px; font-weight: 500; cursor: pointer; }
+.ad-landing .ad-faq summary::-webkit-details-marker { display: none; }
+.ad-landing .ad-faq summary span { font-size: 22px; font-weight: 300; }
+.ad-landing .ad-faq details[open] summary span { transform: rotate(45deg); }
+.ad-landing .ad-faq details p { color: #68645f; font-size: 13px; line-height: 1.8; padding: 0 26px 24px 0; }
+.ad-landing .ad-footer { display: flex; align-items: center; justify-content: space-between; gap: 22px; padding: 40px clamp(22px, 5.5vw, 96px); background: #1c1c1b; color: #f7f6f3; }
+.ad-landing .ad-footer>div { display: flex; gap: 23px; flex-wrap: wrap; font-size: 10px; letter-spacing: .12em; color: #c1beb8; }
+.ad-landing .ad-footer-top { display: flex; align-items: center; gap: 12px; font-size: 10px; letter-spacing: .1em; white-space: nowrap; }
+@media (max-width: 980px) {
+  .ad-landing .ad-nav { height: 70px; }
+  .ad-landing .ad-nav-descriptor { display: none; }
+  .ad-landing .ad-section-heading { display: block; }
+  .ad-landing .ad-section-heading>p { margin-top: 32px; max-width: 530px; }
+  .ad-landing .ad-method-layout { gap: 40px; }
+}
+@media (max-width: 720px) {
+  .ad-landing .ad-nav { height: 68px; }
+  .ad-landing .ad-logotype { font-size: 38px; }
+  .ad-landing .ad-menu-toggle { display: inline-flex; margin-left: auto; }
+  .ad-landing .ad-links { display: none; position: absolute; top: 68px; left: 0; right: 0; margin: 0; padding: 24px 22px 32px; background: #f7f6f3; border-bottom: 1px solid #aaa; align-items: stretch; flex-direction: column; gap: 23px; }
+  .ad-landing .ad-links.is-open { display: flex; }
+  .ad-landing .ad-links a { font-size: 17px; }
+  .ad-landing .ad-nav-contact { width: fit-content; }
+  .ad-landing .ad-hero { min-height: 730px; min-height: min(800px, 100svh); padding: 26px 22px 28px; }
+  .ad-landing .ad-hero-top,.ad-landing .ad-hero-bottom { font-size: 9px; letter-spacing: .10em; }
+  .ad-landing .ad-hero-top span:last-child { display: none; }
+  .ad-landing .ad-hero-bottom span:first-child { max-width: 205px; line-height: 1.4; }
+  .ad-landing .ad-hero-core { padding: 70px 0 75px; }
+  .ad-landing .ad-eyebrow { font-size: 10px; margin-bottom: 20px; }
+  .ad-landing .ad-hero h1 { font-size: clamp(47px, 10vw, 69px); line-height: 1.07; letter-spacing: -.055em; }
+  .ad-landing .ad-hero-description { margin-top: 27px; font-size: 14px; }
+  .ad-landing .ad-hero-actions { gap: 23px; margin-top: 29px; align-items: flex-start; flex-direction: column; }
+  .ad-landing .ad-button { width: 100%; }
+  .ad-landing .ad-hero-watermark { font-size: 110vw; bottom: -6vw; }
+  .ad-landing .ad-section { padding: 77px 22px 83px; }
+  .ad-landing .ad-section-label { margin-bottom: 42px; font-size: 9px; align-items: flex-start; }
+  .ad-landing .ad-section-label span:last-child { text-align: right; }
+  .ad-landing .ad-statement h2 { font-size: clamp(45px, 10.5vw, 72px); }
+  .ad-landing .ad-statement-grid { grid-template-columns: 1fr; gap: 21px; margin: 38px 0 0; }
+  .ad-landing .ad-friction-grid { grid-template-columns: 1fr; gap: 27px; margin-top: 45px; }
+  .ad-landing .ad-friction-grid h3 { margin-top: 17px; }
+  .ad-landing .ad-friction-grid p { max-width: none; }
+  .ad-landing .ad-section-heading h2,.ad-landing .ad-method h2,.ad-landing .ad-focus h2,.ad-landing .ad-contact h2 { font-size: clamp(48px, 10vw, 67px); }
+  .ad-landing .ad-offer-list { margin-top: 55px; }
+  .ad-landing .ad-offer { grid-template-columns: 35px 1fr 25px; gap: 13px; padding: 26px 0 31px; }
+  .ad-landing .ad-offer div:nth-child(3) { grid-column: 2 / 3; grid-row: 2; }
+  .ad-landing .ad-offer>a { grid-column: 3; grid-row: 1; }
+  .ad-landing .ad-offer h3 { font-size: 35px; }
+  .ad-landing .ad-method-layout,.ad-landing .ad-contact-grid,.ad-landing .ad-faq-grid { grid-template-columns: 1fr; gap: 40px; }
+  .ad-landing .ad-method-steps li { gap: 27px; }
+  .ad-landing .ad-focus-row { grid-template-columns: 1fr; margin-top: 43px; }
+  .ad-landing .ad-focus-row span { padding: 19px 0!important; }
+  .ad-landing .ad-focus-row span+span { border-left: none; border-top: 1px solid var(--ad-line); }
+  .ad-landing .ad-form-pair { grid-template-columns: 1fr; gap: 22px; }
+  .ad-landing .ad-contact-heading>p { margin-top: 25px; }
+  .ad-landing .ad-contact-footnote { margin-top: 24px; }
+  .ad-landing .ad-footer { flex-wrap: wrap; gap: 24px; padding: 34px 22px; }
+  .ad-landing .ad-footer>div { order: 3; flex-basis: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ad-landing *, .ad-landing *::before, .ad-landing *::after { scroll-behavior: auto!important; transition-duration: 0s!important; }
+}
