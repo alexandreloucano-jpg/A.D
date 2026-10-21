@@ -116,3 +116,13 @@ ZERO unapproved external sends, payments, signatures, hiring commitments or equi
 2. Commit core TypeScript deal/approval/scenario contracts, SQL additive migration (NOT applied) and negative tests on separate draft PR.
 3. Build owner-only persistent Deal Room using existing backend security and existing Radar inputs.
 4. Run first client through a manually supervised flow BEFORE increasing agent autonomy.
+
+## 13. Bootstrap constraint: EUR 5,000 for the first 90 days (21 Oct 2026 to 19 Jan 2027)
+
+This cash limit excludes founder compensation. It is a planning maximum, not permission to spend. Proposed allocation: EUR 1,800 scoped senior engineering review and integration; EUR 850 legal/IP advice; EUR 450 accounting and potential registration formalities; EUR 300 hosting/AI tools; EUR 200 qualified customer acquisition; EUR 200 original creative demo; EUR 1,200 protected reserve. Initial spending capacity is EUR 3,800 and each commitment requires owner approval and a verified quote. All amounts represent cash ceilings including nonrecoverable taxes.
+
+Reject full-time staffing, a 12-week external engineer contract, paid Webflow, mass-paid advertising, multiple legal entities, multi-tenant SaaS and autonomous equity transactions in this bootstrap stage. Use the existing React/Vercel/Neon/Saver/Taste/Radar; treat 13 agents as a modular future capability roster, initially bundling FIND, CREATE, EVALUATE and CONTRACT/LEARN into supervised, bounded internal drafts.
+
+In the first two weeks, validate the existing public /studio pull request with a verified contact channel and required legal notices; test market demand while auditing existing data before any SQL migration. Then deliver an owner-only persistent Deal Room with versioned audit and approvals, source-grounded creative proposals, a deterministic cash/equity model and legally reviewed contract drafts. Aim for one paid Brand Thesis first, a second independently qualified sales cycle by day 90, and measured delivery cost. Prospecting, pricing, signatures and investments retain explicit owner approval.
+
+Validate the existing business registration before incurring SASU expenses. Formation and trademark fees are conditional and may exceed the tentative accounting/formalities envelope when combined with professional advice. Do not spend the EUR 1,200 reserve without owner authorisation. If no paid demand by day 45, revisit offer and target rather than increasing engineering scope. Record monthly actual spending, cash receipts and contribution margins without mixing signed fees and cash or unrealised holdings.
