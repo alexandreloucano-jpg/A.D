@@ -65,7 +65,7 @@ test("LATER → NOW humain, KILL exclu puis restauration LATER", async ({
     .getByRole("link", { name: "Accueil" })
     .click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    "Sur quoi veux-tuavancer ?",
+    "Aucune prioritéen cours.",
   );
   await page.getByRole("button", { name: /Décisions de test/ }).click();
   await page.getByRole("button", { name: "Accepter dans NOW" }).click();
@@ -77,7 +77,7 @@ test("LATER → NOW humain, KILL exclu puis restauration LATER", async ({
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     "Idée de test à examiner",
   );
-  await page.getByRole("button", { name: "Continuer le projet" }).click();
+  await page.getByRole("button", { name: "Ouvrir le dossier" }).click();
   await page.getByRole("button", { name: "Écarter", exact: true }).click();
   await hideNotice(page);
   await page
@@ -85,7 +85,7 @@ test("LATER → NOW humain, KILL exclu puis restauration LATER", async ({
     .getByRole("link", { name: "Accueil" })
     .click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    "Sur quoi veux-tuavancer ?",
+    "Aucune prioritéen cours.",
   );
   await page.getByRole("button", { name: /Décisions de test/ }).click();
   await page.getByRole("button", { name: "Archives (1)" }).click();
