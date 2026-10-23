@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - feat/ad-v2-editorial-workspace-20261023
+      - fix/ad-v2-mobile-layout-20261023
   workflow_dispatch:
 permissions:
   contents: read
