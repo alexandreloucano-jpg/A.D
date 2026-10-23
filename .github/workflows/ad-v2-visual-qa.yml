@@ -1,0 +1,37 @@
+name: A.D V2 / Responsive visual QA
+on:
+  push:
+    branches:
+      - feat/ad-v2-editorial-workspace-20261023
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  responsive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Install browser and OS dependencies
+        run: npx playwright install --with-deps chromium
+      - name: Locate test browser
+        shell: bash
+        run: |
+          BROWSER_PATH="$(find "$HOME/.cache/ms-playwright" -type f \( -name "chrome-headless-shell" -o -name "chrome" \) | grep -E '/(chrome-headless-shell-linux64|chrome-linux64)/' | head -n 1)"
+          test -n "$BROWSER_PATH"
+          echo "CHROMIUM_PATH=$BROWSER_PATH" >> "$GITHUB_ENV"
+      - name: Run V2 and existing critical paths at 390px and 1440px
+        run: npx playwright test tests/browser/ad-v2-design.spec.ts tests/browser/workspace.spec.ts tests/browser/refinement.spec.ts
+      - name: Save screenshots and failure traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ad-v2-private-qa-screenshots
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7

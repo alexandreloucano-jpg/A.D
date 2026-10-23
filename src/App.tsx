@@ -414,9 +414,9 @@ export function App() {
             A.D
             <span className="brand-line" />
             <span className="brand-caption">
-              DIRECTION
+              PRIVATE
               <br />
-              CRÉATIVE
+              INTELLIGENCE
             </span>
           </a>
           <nav aria-label="Navigation principale">
@@ -516,10 +516,10 @@ export function App() {
                     <div>
                       <p className="eyebrow">
                         {route === "saver"
-                          ? "VOTRE MÉMOIRE CRÉATIVE"
+                          ? "SOURCES ET MÉMOIRE CRÉATIVE"
                           : route === "explorer"
                             ? "OBSERVER AVANT D’INTERPRÉTER"
-                            : "DONNER UNE FORME AUX IDÉES"}
+                            : "DOSSIERS ET DÉCISIONS"}
                       </p>
                       <h1>
                         {project && route === "projets"
@@ -534,7 +534,7 @@ export function App() {
                             ? "Des faits sourcés, des pistes à examiner."
                             : project
                               ? "Idées à examiner, actions acceptées et références."
-                              : "Des directions choisies, à votre rythme."}
+                              : "Projets, tâches et références enregistrés."}
                       </p>
                     </div>
                     <button
@@ -674,7 +674,7 @@ export function App() {
           )}
         </main>
         <footer className="statusbar">
-          <span>A.D / ATELIER PERSONNEL</span>
+          <span>A.D / PRIVATE WORKSPACE</span>
           <button onClick={() => setModal("settings")}>
             <ShieldCheck size={13} />{" "}
             {remote.connected

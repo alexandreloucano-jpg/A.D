@@ -107,7 +107,7 @@ test("Explorer discloses evidence and interpretation; a potential action is a hu
   expect(tasks).toHaveLength(0);
   await nav(page, "Accueil");
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
-    "Sur quoi veux-tu",
+    "Aucune priorité",
   );
 });
 test("compact mobile keeps all destinations, source access and capture usable", async ({
