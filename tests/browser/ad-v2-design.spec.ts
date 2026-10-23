@@ -27,3 +27,53 @@ test("A.D V2 preserves current actions and source navigation",async({page})=>{
   await page.getByRole("navigation",{name:"Navigation principale"}).getByRole("link",{name:"Projets"}).click();
   await expect(page.getByRole("heading",{level:1})).toBeVisible();
 });
+
+
+// Geometry regressions: prior 390px screenshots showed THE DESK painting on top
+// of "Aucune priorité", recent projects and the three factual counters.
+// Horizontal-overflow-only checks did not detect the collision.
+async function expectTodayMobileSectionsDoNotOverlap(page: import("@playwright/test").Page) {
+  const rects = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const node = document.querySelector(selector);
+      if (!node) throw new Error("Missing design node: " + selector);
+      const b = node.getBoundingClientRect();
+      return {top:b.top, bottom:b.bottom, left:b.left, right:b.right};
+    };
+    return {
+      title: rect(".ad-v2-priority h1"),
+      description: rect(".ad-v2-description"),
+      cta: rect(".ad-v2-cta"),
+      counters: rect(".ad-v2-counters"),
+      focus: rect(".ad-v2-focus"),
+      rail: rect(".ad-v2-rail"),
+      scrollViewport: rect(".ad-v2-home"),
+    };
+  });
+  expect(rects.description.top, "description must come below headline").toBeGreaterThanOrEqual(rects.title.bottom + 8);
+  expect(rects.cta.top, "CTA must come after description").toBeGreaterThanOrEqual(rects.description.bottom + 8);
+  expect(rects.counters.top, "facts must be below CTA").toBeGreaterThanOrEqual(rects.cta.bottom + 12);
+  expect(rects.rail.top, "rail must start below complete priority block").toBeGreaterThanOrEqual(rects.focus.bottom + 20);
+  expect(rects.focus.left).toBeGreaterThanOrEqual(rects.scrollViewport.left - 1);
+  expect(rects.focus.right).toBeLessThanOrEqual(rects.scrollViewport.right + 1);
+}
+
+for (const height of [844, 640]) {
+  test(`A.D V2 populated TODAY has no overlapping mobile sections at 390×${height}`, async ({page}, info) => {
+    await page.setViewportSize({width:390,height});
+    await page.goto("/");
+    await expectTodayMobileSectionsDoNotOverlap(page);
+    await page.locator(".ad-v2-priority").getByRole("button",{name:"Créer un dossier"}).click();
+    await page.getByLabel("Nom du projet").fill("Projet de test mobile V2");
+    await page.getByRole("button",{name:"Créer le projet",exact:true}).click();
+    const dismiss = page.getByRole("button",{name:"Masquer le message"});
+    if(await dismiss.isVisible()) await dismiss.click();
+    await page.getByRole("navigation",{name:"Navigation principale"}).getByRole("link",{name:"Accueil"}).click();
+    await expect(page.locator(".ad-v2-rail")).toContainText("Projet de test mobile V2");
+    await expectTodayMobileSectionsDoNotOverlap(page);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+    await page.screenshot({path:info.outputPath(`ad-v2-mobile-populated-top-390x${height}.png`)});
+    await page.locator(".ad-v2-home").evaluate(node => node.scrollTo({top:node.scrollHeight,behavior:"instant"}));
+    await page.screenshot({path:info.outputPath(`ad-v2-mobile-populated-bottom-390x${height}.png`)});
+  });
+}
