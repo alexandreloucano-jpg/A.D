@@ -333,3 +333,88 @@
 @media (prefers-reduced-motion: reduce) {
   .app-frame button, .app-frame a { transition: none; }
 }
+
+
+/* V2 / Mobile compositor fix (2026-10-23)
+ * The original home-layout is a height-constrained scroll container. On mobile,
+ * its column flex children were allowed to shrink below their intrinsic content
+ * height, which caused the rail to paint over the priority title/CTA/counters.
+ * Never solve this with absolute offsets: preserve natural vertical flow.
+ */
+@media (max-width: 700px) {
+  .app-frame .ad-v2-home {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 32px;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+  }
+  .app-frame .ad-v2-home > .ad-v2-focus,
+  .app-frame .ad-v2-home > .ad-v2-rail {
+    flex: 0 0 auto;
+    min-height: max-content;
+    width: 100%;
+    max-width: 100%;
+    align-self: stretch;
+    position: relative;
+  }
+  .app-frame .ad-v2-focus {
+    height: auto;
+    justify-content: flex-start;
+    overflow: visible;
+    gap: 30px;
+  }
+  .app-frame .ad-v2-priority {
+    flex: none;
+    min-width: 0;
+    padding-top: 8px;
+  }
+  .app-frame .ad-v2-focus h1 {
+    font-size: clamp(43px, 11.4vw, 50px);
+    line-height: 1.09;
+    letter-spacing: -.045em;
+    overflow-wrap: break-word;
+  }
+  .app-frame .ad-v2-description {
+    margin-top: 18px;
+    max-width: 35ch;
+    line-height: 1.55;
+  }
+  .app-frame .ad-v2-cta {
+    margin-top: 24px;
+    min-height: 48px;
+  }
+  .app-frame .ad-v2-counters {
+    flex: 0 0 auto;
+    min-height: 70px;
+    margin-top: 0;
+    padding: 18px 0 4px;
+    gap: 10px;
+  }
+  .app-frame .ad-v2-counters > div {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .app-frame .ad-v2-rail {
+    margin: 0;
+    padding: 25px 0 24px;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    max-height: none;
+    overflow: visible;
+  }
+  .app-frame .ad-v2-rail .project-row > span:nth-child(2),
+  .app-frame .ad-v2-rail .reference-row > span:nth-child(2) {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
+@media (max-width: 700px) and (max-height: 700px) {
+  .app-frame .ad-v2-home { gap: 26px; }
+  .app-frame .ad-v2-focus { gap: 24px; }
+  .app-frame .ad-v2-priority { padding-top: 4px; }
+}
