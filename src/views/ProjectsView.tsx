@@ -206,11 +206,10 @@ export function ProjectsView({
           title={
             query
               ? "Aucune correspondance."
-              : "Une direction commence par un dossier."
+              : "Aucun dossier enregistré."
           }
         >
-          Créez un projet. Les idées resteront à examiner jusqu’à votre
-          décision.
+          Créez un dossier pour y conserver vos actions et références.
         </Empty>
       )}
     </>
