@@ -5,7 +5,7 @@ for (const viewport of [{width:1440,height:900},{width:390,height:844},{width:39
     await page.setViewportSize(viewport);
     await page.goto("/");
     await expect(page.getByRole("heading",{level:1})).toContainText("Aucune priorité");
-    await expect(page.getByRole("button",{name:"Créer un dossier"})).toBeVisible();
+    await expect(page.locator(".ad-v2-priority").getByRole("button",{name:"Créer un dossier"})).toBeVisible();
     await expect(page.locator(".workspace")).toHaveCSS("background-color","rgb(247, 246, 242)");
     await expect(page.locator(".workspace")).toHaveCSS("background-image","none");
     for(const label of ["Accueil","Explorer","Saver","Projets"]) {
@@ -13,7 +13,7 @@ for (const viewport of [{width:1440,height:900},{width:390,height:844},{width:39
     }
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1)).toBe(true);
     await page.screenshot({path:info.outputPath(`ad-v2-today-${viewport.width}x${viewport.height}.png`),fullPage:true});
-    await page.getByRole("button",{name:"Créer un dossier"}).click();
+    await page.locator(".ad-v2-priority").getByRole("button",{name:"Créer un dossier"}).click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await page.getByRole("button",{name:"Fermer"}).click();
   });
