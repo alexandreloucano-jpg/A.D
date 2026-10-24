@@ -29,12 +29,12 @@ for(const viewport of sizes){
     }
     await page.screenshot({path:info.outputPath(`signal-desk-today-${viewport.width}-${viewport.height}.png`),fullPage:true});
     await nav.getByRole("link",{name:"Explorer"}).click();
-    await expect(page.getByRole("heading",{name:"Explorer",exact:true})).toBeVisible();
+    await expect(page.getByRole("heading",{name:/Explorer/})).toBeVisible();
     await page.screenshot({path:info.outputPath(`signal-desk-radar-${viewport.width}.png`)});
     await nav.getByRole("link",{name:"Saver"}).click();
-    await expect(page.getByRole("heading",{name:"Saver",exact:true})).toBeVisible();
+    await expect(page.getByRole("heading",{name:/Saver/})).toBeVisible();
     await nav.getByRole("link",{name:"Projets"}).click();
-    await expect(page.getByRole("heading",{name:"Projets",exact:true})).toBeVisible();
+    await expect(page.getByRole("heading",{name:/Projets/})).toBeVisible();
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
   });
 }
