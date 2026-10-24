@@ -22,7 +22,9 @@ beforeEach(async()=>{
   vi.stubEnv("AD_TURNSTILE_SECRET_KEY","test-secret");
   vi.stubEnv("VITE_AD_STUDIO_TURNSTILE_SITE_KEY","test-site-key");
   vi.stubEnv("AD_PRIVACY_NOTICE_URL","https://app.example/privacy");
-  vi.stubEnv("AD_BUSINESS_LEGAL_NAME","Test Studio");
+  vi.stubEnv("AD_BUSINESS_LEGAL_NAME","Alexis Martin EI");
+  vi.stubEnv("AD_BUSINESS_LEGAL_FORM","EI");
+  vi.stubEnv("AD_BUSINESS_SIRET","12345678901234");
   vi.stubGlobal("fetch",vi.fn(async()=>new Response(JSON.stringify({success:true,hostname:"app.example"}))));
   await s.put("session",digest("owner-session"),{owner:cfg.owner,csrf:"fixture-csrf"},600);
 });
@@ -38,6 +40,12 @@ it("rejects payment or CRM capabilities not granted to public visitors",async()=
 });
 it("stays disabled with a missing verified legal/public anti-bot configuration",async()=>{
   vi.stubEnv("AD_PUBLIC_ENQUIRIES_ENABLED","0");
+  const status=await studioInquiryRoute(new Request(cfg.app+"/api/studio/availability"),s,cfg);
+  expect((await status.json()).available).toBe(false);
+  await expect(studioInquiryRoute(post(),s,cfg)).rejects.toMatchObject({status:503});
+});
+it("does not infer VAT regime or enable public intake without EI and a valid-length SIRET",async()=>{
+  vi.stubEnv("AD_BUSINESS_SIRET","unconfirmed");
   const status=await studioInquiryRoute(new Request(cfg.app+"/api/studio/availability"),s,cfg);
   expect((await status.json()).available).toBe(false);
   await expect(studioInquiryRoute(post(),s,cfg)).rejects.toMatchObject({status:503});
