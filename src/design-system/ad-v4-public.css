@@ -1,0 +1,111 @@
+/* A.D Studio / NEW ISSUE public art direction
+   A completely new sister identity to the private Signal Desk.
+   Functional form, pricing copy, legal states and routes untouched.
+*/
+.ad-landing{
+  --ad-ink:#0d1517;--ad-paper:#edf0ee;--ad-line:#b8c5be;--ad-accent:#d9fb72;
+  font-family:Inter,Arial,sans-serif;color:#0d1517;background:#edf0ee;overflow-x:hidden;
+}
+.ad-landing *{box-sizing:border-box}
+.ad-landing .ad-nav{
+  background:#0d1517;color:#f4f8f2;border-bottom:1px solid #304140;
+  padding:15px clamp(18px,4vw,68px);min-height:78px
+}
+.ad-landing .ad-logotype{font:800 39px/.9 Inter,Arial,sans-serif!important;letter-spacing:-.12em;color:#f6f8f4}
+.ad-landing .ad-logo-mark{color:#d9fb72;letter-spacing:0;font-size:12px}
+.ad-landing .ad-nav-descriptor{color:#afc1b8;font:700 10px Inter,Arial,sans-serif;letter-spacing:.14em}
+.ad-landing .ad-nav-descriptor span{color:#d9fb72}
+.ad-landing .ad-links a{font:600 12px Inter,Arial,sans-serif;color:#ecf3ed}
+.ad-landing .ad-nav-contact{color:#0d1517!important;background:#d9fb72;padding:12px 17px;border:1px solid #d9fb72}
+.ad-landing .ad-menu-toggle{border:1px solid #526861;background:transparent;color:#d9fb72;border-radius:0}
+.ad-landing h1,.ad-landing h2,.ad-landing h3,
+.ad-landing .ad-small-title,.ad-landing .ad-offer h3,
+.ad-landing .ad-method-steps h3{
+  font-family:Inter,Arial,sans-serif!important;font-weight:800!important;
+  line-height:1.02;letter-spacing:-.078em;
+}
+.ad-landing em{font-style:normal!important;font-weight:inherit;color:#b3df43}
+.ad-landing .ad-hero{
+  background:#0d1517;color:#f4f8f1;border:0;min-height:min(760px,85svh);
+  padding:clamp(30px,4vw,62px) clamp(18px,5vw,90px) 25px;
+  position:relative;overflow:hidden;
+}
+.ad-landing .ad-hero::before{display:none!important;content:none!important}
+.ad-landing .ad-hero::after{
+  content:"";position:absolute;right:-11%;top:15%;width:40vw;height:40vw;max-width:700px;max-height:700px;
+  border:clamp(28px,4.5vw,80px) solid #1c2e2d;transform:rotate(-22deg);pointer-events:none;opacity:.65
+}
+.ad-landing .ad-hero-top,.ad-landing .ad-hero-bottom,.ad-landing .ad-eyebrow,
+.ad-landing .ad-section-label,.ad-landing .ad-offer-kicker{
+  font:700 10px/1.4 Inter,Arial,sans-serif;letter-spacing:.17em
+}
+.ad-landing .ad-hero-top,.ad-landing .ad-hero-bottom,.ad-landing .ad-eyebrow{color:#adbfba}
+.ad-landing .ad-hero-core{position:relative;z-index:2}
+.ad-landing .ad-hero h1{
+  font-size:clamp(53px,8.1vw,138px)!important;line-height:.94!important;
+  letter-spacing:-.095em!important;max-width:1120px;color:#f5f7f1
+}
+.ad-landing .ad-hero h1 em{color:#d9fb72}
+.ad-landing .ad-hero-description{color:#bfcec6;max-width:57ch;line-height:1.65;font:400 15px Inter,Arial,sans-serif}
+.ad-landing .ad-hero-watermark{font:800 250px/.8 Inter,Arial,sans-serif!important;color:#274039;opacity:.12;letter-spacing:-.13em}
+.ad-landing .ad-hero-bottom{border-color:#344844}
+.ad-landing .ad-button{border-radius:0!important;box-shadow:none!important;font:700 13px Inter,Arial,sans-serif;min-height:51px;padding:15px 22px}
+.ad-landing .ad-button:hover{transform:translateY(-1px)}
+.ad-landing .ad-button-light{background:#d9fb72;color:#0d1517;border:1px solid #d9fb72}
+.ad-landing .ad-button-light:hover{background:#e9ffac}
+.ad-landing .ad-button-dark{background:#0d1517;color:#eff5e9;border:1px solid #0d1517}
+.ad-landing .ad-button-dark:hover{background:#2b4440}
+.ad-landing .ad-text-link{color:#ebf3df;border-bottom-color:#bfd29a}
+.ad-landing .ad-section{border-bottom:1px solid #c4d0c9;padding-inline:clamp(18px,5vw,90px)}
+.ad-landing .ad-section-label{color:#51645e;border-bottom-color:#c4d0c9}
+.ad-landing .ad-statement,.ad-landing .ad-frictions,.ad-landing .ad-services{background:#edf0ee;color:#142122}
+.ad-landing .ad-statement h2,.ad-landing .ad-section-heading h2,.ad-landing .ad-method h2,
+.ad-landing .ad-focus h2,.ad-landing .ad-contact h2,.ad-landing .ad-faq h2{
+  font-size:clamp(39px,5.9vw,94px)!important;line-height:1.01;letter-spacing:-.085em
+}
+.ad-landing .ad-friction-grid article{border-top:3px solid #0d1517}
+.ad-landing .ad-friction-grid h3{font-size:clamp(21px,2.4vw,35px)}
+.ad-landing .ad-statement-grid p,.ad-landing .ad-friction-grid p,.ad-landing .ad-section-heading>p,
+.ad-landing .ad-focus>p,.ad-landing .ad-contact-heading>p,
+.ad-landing .ad-offer div:nth-child(3)>p,.ad-landing .ad-faq details p{color:#52645e;line-height:1.7}
+.ad-landing .ad-offer-list{border-top:3px solid #0d1517}
+.ad-landing .ad-offer{border-bottom:1px solid #b9cac0}
+.ad-landing .ad-offer h3{font-size:clamp(29px,3.3vw,52px)!important}
+.ad-landing .ad-offer-number{color:#758b80}
+.ad-landing .ad-offer-detail{color:#496258}
+.ad-landing .ad-method{background:#d7e8d3}
+.ad-landing .ad-method-steps li{border-color:#98b19f}
+.ad-landing .ad-focus{background:#0d1517;color:#f1f7ef}
+.ad-landing .ad-focus h2{color:#eff6ed}
+.ad-landing .ad-focus h2 em{color:#d9fb72}
+.ad-landing .ad-focus p{color:#b8cbc1!important}
+.ad-landing .ad-focus-row span{border-color:#496159;color:#d9fb72}
+.ad-landing .ad-contact{background:#ebf0e9}
+.ad-landing .ad-inquiry-form{background:#f7faf4;border:1px solid #b8cbbd;border-radius:0;box-shadow:none}
+.ad-landing .ad-inquiry-form :is(input,textarea,select){
+  background:#fff;border:1px solid #aec0b5;border-radius:0;color:#0d1517;
+  min-height:45px;padding:10px 12px;font:400 15px Inter,Arial,sans-serif;
+}
+.ad-landing .ad-inquiry-form label{font:600 12px Inter,Arial,sans-serif;color:#2c443a}
+.ad-landing .ad-form-note{color:#657870}
+.ad-landing .ad-faq{background:#edf0ee}
+.ad-landing .ad-faq details{border-color:#bbcbc2}
+.ad-landing .ad-footer{background:#0d1517;color:#f6f8f3;padding-inline:clamp(18px,5vw,90px)}
+.ad-landing .ad-footer .ad-logotype{color:#f6f8f3}
+.ad-landing :is(a,button,input,textarea,select,summary):focus-visible{outline:3px solid #95cb42;outline-offset:3px}
+@media(max-width:760px){
+  .ad-landing .ad-nav{min-height:64px;padding:13px 19px}
+  .ad-landing .ad-logotype{font-size:34px!important}
+  .ad-landing .ad-links{background:#0d1517;color:#f1f4ed}
+  .ad-landing .ad-links.is-open{border:1px solid #3f5750}
+  .ad-landing .ad-links a{color:#f1f4ed}
+  .ad-landing .ad-hero{min-height:660px;padding:27px 20px 30px}
+  .ad-landing .ad-hero h1{font-size:clamp(49px,13vw,76px)!important}
+  .ad-landing .ad-hero::after{width:72vw;height:72vw;top:28%;right:-38%;border-width:30px}
+  .ad-landing .ad-section{padding-inline:20px}
+  .ad-landing .ad-hero-description{font-size:14px}
+  .ad-landing .ad-inquiry-form{padding:19px}
+}
+@media(prefers-reduced-motion:reduce){
+  .ad-landing *, .ad-landing *::before,.ad-landing *::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}
+}
