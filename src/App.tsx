@@ -5,6 +5,7 @@ import {
 } from "./intake/local-archive";
 import { canonicalSource, type IntakeItem } from "./intake/model";
 import { AccountSettings } from "./AccountSettings";
+import { CommandPalette } from "./ui/CommandPalette";
 import { marketRequest } from "./scout-market/client";
 import type { Finding } from "./scout-market/schema";
 import type { EvidenceReceipt } from "./opportunity/model";
@@ -88,6 +89,17 @@ export function App() {
   });
   const [data, setData] = useState(initial.data);
   const [fatal, setFatal] = useState(initial.error);
+  const [paletteOpen,setPaletteOpen]=useState(false);
+  useEffect(()=>{
+    const handle=(e:KeyboardEvent)=>{
+      if((e.metaKey||e.ctrlKey)&&!e.altKey&&e.key.toLocaleLowerCase()==="k"){
+        if(document.querySelector("dialog[open]")&&!paletteOpen)return;
+        e.preventDefault();setPaletteOpen(v=>!v);
+      }
+    };
+    window.addEventListener("keydown",handle);
+    return ()=>window.removeEventListener("keydown",handle);
+  },[paletteOpen]);
   const remote = useRemoteSaver();
   const [readerMatches, setReaderMatches] = useState<
     {
@@ -466,6 +478,13 @@ export function App() {
             ))}
           </nav>
           <div className="top-actions">
+            <button className="ad-command-trigger" type="button"
+              aria-label="Rechercher partout" aria-keyshortcuts="Meta+K Control+K"
+              onClick={()=>setPaletteOpen(true)}>
+              <Search size={17} aria-hidden="true"/>
+              <span className="ad-command-label">Rechercher</span>
+              <kbd>⌘ K</kbd>
+            </button>
             <button
               className={
                 "capture-button" + (route === "saver" ? " saver-capture" : "")
@@ -888,6 +907,16 @@ export function App() {
           />
         </Modal>
       )}
+      <CommandPalette
+        open={paletteOpen}
+        onClose={()=>setPaletteOpen(false)}
+        data={displayData}
+        navigate={navigate}
+        openProject={id=>{navigate("projets");setProjectId(id);}}
+        openReference={openReference}
+        searchRadar={q=>{navigate("explorer");setQuery(q);}}
+        capture={()=>{setError("");setCaptureContext(null);setModal("capture");}}
+      />
       {modal === "settings" && (
         <Modal
           title="Votre espace, vos données."
