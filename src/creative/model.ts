@@ -15,6 +15,7 @@ export const creativeRevisionSchema = z.object({
   createdAt: z.string().datetime(),
   brief: written(3000),
   referenceIds: z.array(uuid).max(12),
+  unknowns: z.array(z.string().max(350)).max(6).default([]),
   directions: z.tuple([creativeDirectionSchema, creativeDirectionSchema]),
   origin: z.enum(["HUMAN", "STRUCTURED_TEMPLATE", "CONFIGURED_AI"]),
   approvedDirection: z.enum(["A", "B"]).nullable(),
@@ -77,7 +78,7 @@ export function creativeStartingPoints(brief: string, referenceTitles: string[])
 export function nextCreativeRevision(
   board: CreativeBoard | undefined,
   projectId: string,
-  input: Pick<CreativeRevision,"brief"|"referenceIds"|"directions"|"origin"|"aiProvenance">,
+  input: Pick<CreativeRevision,"brief"|"referenceIds"|"directions"|"origin"|"aiProvenance"> & { unknowns?: string[] },
   approvedDirection: "A"|"B"|null = null,
 ): CreativeBoard {
   const now = new Date().toISOString();
