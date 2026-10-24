@@ -1,0 +1,36 @@
+name: A.D Studio / Secure Funnel QA
+on:
+  push:
+    branches:
+      - feat/ad-studio-client-funnel-20261024
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Find Chromium binary
+        shell: bash
+        run: |
+          BROWSER_PATH="$(find "$HOME/.cache/ms-playwright" -type f \( -name "chrome-headless-shell" -o -name "chrome" \) | grep -E '/(chrome-headless-shell-linux64|chrome-linux64)/' | head -n 1)"
+          test -n "$BROWSER_PATH"
+          echo "CHROMIUM_PATH=$BROWSER_PATH" >> "$GITHUB_ENV"
+      - name: Validate public and owner workspaces
+        run: npx playwright test tests/browser/studio-revenue.spec.ts tests/browser/workspace.spec.ts
+      - name: Save mobile desktop and error screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ad-studio-acquisition-qa
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
