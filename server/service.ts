@@ -17,7 +17,7 @@ import { registerClient } from "./registration.js";
 import { instagramRoute } from "./instagram.js";
 import { googleRoute } from "./google.js";
 import { scoutCheckRoute } from "./scout-check.js";
-import { classificationRoute } from "./ai.js";
+import { classificationRoute, creativeDraftRoute } from "./ai.js";
 import { tasteRoute } from "./taste.js";
 import { extractRoute, originalRoute } from "./extraction.js";
 import { xRoute } from "./x.js";
@@ -212,6 +212,7 @@ async function route(
     if (path.startsWith("/api/scout/check/")) return scoutCheckRoute(r, s, c);
     if (path === "/api/taste/context") return tasteRoute(r, s, c);
     if (path === "/api/scout/classify") return classificationRoute(r, s, c);
+    if (path === "/api/creative/draft") return creativeDraftRoute(r, s, c);
     if (path.startsWith("/api/x/")) return xRoute(r, s, c);
     if (path === "/api/collections") return collectionsRoute(r, s, c);
     const versionMatch =
