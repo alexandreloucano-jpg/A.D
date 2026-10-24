@@ -93,6 +93,7 @@ test("A.D beta restores one genuine prior dossier using a backup, never fabricat
   const bytes=await readFile(await backup.path());
   await page.evaluate(()=>localStorage.removeItem("ad.workspace.v1"));
   await page.reload();
+  await page.getByRole("navigation",{name:"Navigation principale"}).getByRole("link",{name:"Accueil"}).click();
   await expect(page.getByRole("button",{name:"Récupérer mes anciens dossiers"})).toBeVisible();
   await page.getByRole("button",{name:"Récupérer mes anciens dossiers"}).click();
   await expect(page.getByRole("dialog")).toBeVisible();
