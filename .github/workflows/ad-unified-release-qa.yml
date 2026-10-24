@@ -1,0 +1,37 @@
+name: A.D Unified Release / Browser QA
+on:
+  push:
+    branches:
+      - release/ad-unified-studio-create-v2-20261024
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Resolve Chromium
+        shell: bash
+        run: |
+          BROWSER_PATH="$(find "$HOME/.cache/ms-playwright" -type f \( -name "chrome-headless-shell" -o -name "chrome" \) | grep -E '/(chrome-headless-shell-linux64|chrome-linux64)/' | head -n 1)"
+          test -n "$BROWSER_PATH"
+          echo "CHROMIUM_PATH=$BROWSER_PATH" >> "$GITHUB_ENV"
+      - name: Test unified public and private journeys at 390 and 1440
+        run: npx playwright test tests/browser/studio-revenue.spec.ts tests/browser/creative-canvas.spec.ts tests/browser/workspace.spec.ts tests/browser/ad-v2-design.spec.ts
+      - name: Upload snapshots and traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ad-unified-release-browser-screenshots
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7

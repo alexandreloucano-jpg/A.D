@@ -503,6 +503,7 @@ export function App() {
                   setProjectId={setProjectId}
                   openReference={openReference}
                   setModal={setModal}
+                  remote={remote}
                 />
               )}
               {route !== "accueil" && (
@@ -665,6 +666,12 @@ export function App() {
                         projects={projects}
                         query={query}
                         openReference={openReference}
+                        remote={remote}
+                        onCapture={() => {
+                          setError("");
+                          setCaptureContext(null);
+                          setModal("capture");
+                        }}
                       />
                     )}
                   </div>

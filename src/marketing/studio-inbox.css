@@ -1,0 +1,12 @@
+/* Private enquiries: editorial owner-only list, never rendered publicly. */
+.app-frame .ad-studio-inbox {border-top:1px solid #D8D6D1;padding-top:18px;margin-top:25px;}
+.app-frame .ad-studio-inbox-list {display:flex;flex-direction:column;gap:0;max-height:420px;overflow-y:auto;}
+.app-frame .ad-studio-inbox-row {display:flex;justify-content:space-between;align-items:flex-start;gap:12px;border-bottom:1px solid #D8D6D1;padding:15px 0;}
+.app-frame .ad-studio-inbox-copy {min-width:0;flex:1;}
+.app-frame .ad-studio-inbox-copy strong {display:block;font-size:14px;font-weight:600;}
+.app-frame .ad-studio-inbox-copy small {display:block;color:#6B6964;font-size:11px;margin-top:5px;}
+.app-frame .ad-studio-inbox-copy p {font-size:12px;line-height:1.6;margin:9px 0;overflow-wrap:anywhere;white-space:normal;}
+.app-frame .ad-studio-inbox-copy a {display:inline-flex;gap:4px;align-items:center;font-size:11px;text-decoration:underline;}
+.app-frame .ad-studio-inbox-row select {max-width:134px;min-height:44px;font-size:11px;padding:7px;border:1px solid #D8D6D1;background:#FFFEFA;}
+.app-frame .ad-studio-inbox-status {font-size:12px;color:#6B6964;}
+@media(max-width:700px){.app-frame .ad-studio-inbox-row {flex-direction:column;}.app-frame .ad-studio-inbox-row select {width:100%;max-width:100%;}}

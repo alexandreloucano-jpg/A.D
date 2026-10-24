@@ -6,10 +6,11 @@ import "@fontsource/inter/latin-600.css";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
+import { StudioLanding } from "./marketing/StudioLanding";
 import "./styles.css";
 import "./design-system/ad-v2.css";
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <App />
+    {window.location.pathname === "/studio" || window.location.pathname === "/studio/" ? <StudioLanding /> : <App />}
   </React.StrictMode>,
 );

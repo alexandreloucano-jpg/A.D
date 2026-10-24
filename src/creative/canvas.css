@@ -1,0 +1,74 @@
+/* A.D / CREATE — quiet editorial workspace, not a general-purpose image editor */
+.app-frame .ad-create { margin: 0 0 42px; color:#191919; border-top:1px solid #191919; padding-top:26px; font-family:Inter,Arial,sans-serif; }
+.app-frame .ad-create * { box-sizing:border-box; }
+.app-frame .ad-create-head { display:flex; justify-content:space-between; align-items:start; gap:18px; padding-bottom:24px; }
+.app-frame .ad-create-head h2 { font:400 clamp(32px,3.2vw,46px)/1.08 "Bodoni Moda",Georgia,serif; margin:13px 0 14px; letter-spacing:-.035em; }
+.app-frame .ad-create-head p:not(.ad-create-kicker) { color:#6B6964; margin:0; font-size:13px; line-height:1.65; max-width:670px; }
+.app-frame .ad-create-kicker,.app-frame .ad-create-direction-top,.app-frame .ad-create-workflow,.app-frame .ad-create-state span { color:#6B6964; letter-spacing:.1em; font-size:10px; font-weight:600; }
+.app-frame .ad-create-state { min-width:120px; display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
+.app-frame .ad-create-state strong { font-size:11px; font-weight:500; white-space:nowrap; }
+.app-frame .ad-create-workflow { display:flex; gap:16px; justify-content:space-between; border-top:1px solid #D8D6D1; border-bottom:1px solid #D8D6D1; padding:13px 0; margin-bottom:25px; }
+.app-frame .ad-create-brief { margin:0 0 25px; }
+.app-frame .ad-create label { color:#252525; font-size:12px; font-weight:500; }
+.app-frame .ad-create-brief>label { display:block; margin-bottom:10px; }
+.app-frame .ad-create textarea,.app-frame .ad-create input[type=text],.app-frame .ad-create-direction input {
+ display:block; width:100%; min-width:0; background:#FFFEFA; color:#191919; border:1px solid #D8D6D1; border-radius:2px; padding:13px 14px; resize:vertical; margin-top:8px; font:400 15px/1.55 Inter,sans-serif;
+}
+.app-frame .ad-create-brief textarea { margin-top:0; max-width:none; }
+.app-frame .ad-create-brief small,.app-frame .ad-create-source-top p,.app-frame .ad-create-ai-status,.app-frame .ad-create-privacy { color:#6B6964; font:400 11px/1.65 Inter,sans-serif; }
+.app-frame .ad-create-brief small { display:block; margin-top:7px; }
+.app-frame .ad-create-source-top { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding:17px 0; border-top:1px solid #D8D6D1; }
+.app-frame .ad-create-source-top h3 { font:400 28px "Bodoni Moda",Georgia,serif; letter-spacing:-.03em; margin:0; }
+.app-frame .ad-create-source-top p { margin:5px 0 0; }
+.app-frame .ad-create-source-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; max-height:360px; overflow-y:auto; padding:2px 1px 16px; }
+.app-frame .ad-create-ref { border:1px solid #D8D6D1; padding:8px; display:flex; flex-direction:column; background:#FFFEFA; min-width:0; cursor:pointer; }
+.app-frame .ad-create-ref.is-selected { border:2px solid #191919; padding:7px; }
+.app-frame .ad-create-ref-visual { position:relative; aspect-ratio:4/3; background:#EFEDE7; width:100%; }
+.app-frame .ad-create-ref-visual img { width:100%; height:100%; object-fit:cover; }
+.app-frame .ad-create-ref-visual input { position:absolute; top:8px; right:8px; width:20px; height:20px; accent-color:#191919; margin:0; }
+.app-frame .ad-create-ref-fallback { display:grid; place-items:center; width:100%; height:100%; color:#797772; font-size:10px; letter-spacing:.1em; }
+.app-frame .ad-create-ref>strong { display:block; font-size:12px; font-weight:500; margin-top:9px; overflow-wrap:anywhere; max-width:100%; }
+.app-frame .ad-create-ref>small { display:block; color:#6B6964; font-size:10px; margin-top:4px; font-weight:400; }
+.app-frame .ad-create-open { align-self:start; border:0; background:none; padding:6px 0; text-decoration:underline; font-size:11px; color:#191919; }
+.app-frame .ad-create-empty { padding:22px; color:#6B6964; border:1px solid #D8D6D1; font-size:13px; }
+.app-frame .ad-create-actions { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin:19px 0 10px; }
+.app-frame .ad-create button.ad-create-ai,.app-frame .ad-create button.ad-create-neutral,.app-frame .ad-create button.ad-create-save,.app-frame .ad-create button.ad-create-approve {
+ border-radius:2px; display:inline-flex; gap:10px; align-items:center; justify-content:center; padding:13px 16px; font-size:12px; min-height:44px; border:1px solid #191919; background:#191919; color:#FFFEFA; font-weight:500;
+}
+.app-frame .ad-create button.ad-create-neutral { background:transparent; color:#191919; border-color:#D8D6D1; }
+.app-frame .ad-create button.ad-create-ai:disabled,.app-frame .ad-create button.ad-create-approve:disabled,.app-frame .ad-create button.ad-create-neutral:disabled { cursor:not-allowed; opacity:.4; }
+.app-frame .ad-create-consent { display:flex; align-items:flex-start; gap:8px; line-height:1.55; max-width:800px; color:#5A5852!important; margin:10px 0 7px; font-weight:400!important; }
+.app-frame .ad-create-consent input { accent-color:#191919; margin:3px 0 0; flex:0 0 16px; }
+.app-frame .ad-create-direction-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; margin:27px 0 22px; }
+.app-frame .ad-create-direction { display:flex; flex-direction:column; gap:19px; min-width:0; padding:23px; background:#FFFEFA; border:1px solid #D8D6D1; }
+.app-frame .ad-create-direction-top { display:flex; justify-content:space-between; align-items:center; gap:10px; border-bottom:1px solid #D8D6D1; padding-bottom:18px; }
+.app-frame .ad-create-direction-top strong { color:#49685C; display:inline-flex; align-items:center; gap:5px; font-size:10px; }
+.app-frame .ad-create-direction label { display:block; font-size:11px; }
+.app-frame .ad-create-direction input,.app-frame .ad-create-direction textarea { margin-top:7px; }
+.app-frame .ad-create-direction input { font-size:15px; }
+.app-frame .ad-create-direction textarea { font-size:14px; }
+.app-frame .ad-create-direction .ad-create-approve { width:100%; margin-top:auto; }
+.app-frame .ad-create-error { background:#f8eae6; color:#842b25; padding:13px 16px; font-size:12px; border-left:2px solid #842b25; }
+.app-frame .ad-create-message { color:#355b4d; padding:12px 0; font-size:12px; }
+.app-frame .ad-create-unknowns { border-left:2px solid #797772; padding:10px 18px; background:#EFEDE7; font-size:12px; }
+.app-frame .ad-create-unknowns ul { margin:10px 0; padding-left:20px; line-height:1.7; }
+.app-frame .ad-create-footer { display:flex; align-items:center; gap:12px; flex-wrap:wrap; border-top:1px solid #D8D6D1; padding:23px 0; }
+.app-frame .ad-create-history { border-top:1px solid #D8D6D1; font-size:12px; padding:14px 0; }
+.app-frame .ad-create-history summary { cursor:pointer; font-weight:500; }
+.app-frame .ad-create-revision { display:flex; justify-content:space-between; gap:12px; align-items:center; border-bottom:1px solid #D8D6D1; padding:14px 0; }
+.app-frame .ad-create-revision p { color:#6B6964; margin:6px 0 0; }
+.app-frame .ad-create-revision button { font-size:12px; border:1px solid #D8D6D1; padding:10px; background:transparent; }
+.app-frame .ad-create-privacy { margin-top:16px; }
+@media (max-width:900px) {
+ .app-frame .ad-create-source-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+@media (max-width:700px) {
+ .app-frame .ad-create-head { flex-direction:column; }
+ .app-frame .ad-create-state { flex-direction:row; justify-content:space-between; align-items:center; width:100%; }
+ .app-frame .ad-create-workflow { flex-wrap:wrap; justify-content:flex-start; gap:8px 18px; }
+ .app-frame .ad-create-source-grid { grid-template-columns:repeat(2,minmax(0,1fr)); max-height:290px; }
+ .app-frame .ad-create-direction-grid { grid-template-columns:minmax(0,1fr); }
+ .app-frame .ad-create-direction { padding:17px; }
+ .app-frame .ad-create-actions>button,.app-frame .ad-create-footer>button { width:100%; }
+}
+@media (prefers-reduced-motion:reduce) { .app-frame .ad-create * { transition:none!important; } }
