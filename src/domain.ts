@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { creativeBoardSchema } from "./creative/model";
 const text = z.string().trim().min(1).max(10000);
 export const safeUrl = z
   .string()
@@ -71,15 +72,20 @@ export const workspaceSchema = z
     projects: z.array(projectSchema).max(1000),
     tasks: z.array(taskSchema).max(10000),
     signals: z.array(signalSchema).max(10000),
+    creativeBoards: z.array(creativeBoardSchema).max(1000).optional(),
   })
   .strict()
   .superRefine((s, ctx) => {
-    const ids = [...s.references, ...s.projects, ...s.tasks, ...s.signals].map(
+    const ids = [...s.references, ...s.projects, ...s.tasks, ...s.signals, ...(s.creativeBoards || [])].map(
       (x) => x.id,
     );
     if (new Set(ids).size !== ids.length)
       ctx.addIssue({ code: "custom", message: "Identifiants dupliqués." });
     const projects = new Set(s.projects.map((p) => p.id));
+    if (
+      s.creativeBoards?.some((board) => !projects.has(board.projectId)) ||
+      new Set((s.creativeBoards || []).map((board) => board.projectId)).size !== (s.creativeBoards || []).length
+    ) ctx.addIssue({ code: "custom", message: "Dossier créatif associé introuvable ou dupliqué." });
     if (
       s.tasks.some((t) => !projects.has(t.projectId)) ||
       s.references.some((r) => r.projectId && !projects.has(r.projectId))
@@ -96,6 +102,7 @@ export const emptyWorkspace = (): Workspace => ({
   projects: [],
   tasks: [],
   signals: [],
+  creativeBoards: [],
 });
 export function newTask(
   projectId: string,
