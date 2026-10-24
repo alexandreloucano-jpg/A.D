@@ -1,4 +1,6 @@
 import { MarketPanel } from "../scout-market/MarketPanel";
+import { CreativeCanvas } from "../creative/CreativeCanvas";
+import type { RemoteSaver } from "../remote-saver";
 import { ArrowUpRight, Bookmark, Folder } from "lucide-react";
 import { TaskForm } from "../components/forms";
 import { Empty } from "../components/ui";
@@ -15,6 +17,8 @@ export function ProjectsView({
   projects,
   query,
   openReference,
+  remote,
+  onCapture,
 }: {
   project: Workspace["projects"][number] | undefined;
   archive: boolean;
@@ -26,6 +30,8 @@ export function ProjectsView({
   projects: Workspace["projects"];
   query: string;
   openReference: (id: string) => void;
+  remote: RemoteSaver;
+  onCapture: () => void;
 }) {
   const acceptedCount = (id: string) =>
     data.tasks.filter((t) => t.projectId === id && t.lane === "NOW").length;
@@ -38,6 +44,7 @@ export function ProjectsView({
       )}
       {project ? (
         <>
+          <CreativeCanvas key={project.id} project={project} data={data} references={data.references} remote={remote} commit={commit} openReference={openReference} capture={onCapture} />
           <div className="project-controls">
             <h2>{archive ? "Actions écartées" : "Actions du projet"}</h2>
             <button

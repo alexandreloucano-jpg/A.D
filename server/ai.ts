@@ -9,6 +9,7 @@ import {
   type ReaderDocument,
 } from "../src/reader/model.js";
 import type { Reference } from "../src/domain.js";
+import { creativeAIResponse } from "../src/creative/model.js";
 import {
   proposalsSchema,
   validateProposals,
@@ -319,4 +320,42 @@ export async function classificationRoute(
       contentVersion: r.contentVersion,
     })),
   });
+}
+
+/** A.D CREATE: owner-triggered, bounded creative drafting, no external publication.
+ * Accepts explicitly selected notes only. They are user-supplied context, NOT
+ * verified facts or licensed client material. The result requires human review.
+ */
+export async function creativeDraftRoute(request:Request, store:Store, c:Config) {
+  const session=await owner(request,store,c,request.method!=="GET");
+  const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{
+    status,headers:{"content-type":"application/json","cache-control":"no-store"}
+  });
+  if(request.method==="GET") return json({available:aiAvailable(),provider:settings()?.name||null});
+  if(request.method!=="POST") throw new ServiceError(405,"method_not_allowed");
+  if(!aiAvailable()) throw new ServiceError(503,"authorized_ai_provider_unavailable");
+  const body=z.object({
+    projectName:z.string().trim().min(1).max(160),
+    brief:z.string().trim().min(30).max(3000),
+    references:z.array(z.object({
+      id:z.string().uuid(),title:z.string().max(200),
+      note:z.string().max(800),
+      url:z.string().url().max(4096).nullable(),
+    }).strict()).max(8),
+  }).strict().parse(await request.json());
+  if(new Set(body.references.map(r=>r.id)).size!==body.references.length)
+    throw new ServiceError(400,"duplicate_references");
+  const output=await generate(store,session.owner,
+    "You are A.D, a senior creative strategist for independent Paris fashion, luxury and hospitality founders. Produce exactly two original, strongly differentiated creative treatments in French. JSON response strictly {directions:[{letter:'A',title,thesis,visualGrammar,production},{letter:'B',title,thesis,visualGrammar,production}],unknowns:string[]}. Direction A should focus on founder heritage/material/narrative; B should focus on iconic visual distinctiveness, product and distribution. Do not imitate any named contemporary brand or replicate unlicensed references. No fabricated customer orders, verified founders, available budgets or client agreements. Never assert that selected reference descriptions are verified public facts. Describe open questions clearly. No text outside JSON.",
+    body,
+  );
+  const raw=z.object({
+    directions:creativeAIResponse.shape.directions,
+    unknowns:creativeAIResponse.shape.unknowns,
+  }).strict().parse(output.value);
+  const validated=creativeAIResponse.parse({
+    ...raw,provenance:output.provenance,requiresApproval:true
+  });
+  await store.audit(session.owner,"configured-ai","creative_draft_generated","owner_review_required");
+  return json(validated);
 }
