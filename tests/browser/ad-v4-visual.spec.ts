@@ -21,6 +21,15 @@ for(const size of [{width:390,height:844},{width:390,height:640},{width:768,heig
     return {heroBottom:hero.bottom,buttonBottom:button.bottom};
   });
   expect(noteGeometry.buttonBottom,"Recovery button must be fully contained in decision panel").toBeLessThanOrEqual(noteGeometry.heroBottom-8);
+  if(size.width<=760) {
+    const flow=await page.evaluate(()=>{
+      const rect=(selector:string)=>document.querySelector(selector)!.getBoundingClientRect();
+      return {focusBottom:rect(".ad-v2-focus").bottom,counterBottom:rect(".ad-v2-counters").bottom,railTop:rect(".ad-v2-rail").top,railHeadingTop:rect(".ad-v2-rail .ad-v2-heading-line").top};
+    });
+    expect(flow.focusBottom,"Decision section must enclose stats").toBeGreaterThanOrEqual(flow.counterBottom-1);
+    expect(flow.railTop,"Intelligence rail must not overlap counters").toBeGreaterThanOrEqual(flow.counterBottom+12);
+    expect(flow.railHeadingTop,"Rail text must start after counters").toBeGreaterThanOrEqual(flow.counterBottom+12);
+  }
   if(size.width>760){
    expect(infoBox.top.w).toBeGreaterThan(170);
    expect(infoBox.main.x).toBeGreaterThanOrEqual(infoBox.top.right-1);
