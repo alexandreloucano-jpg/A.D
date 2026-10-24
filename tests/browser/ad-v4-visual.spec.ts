@@ -15,6 +15,12 @@ for(const size of [{width:390,height:844},{width:390,height:640},{width:768,heig
   });
   expect(infoBox.hero.w).toBeGreaterThan(230);
   expect(infoBox.stats.y).toBeGreaterThan(infoBox.hero.bottom);
+  const noteGeometry=await page.evaluate(()=>{
+    const hero=document.querySelector(".ad-v2-priority")!.getBoundingClientRect();
+    const button=document.querySelector(".ad-v2-restore button")!.getBoundingClientRect();
+    return {heroBottom:hero.bottom,buttonBottom:button.bottom};
+  });
+  expect(noteGeometry.buttonBottom,"Recovery button must be fully contained in decision panel").toBeLessThanOrEqual(noteGeometry.heroBottom-8);
   if(size.width>760){
    expect(infoBox.top.w).toBeGreaterThan(170);
    expect(infoBox.main.x).toBeGreaterThanOrEqual(infoBox.top.right-1);
