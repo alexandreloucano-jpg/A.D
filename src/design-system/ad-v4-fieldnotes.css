@@ -302,9 +302,23 @@ body{margin:0}
 @media(max-width:1120px) and (min-width:761px){
  .app-frame .workspace{grid-template-columns:194px minmax(0,1fr)}
  .app-frame .topbar{padding:23px 9px 16px}
- .app-frame .home-layout.ad-v2-home{grid-template-columns:minmax(0,1fr);gap:30px}
- .app-frame .ad-v2-rail{border-top:1px solid var(--line);padding-top:18px}
- .app-frame .ad-v2-priority{min-height:290px}
+ /* Tablet is a true vertical editorial reading flow, not a one-column
+    CSS grid with shrinkable overlapping children. */
+ .app-frame .home-layout.ad-v2-home{
+   display:flex;flex-direction:column;align-items:stretch;
+   gap:30px;overflow-x:hidden;overflow-y:auto;min-height:0;
+ }
+ .app-frame .ad-v2-focus{
+   flex:0 0 auto;align-self:stretch;justify-content:flex-start;
+   width:100%;height:auto;min-height:max-content;overflow:visible;
+ }
+ .app-frame .ad-v2-priority{min-height:290px;flex:0 0 auto;height:auto}
+ .app-frame .ad-v2-counters{flex:0 0 auto;min-height:89px}
+ .app-frame .ad-v2-rail{
+   flex:0 0 auto;align-self:stretch;position:relative;width:100%;
+   height:auto;min-height:max-content;overflow:visible;
+   border-top:1px solid var(--line);padding-top:28px;
+ }
 }
 @media(max-width:760px){
  .app-frame .workspace{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:64px minmax(0,1fr) 24px}
