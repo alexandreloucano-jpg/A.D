@@ -1,4 +1,5 @@
 import { mediaRoute } from "./media.js";
+import { studioInquiryRoute } from "./studio.js";
 import { marketJob } from "./market/job-route.js";
 import { marketRoute } from "./market.js";
 import { intakeRoute } from "./intake.js";
@@ -191,6 +192,7 @@ async function route(
   }
   if (c.role === "app") {
     if (path.startsWith("/api/media/")) return mediaRoute(r, s, c);
+    if (path === "/api/studio/availability" || path === "/api/studio/inquiries") return studioInquiryRoute(r,s,c);
     if (path === "/api/jobs/market") return marketJob(r, s, c);
     if (path.startsWith("/api/market/")) return marketRoute(r, s, c);
     if (path === "/api/intake") return intakeRoute(r, s, c);
