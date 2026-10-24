@@ -4,7 +4,7 @@ This document is PUBLIC and deliberately contains **no private archives**. It is
 
 ## Before any task
 1. Read this repository's `AGENTS.md` and `docs/CODEX_HANDOFF_MASTER_2026-10-24.md` completely.
-2. Check real branch HEAD, open PRs, CI, deployed Vercel SHA, feature flags, Neon schema and migration status. Never infer deployment from a merge.
+2. Read [CODEX_REUSE_GATE.md](CODEX_REUSE_GATE.md) and check real branch HEAD, open PRs, CI, deployed Vercel SHA, feature flags, Neon schema and migration status. Never infer deployment from a merge and never rebuild without file-level proof.
 3. If the owner has attached or mounted the separate **private** `AD_CONTINUITY_PACK_2026-10-24.zip`, read in order: `00_START_HERE.md`, `AGENTS.md`, `01_CURRENT_STATE.md`, `02_PRODUCT_CANON.md`, `03_DECISION_LEDGER.md`, `05_GAPS_AND_RECOVERY.md`; then the latest `sessions/*.md` and only relevant original artifacts.
 4. Never commit private package contents to this **public** repository or publish links to private storage. Access it only in an owner-controlled private session or vault.
 5. On completion create a factual private session handoff: goal, source, starting SHA, changed files, actual tests, blockers, outcome, next task. Technical public docs can be updated separately without sensitive context.
@@ -13,7 +13,7 @@ This document is PUBLIC and deliberately contains **no private archives**. It is
 - 2026-10-24: Original A.D-only Library files gathered into private continuity archive; **29 source files**, indexed by SHA-256, with imported A.D recovery ZIP, prior handoff, design/Scout prototypes and screenshots. A ZIP test passed. This is **not** a complete ChatGPT/Codex conversation export.
 - 2026-10-24: Neon snapshot `AD_CONTINUITY_2026-10-24` created on A.D's main branch, ID `snap-bold-smoke-b7cm3ogl`. A snapshot exists but **restore was not tested** and local browser storage is not included.
 - Private GitHub knowledge repo is **not provisioned** through the current connector (no repository-creation action), and the private ZIP is **not** stored in this public repository.
-- ChatGPT library upload was attempted but failed with `container_session_unavailable`. Do not claim cloud vault synchronization.
+- Updated later on 2026-10-24: the A.D continuity archive and the curated AD-KNOWLEDGE starter ZIP were **successfully stored in the owner's private ChatGPT Library** at `/A.D-CLOUD/Continuity`, verified by a subsequent Library listing. **This does not mean the files are available inside Codex Cloud**; the future private GitHub knowledge repository and multi-environment mounting are still missing. An earlier upload attempt failed before a subsequent successful upload.
 - No production code, Vercel alias or Neon table has been changed by this documentation-only handoff.
 
 ## Don't lose the product intent
