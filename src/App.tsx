@@ -5,6 +5,7 @@ import {
 } from "./intake/local-archive";
 import { canonicalSource, type IntakeItem } from "./intake/model";
 import { AccountSettings } from "./AccountSettings";
+import { WorkspaceCloudPanel } from "./cloud/WorkspaceCloudPanel";
 import { parseSharedCapture } from "./share";
 import { useRemoteSaver, RemoteSaverSettings } from "./remote-saver";
 import { useWorkspaceNavigation } from "./hooks/useWorkspaceNavigation";
@@ -965,6 +966,7 @@ export function App() {
                 </div>
               )}
             </details>
+            <WorkspaceCloudPanel local={data} remote={remote} commit={commit} fatal={!!fatal}/>
             {adminMode && (
               <>
                 <h3>Administration Grok Scout</h3>
