@@ -442,7 +442,7 @@ export function App() {
       >
         Aller au contenu
       </a>
-      <div className="workspace" data-view={route}>
+      <div className="workspace" data-view={route} data-work-room={route === "projets" && !!project ? "true" : undefined}>
         <header className="topbar">
           <a
             className="brand"
@@ -565,7 +565,7 @@ export function App() {
                     (project && route === "projets" ? " project-detail" : "")
                   }
                 >
-                  <header className="page-heading">
+                  {!(project && route === "projets") && <header className="page-heading">
                     <div>
                       <p className="eyebrow">
                         {route === "saver"
@@ -611,7 +611,7 @@ export function App() {
                           ? "Ajouter un signal"
                           : "Nouveau projet"}
                     </button>
-                  </header>
+                  </header>}
                   <div className="collection-toolbar">
                     {project && route === "projets" ? (
                       <button
