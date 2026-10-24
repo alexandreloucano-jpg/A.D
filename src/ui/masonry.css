@@ -1,0 +1,20 @@
+/* Editorial columns: retain the existing receipt, source buttons and reader actions. */
+.app-frame .ad-library-layout{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;border-bottom:1px solid #d8d6d1;padding:12px 0;margin:14px 0}
+.app-frame .ad-library-layout>span{font:11px Inter,Arial,sans-serif;color:#6b6964;letter-spacing:.03em}
+.app-frame .ad-library-layout>div{display:flex;align-items:center;gap:0;border:1px solid #d8d6d1}
+.app-frame .ad-library-layout button{min-height:42px;border:0;background:transparent;color:#191919;padding:10px 16px;font:500 12px Inter,Arial,sans-serif;cursor:pointer}
+.app-frame .ad-library-layout button+button{border-left:1px solid #d8d6d1}
+.app-frame .ad-library-layout button[aria-pressed=true]{background:#191919;color:#fffefa}
+.app-frame .ad-library-layout button:focus-visible{outline:2px solid #191919;outline-offset:3px}
+.app-frame .reference-grid[data-layout=masonry]{display:block;column-count:3;column-gap:16px;padding:0;min-width:0}
+.app-frame .reference-grid[data-layout=masonry] .reference-card{display:inline-block;vertical-align:top;box-sizing:border-box;width:100%;max-width:100%;margin:0 0 16px;break-inside:avoid;page-break-inside:avoid;contain:layout style}
+.app-frame .reference-grid[data-layout=masonry] .reference-card[data-has-media=true] .reference-media{height:auto;min-height:165px;aspect-ratio:4/3;overflow:hidden}
+.app-frame .reference-grid[data-layout=masonry] .reference-card .reference-body{min-width:0}
+.app-frame .ad-library-more{display:flex;justify-content:center;padding:20px 0 28px}
+.app-frame .ad-library-more button{min-height:48px;width:min(100%,360px);background:transparent;color:#191919;border:1px solid #d8d6d1;padding:10px 14px;font:500 12px Inter,Arial,sans-serif;cursor:pointer}
+.app-frame .ad-library-more button:focus-visible{outline:2px solid #191919;outline-offset:3px}
+@media(max-width:1080px){.app-frame .reference-grid[data-layout=masonry]{column-count:2}}
+@media(max-width:680px){.app-frame .reference-grid[data-layout=masonry]{column-count:1}
+.app-frame .ad-library-layout>div{width:100%;justify-content:stretch}.app-frame .ad-library-layout button{flex:1}
+.app-frame .reference-grid[data-layout=masonry] .reference-card{margin-bottom:12px}}
+@media(prefers-reduced-motion:reduce){.app-frame .ad-library-layout *, .app-frame .ad-library-more *{transition:none!important}}
