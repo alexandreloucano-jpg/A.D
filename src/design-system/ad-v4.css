@@ -363,6 +363,20 @@ body{background:var(--ad-paper);color:var(--ad-ink)}
 @media(max-width:700px) and (max-height:700px){
   .app-frame .ad-issue-hero{padding-top:37px}
 }
+/* Specificity-safe compact mobile hero: the previous desktop flex rule must not
+   push the counters off the first iPhone screen. */
+@media(max-width:700px){
+  .app-frame .ad-v2-priority.ad-issue-hero{
+    flex:0 0 auto;justify-content:flex-start;align-items:flex-start;
+    min-height:0;gap:0;padding:30px 0 24px;
+  }
+  .app-frame .ad-v2-description.ad-issue-lead{
+    margin:20px 0 21px;max-width:34ch;font-size:13px;
+  }
+  .app-frame .ad-v2-counters.ad-issue-numbers{
+    flex:0 0 auto;min-height:86px;margin:0;padding:0;
+  }
+}
 @media(prefers-reduced-motion:reduce){
   .app-frame *, .app-frame *::before,.app-frame *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 }
