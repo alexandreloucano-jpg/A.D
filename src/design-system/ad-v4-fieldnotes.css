@@ -339,7 +339,7 @@ body{margin:0}
  .app-frame .section-meta .workspace-label{display:none}
  .app-frame .section-meta .local-state{font-size:9px;max-width:51%}
  .app-frame .home-layout.ad-v2-home{display:flex;flex-direction:column;overflow:auto;gap:22px;padding:18px 0 32px}
- .app-frame .ad-v2-focus{min-height:0;gap:0;padding:0}
+ .app-frame .ad-v2-focus{flex:0 0 auto;height:auto;min-height:0;gap:0;padding:0;overflow:visible}
  .app-frame .ad-v2-heading-line{font-size:9px}
  .app-frame .ad-v2-priority{min-height:330px;max-width:none;height:auto;flex:0 0 auto;margin:14px 0 14px;padding:34px 24px}
  .app-frame .ad-v2-overline{font-size:9px;margin-bottom:30px}
@@ -347,11 +347,11 @@ body{margin:0}
  .app-frame .ad-v2-description{font-size:13px;margin-top:19px}
  .app-frame .ad-v2-priority .ad-v2-cta{margin-top:24px;min-height:48px}
  .app-frame .ad-v2-restore{margin-top:14px}
- .app-frame .ad-v2-counters{gap:0;padding:0}
+ .app-frame .ad-v2-counters{flex:0 0 auto;gap:0;padding:0}
  .app-frame .ad-v2-counters>div{padding:15px 10px;gap:9px}
  .app-frame .ad-v2-counters strong{font-size:28px}
  .app-frame .ad-v2-counters span{font-size:9px}
- .app-frame .ad-v2-rail{padding:21px 0 0;border-top:1px solid var(--line)}
+ .app-frame .ad-v2-rail{flex:0 0 auto;height:auto;min-height:0;padding:21px 0 0;border-top:1px solid var(--line)}
  .app-frame .page-heading{align-items:start;gap:14px;padding:0 0 18px}
  .app-frame .page-heading h1{font-size:clamp(30px,8vw,42px)}
  .app-frame .page-heading>.primary{padding:9px 11px;font-size:11px;min-height:44px;max-width:140px}
