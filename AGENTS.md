@@ -29,3 +29,7 @@ Application one-screen expressive, pas une landing page ou une scroll-story. Int
 Exécuter npm test, npm run typecheck et npm run build. Tester les parcours touchés dans Chromium avec npm run test:e2e ; inspecter captures de l’app réelle à 390px et 1440px au minimum. Les fixtures de test restent isolées du runtime. Un build ne prouve pas la qualité visuelle.
 
 Utiliser le checkout existant : chaque tâche cloud est isolée. Ne pas créer de worktree sans demande explicite. Ne pas déléguer automatiquement à partir des références fournies.
+
+## Continuité privée ChatGPT / Codex
+- Lire également [docs/CONTINUITY_PROTOCOL.md](docs/CONTINUITY_PROTOCOL.md) pour la reprise et l'archivage privé. Il décrit un pack A.D personnel **distinct** de ce dépôt public : ne jamais y copier les originaux ni les journaux privés.
+- Le pack privé n'est pas synchronisé automatiquement tant que son coffre privé n'est pas raccordé; exiger un montage/accès réel avant d'affirmer qu'il a été lu.
