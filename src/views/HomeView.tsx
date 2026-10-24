@@ -24,9 +24,9 @@ export function HomeView({data,now,navigate,setProjectId,openReference,setModal,
  return (
   <div className="home-layout ad-v2-home">
    <section className={"home-focus ad-v2-focus"+(priority?" has-priority":"")}>
-    <div className="ad-v2-heading-line"><span>01 / TODAY</span><span>PRIVATE CREATIVE INTELLIGENCE</span></div>
+    <div className="ad-v2-heading-line"><span>A.D / DAILY CONTROL</span><span>YOUR WORKSPACE, IN CONTEXT</span></div>
     <div className="ad-v2-priority">
-      <p className="ad-v2-overline">{priority?"DÉCISION PRIORITAIRE · VALIDÉE":"AUCUNE DÉCISION PRIORITAIRE"}</p>
+      <p className="ad-v2-overline">{priority?"DECISION / APPROVED":"DECISION / NO ACTION ACCEPTED"}</p>
       <h1>{priority?priority.title:<>Aucune priorité<br/><em>en cours.</em></>}</h1>
       <p className="ad-v2-description">{priority
        ?"Vous avez validé cette action. Ouvrez son dossier pour poursuivre."
@@ -51,12 +51,12 @@ export function HomeView({data,now,navigate,setProjectId,openReference,setModal,
     </div>
    </section>
    <aside className="home-rail ad-v2-rail" aria-label="Intelligence et travail récent">
-    <div className="ad-v2-heading-line"><span>THE DESK</span><span>RECENT ACTIVITY</span></div>
+    <div className="ad-v2-heading-line"><span>INTELLIGENCE FEED</span><span>SOURCED / PRIVATE</span></div>
     <MarketPanel mode="home" onOpenDossier={onOpenDossier}/>
     <StudioLeadsPanel remote={remote}/>
     <section>
       <div className="section-label">
-       <h2>Dossiers récents</h2>
+       <h2>Dossiers actifs</h2>
        <button aria-label="Voir les projets" onClick={()=>navigate("projets")}><ArrowUpRight size={17}/></button>
       </div>
       {recent.length?recent.map((p,i)=>
@@ -70,14 +70,14 @@ export function HomeView({data,now,navigate,setProjectId,openReference,setModal,
       </div>}
     </section>
     <section>
-      <div className="section-label"><h2>Dernière référence</h2><span>{String(references.length).padStart(2,"0")}</span></div>
+      <div className="section-label"><h2>Mémoire récente</h2><span>{String(references.length).padStart(2,"0")}</span></div>
       {latest?<button className="reference-row" onClick={()=>openReference(latest.id)}>
        <span className="row-index">SAVER</span>
        <span>{latest.title}<small>{latest.url?"Source enregistrée":"Note personnelle"}</small></span>
        <ArrowUpRight size={16} aria-hidden="true"/>
       </button>:<p className="ad-v2-no-content">Aucune référence enregistrée.</p>}
     </section>
-    <button className="ad-v2-plain-link" onClick={()=>navigate("explorer")}>Ouvrir le radar <ArrowUpRight size={17}/></button>
+    <button className="ad-v2-plain-link" onClick={()=>navigate("explorer")}>Explorer les opportunités <ArrowUpRight size={17}/></button>
    </aside>
   </div>
  );
