@@ -313,7 +313,7 @@ export function App() {
           (e instanceof Error?e.message:"Réessayez depuis le Radar sans recréer un dossier."));
       }
     }
-    setProjectId(staged.projectId);setArchive(false);navigate("projets");
+    navigate("projets");setProjectId(staged.projectId);setArchive(false);
   }
   async function importLocal(items: IntakeItem[], preferredIds?: string[]) {
     const current = repository.read(),
