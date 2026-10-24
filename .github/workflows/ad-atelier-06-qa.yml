@@ -1,0 +1,35 @@
+name: A.D Atelier 06 / Visual and Product QA
+on:
+  push:
+    branches:
+      - feat/ad-v4-design-reset-20261024
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  visual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24, cache: npm}
+      - run: npm ci
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Find browser binary
+        shell: bash
+        run: |
+          BROWSER_PATH="$(find "$HOME/.cache/ms-playwright" -type f \( -name "chrome-headless-shell" -o -name "chrome" \) | grep -E '/(chrome-headless-shell-linux64|chrome-linux64)/' | head -n 1)"
+          test -n "$BROWSER_PATH"
+          echo "CHROMIUM_PATH=$BROWSER_PATH" >> "$GITHUB_ENV"
+      - name: Validate new composition and retained critical workflows
+        run: npx playwright test tests/browser/ad-atelier-06.spec.ts tests/browser/ad-interactions.spec.ts tests/browser/ad-v2-design.spec.ts tests/browser/opportunity-room.spec.ts tests/browser/studio-revenue.spec.ts
+      - name: Save screenshots and failure traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ad-atelier-06-visual
+          path: test-results/
+          retention-days: 7
+          if-no-files-found: ignore
