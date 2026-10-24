@@ -1,3 +1,4 @@
+import "./studio-inbox.css";
 import { useEffect, useState } from "react";
 import { ArrowUpRight, RefreshCcw } from "lucide-react";
 import type { RemoteSaver } from "../remote-saver";
