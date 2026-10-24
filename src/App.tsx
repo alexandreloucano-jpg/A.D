@@ -966,7 +966,9 @@ export function App() {
                 </div>
               )}
             </details>
-            <WorkspaceCloudPanel local={data} remote={remote} commit={commit} fatal={!!fatal}/>
+            {import.meta.env.VITE_AD_WORKSPACE_SYNC_UI === "1" && (
+              <WorkspaceCloudPanel local={data} remote={remote} commit={commit} fatal={!!fatal}/>
+            )}
             {adminMode && (
               <>
                 <h3>Administration Grok Scout</h3>
