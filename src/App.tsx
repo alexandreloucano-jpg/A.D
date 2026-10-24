@@ -456,9 +456,9 @@ export function App() {
             A.D
             <span className="brand-line" />
             <span className="brand-caption">
-              PRIVATE
+              CREATIVE
               <br />
-              INTELLIGENCE
+              OPERATIONS
             </span>
           </a>
           <nav aria-label="Navigation principale">
@@ -734,7 +734,7 @@ export function App() {
           )}
         </main>
         <footer className="statusbar">
-          <span>A.D / PRIVATE WORKSPACE</span>
+          <span>A.D / INDEX 04 · PRIVATE DESK</span>
           <button onClick={() => setModal("settings")}>
             <ShieldCheck size={13} />{" "}
             {remote.connected

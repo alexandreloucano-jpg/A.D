@@ -6,7 +6,7 @@ for (const viewport of [{width:1440,height:900},{width:390,height:844},{width:39
     await page.goto("/");
     await expect(page.getByRole("heading",{level:1})).toContainText("Aucune priorité");
     await expect(page.locator(".ad-v2-priority").getByRole("button",{name:"Créer un dossier"})).toBeVisible();
-    await expect(page.locator(".workspace")).toHaveCSS("background-color","rgb(247, 246, 242)");
+    await expect(page.locator(".workspace")).toHaveCSS("background-color","rgb(232, 235, 234)");
     await expect(page.locator(".workspace")).toHaveCSS("background-image","none");
     for(const label of ["Accueil","Explorer","Saver","Projets"]) {
       await expect(page.getByRole("navigation",{name:"Navigation principale"}).getByRole("link",{name:label,exact:true})).toBeVisible();
