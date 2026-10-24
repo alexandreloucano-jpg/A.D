@@ -1,7 +1,15 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { ArrowDown, ArrowRight, ArrowUpRight, Check, Menu, X } from "lucide-react";
 import "./studio.css";
 
+declare global {
+  interface Window {
+    turnstile?: {
+      render:(element:HTMLElement,options:{sitekey:string;callback:(token:string)=>void;"expired-callback":()=>void;"error-callback":()=>void})=>string;
+      remove:(widgetId:string)=>void;
+    };
+  }
+}
 type Brief = {
   name: string;
   email: string;
@@ -62,6 +70,12 @@ export function StudioLanding() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [brief, setBrief] = useState<Brief>(initialBrief);
   const [feedback, setFeedback] = useState("");
+  const [ready,setReady]=useState(false);
+  const [privacyUrl,setPrivacyUrl]=useState<string|null>(null);
+  const [token,setToken]=useState("");
+  const [sending,setSending]=useState(false);
+  const turnstileNode=useRef<HTMLDivElement>(null);
+  const siteKey=(import.meta.env.VITE_AD_STUDIO_TURNSTILE_SITE_KEY||"").trim();
   const recipient = (import.meta.env.VITE_AD_STUDIO_CONTACT_EMAIL || "").trim();
   const recipientReady = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient);
 
@@ -72,6 +86,39 @@ export function StudioLanding() {
       "A.D Studio, direction artistique et stratégie de marque pour fondateurs indépendants à Paris. Du positionnement au monde de marque.",
     );
   }, []);
+
+  useEffect(()=>{
+    let mounted=true;
+    fetch("/api/studio/availability",{cache:"no-store"})
+      .then(r=>r.ok?r.json():Promise.reject(new Error("offline")))
+      .then((v:{available?:boolean;privacyUrl?:string})=>{
+        if(mounted){setReady(v.available===true);setPrivacyUrl(v.privacyUrl||null);}
+      }).catch(()=>{if(mounted)setReady(false);});
+    return ()=>{mounted=false;};
+  },[]);
+  useEffect(()=>{
+    if(!ready||!siteKey||!turnstileNode.current)return;
+    let active=true,widget="";
+    function mount(){
+      if(!active||!turnstileNode.current||!window.turnstile)return;
+      widget=window.turnstile.render(turnstileNode.current,{
+        sitekey:siteKey,
+        callback:t=>{if(active)setToken(t);},
+        "expired-callback":()=>setToken(""),
+        "error-callback":()=>setToken(""),
+      });
+    }
+    if(window.turnstile)mount();
+    else{
+      let script=document.querySelector<HTMLScriptElement>('script[data-ad-turnstile]');
+      if(!script){script=document.createElement("script");script.dataset.adTurnstile="true";
+        script.src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+        script.async=true;script.defer=true;document.head.appendChild(script);}
+      script.addEventListener("load",mount,{once:true});
+      return ()=>{active=false;script?.removeEventListener("load",mount);if(widget)window.turnstile?.remove(widget);};
+    }
+    return ()=>{active=false;if(widget)window.turnstile?.remove(widget);};
+  },[ready,siteKey]);
 
   const update = (field: keyof Brief, value: string) => {
     setBrief((previous) => ({ ...previous, [field]: value }));
@@ -93,6 +140,24 @@ export function StudioLanding() {
       "Échange de qualification, sans audit gratuit ni engagement.",
     ];
     const message = lines.join("\n");
+    if(ready&&siteKey){
+      if(!token){setFeedback("Veuillez terminer la vérification anti-spam avant l’envoi.");return;}
+      setSending(true);setFeedback("");
+      try{
+        const response=await fetch("/api/studio/inquiries",{
+          method:"POST",headers:{"content-type":"application/json"},
+          body:JSON.stringify({...brief,privacyAcknowledged:true,marketingOptIn:false,
+            verificationToken:token,trap:"",sourcePath:"/studio"}),
+        });
+        const result=await response.json();
+        if(!response.ok||result.received!==true)throw new Error("request_not_accepted");
+        setFeedback("Demande reçue et enregistrée par A.D Studio. Référence : "+result.reference+". Aucun rendez-vous n'est encore confirmé.");
+        setBrief(initialBrief);setToken("");
+      }catch{
+        setFeedback("Envoi non confirmé. Réessayez ou contactez A.D par email. Aucune réservation ni paiement n'a été effectué.");
+      }finally{setSending(false);}
+      return;
+    }
     if (recipientReady) {
       window.location.href = "mailto:" + recipient +
         "?subject=" + encodeURIComponent("A.D Studio — " + brief.brand.trim()) +
@@ -226,8 +291,10 @@ export function StudioLanding() {
               <label>Votre enjeu aujourd'hui
                 <textarea value={brief.challenge} required maxLength={1200} rows={4} placeholder="Ce qui doit changer, se lancer ou se développer..." onChange={(e)=>update("challenge",e.target.value)}/>
               </label>
-              <button type="submit" className="ad-button ad-button-dark">
-                {recipientReady ? "Préparer mon email" : "Copier mon brief"} <ArrowUpRight size={17}/>
+              {ready&&siteKey&&<div ref={turnstileNode} aria-label="Vérification anti-spam"/>}
+              {ready&&privacyUrl&&<p className="ad-form-note">Votre demande sera conservée pour y répondre, sans inscription automatique à une newsletter. <a href={privacyUrl} target="_blank" rel="noopener noreferrer">Confidentialité et droits</a>.</p>}
+              <button type="submit" disabled={sending} className="ad-button ad-button-dark">
+                {ready&&siteKey?(sending?"Envoi en cours…":"Envoyer ma demande"):recipientReady?"Préparer mon email":"Copier mon brief"} <ArrowUpRight size={17}/>
               </button>
               <p className="ad-form-note">
                 {recipientReady ? "L'envoi se fait depuis votre messagerie. Rien n'est transmis automatiquement." : "Version d'essai : le canal de contact n'est pas configuré. Votre brief est copié sur votre appareil ; aucun message n'est envoyé."}
