@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { safeUrl } from "../domain.js";
+// Keep this schema independent of domain.ts to avoid a cyclic ESM import.
+const safeUrl=z.string().url().max(4096).refine(v=>{
+  try{const u=new URL(v);return ["https:","http:"].includes(u.protocol)&&!u.username&&!u.password;}catch{return false;}
+},"HTTP(S) URL sans identifiants requis.");
 const uuid=z.string().uuid();
 export const evidenceReceiptSchema=z.object({
   id:uuid,
