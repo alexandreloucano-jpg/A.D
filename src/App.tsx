@@ -489,6 +489,7 @@ export function App() {
               className={
                 "capture-button" + (route === "saver" ? " saver-capture" : "")
               }
+              aria-label="Capturer"
               onClick={() => {
                 setError("");
                 setCaptureContext(null);
