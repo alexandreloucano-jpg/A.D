@@ -97,7 +97,7 @@ test("A.D beta restores one genuine prior dossier using a backup, never fabricat
   await expect(page.getByRole("button",{name:"Récupérer mes anciens dossiers"})).toBeVisible();
   await page.getByRole("button",{name:"Récupérer mes anciens dossiers"}).click();
   await expect(page.getByRole("dialog")).toBeVisible();
-  await expect(page.getByText("Importer une sauvegarde")).toBeVisible();
+  await expect(page.locator(".file-button")).toBeVisible();
   await page.locator('input[type="file"][accept*=".json"]').setInputFiles({
     name:"ad-workspace-backup.json",mimeType:"application/json",buffer:bytes,
   });
