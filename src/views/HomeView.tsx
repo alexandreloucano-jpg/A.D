@@ -40,12 +40,12 @@ export function HomeView({data,now,navigate,setProjectId,openReference,setModal,
           :"Ton espace ne contient pas d’action urgente validée. Examine le Radar ou reprends un dossier existant."}</p>
         {priority?.acceptedAt&&<p className="ad-v2-date v4-approved">APPROUVÉE · {dateLabel(priority.acceptedAt)}</p>}
         <button className="ad-v2-cta v4-action" onClick={act}>
-          <span>{priority?"Continuer la mission":data.projects.length?"Voir mes dossiers":"Créer un dossier"}</span>
+          <span>{priority?"Continuer la mission":data.projects.length?"Voir mes dossiers":"Créer mon premier dossier"}</span>
           <ArrowUpRight size={19} aria-hidden="true"/>
         </button>
         {!data.projects.length&&<div className="ad-v2-restore v4-restore">
           <span>Dossiers créés sur un autre domaine ?</span>
-          <button type="button" onClick={onRestore}>Importer une sauvegarde <Upload size={14} aria-hidden="true"/></button>
+          <button type="button" onClick={onRestore}>Récupérer mes anciens dossiers <Upload size={14} aria-hidden="true"/></button>
         </div>}
       </div>
       <div className="ad-v2-counters v4-mission-stats" aria-label="État réel de l'espace de travail">
