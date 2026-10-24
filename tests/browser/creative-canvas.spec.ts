@@ -1,0 +1,46 @@
+import { test,expect } from "@playwright/test";
+for (const width of [390,1440]) {
+  test(`Creative Canvas — source → two directions → version → approval at ${width}px`, async({page},info)=>{
+    await page.setViewportSize({width,height:width===390?844:900});
+    await page.goto("/");
+    await page.getByRole("navigation").getByRole("link",{name:"Projets"}).click();
+    await page.getByRole("button",{name:"Nouveau projet"}).click();
+    await page.getByLabel("Nom du projet").fill("Maison test de création");
+    await page.getByRole("button",{name:"Créer le projet"}).click();
+    await expect(page.getByRole("region",{name:"Creative Canvas A.D"})).toBeVisible();
+    await page.getByRole("button",{name:"Capturer",exact:true}).first().click();
+    await page.getByLabel("Lien source").fill("https://example.org/inspiration");
+    await page.getByLabel("Titre (facultatif)").fill("Référence originale");
+    await page.getByLabel("Votre pensée").fill("Un travail de contraste entre artisanat et architecture.");
+    await page.getByText("Provenance et projet").click();
+    await page.getByLabel("Associer à un projet").selectOption({label:"Maison test de création"});
+    await page.getByRole("button",{name:"Sauvegarder",exact:true}).click();
+    await page.getByRole("navigation").getByRole("link",{name:"Projets"}).click();
+    const card=page.getByRole("button",{name:/Maison test de création/});
+    if(await card.isVisible())await card.click();
+    const canvas=page.getByRole("region",{name:"Creative Canvas A.D"});
+    await expect(canvas.getByText("Référence originale",{exact:true})).toBeVisible();
+    await canvas.getByLabel("Sélectionner Référence originale").check();
+    await canvas.getByLabel("L'intention créative").fill("Maison de maroquinerie fondée sur la matière et une signature reconnaissable pour un lancement à Paris.");
+    await canvas.getByRole("button",{name:"Préparer le canevas (sans IA)"}).click();
+    await expect(canvas.getByText(/Deux pistes préparées sans IA/)).toBeVisible();
+    await expect(canvas.getByRole("button",{name:"Générer deux pistes avec IA"})).toBeDisabled();
+    await canvas.getByRole("button",{name:"Enregistrer une version"}).click();
+    await expect(canvas.getByRole("status")).toContainText("Version 1 enregistrée localement");
+    await page.reload();
+    const reload=page.getByRole("region",{name:"Creative Canvas A.D"});
+    await expect(reload.getByText("VERSION 01")).toBeVisible();
+    await expect(reload.getByText("Référence originale",{exact:true})).toBeVisible();
+    await reload.getByRole("button",{name:"Valider la direction B"}).click();
+    await expect(reload.getByRole("status")).toContainText("Piste B validée");
+    await expect(reload.getByText("PISTE B VALIDÉE")).toBeVisible();
+    await expect(reload.getByText("Historique des versions (2)")).toBeVisible();
+    const downloading=page.waitForEvent("download");
+    await reload.getByRole("button",{name:"Exporter le traitement"}).click();
+    const download=await downloading;
+    expect(download.suggestedFilename()).toContain("creative-v2.md");
+    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth+1);
+    expect(overflow).toBe(false);
+    await page.screenshot({path:info.outputPath(`create-canvas-${width}.png`),fullPage:true});
+  });
+}
