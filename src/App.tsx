@@ -665,6 +665,12 @@ export function App() {
                         projects={projects}
                         query={query}
                         openReference={openReference}
+                        remote={remote}
+                        onCapture={() => {
+                          setError("");
+                          setCaptureContext(null);
+                          setModal("capture");
+                        }}
                       />
                     )}
                   </div>
