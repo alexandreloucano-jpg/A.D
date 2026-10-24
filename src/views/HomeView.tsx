@@ -1,13 +1,13 @@
 import { MarketPanel } from "../scout-market/MarketPanel";
 import { StudioLeadsPanel } from "../marketing/StudioLeadsPanel";
 import type { RemoteSaver } from "../remote-saver";
-import { ArrowUpRight, Plus } from "lucide-react";
+import { ArrowUpRight, Plus, Upload } from "lucide-react";
 import { dateLabel, type Route } from "../display";
 import { rediscover, type Task, type Workspace } from "../domain";
 
-export function HomeView({data,now,navigate,setProjectId,openReference,setModal,remote}: {
+export function HomeView({data,now,navigate,setProjectId,openReference,setModal,remote,onRestore}: {
  data:Workspace; now:Task[]; navigate:(r:Route)=>void; setProjectId:(id:string|null)=>void;
- openReference:(id:string)=>void; setModal:(v:"project")=>void; remote:RemoteSaver;
+ openReference:(id:string)=>void; setModal:(v:"project")=>void; remote:RemoteSaver; onRestore:()=>void;
 }) {
  const priority=now[0];
  const project=priority?data.projects.find(p=>p.id===priority.projectId):undefined;
@@ -35,6 +35,12 @@ export function HomeView({data,now,navigate,setProjectId,openReference,setModal,
        {priority?"Ouvrir le dossier":data.projects.length?"Examiner les dossiers":"Créer un dossier"}
        <ArrowUpRight size={17} aria-hidden="true"/>
       </button>
+      {!data.projects.length && (
+       <div className="ad-v2-restore">
+        <p>Déjà des dossiers dans une ancienne version d’A.D ? Les données locales ne suivent pas automatiquement un changement de domaine.</p>
+        <button type="button" onClick={onRestore}>Récupérer mes anciens dossiers <Upload size={15} aria-hidden="true"/></button>
+       </div>
+      )}
     </div>
     <div className="ad-v2-counters" aria-label="État de l'espace de travail">
       <div><strong>{String(data.projects.length).padStart(2,"0")}</strong><span>Dossiers</span></div>

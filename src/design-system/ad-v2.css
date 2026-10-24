@@ -418,3 +418,11 @@
   .app-frame .ad-v2-focus { gap: 24px; }
   .app-frame .ad-v2-priority { padding-top: 4px; }
 }
+
+/* Recover private local workspace explicitly after moving to a new host.
+   This button must never fabricate data or silently replace current storage. */
+.app-frame .ad-v2-restore { margin-top:14px; max-width:38ch; }
+.app-frame .ad-v2-restore p { margin:0 0 8px; color:var(--muted, #77746d); font-size:12px; line-height:1.55; }
+.app-frame .ad-v2-restore button { display:inline-flex; gap:9px; align-items:center; border:0; border-bottom:1px solid currentColor; background:transparent; color:inherit; padding:8px 0; font-size:12px; text-align:left; cursor:pointer; }
+.app-frame .ad-v2-restore button:focus-visible { outline:2px solid currentColor; outline-offset:3px; }
+@media(max-width:700px){.app-frame .ad-v2-restore { margin-top:16px; }}

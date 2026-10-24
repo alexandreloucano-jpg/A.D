@@ -504,6 +504,7 @@ export function App() {
                   openReference={openReference}
                   setModal={setModal}
                   remote={remote}
+                  onRestore={() => setModal("settings")}
                 />
               )}
               {route !== "accueil" && (
@@ -885,7 +886,7 @@ export function App() {
                 historiques Sites et l’API xAI restent indépendantes.
               </p>
             )}
-            <details className="settings-backup">
+            <details className="settings-backup" open={data.projects.length === 0 && data.tasks.length === 0}>
               <summary>Sauvegarde et restauration</summary>
               <p>
                 Les projets et signaux restent dans ce navigateur. Les
@@ -893,6 +894,15 @@ export function App() {
                 Exportez une copie avant de changer d’appareil ; utilisez un
                 appareil de confiance.
               </p>
+              {!data.projects.length && (
+                <p role="note">
+                  Pour récupérer vos dossiers depuis une autre adresse d’A.D :
+                  sur l’ancien site, ouvrez Réglages → Sauvegarde et restauration
+                  puis « Exporter mes données ». Ici, choisissez le fichier JSON
+                  avec « Importer une sauvegarde », vérifiez les compteurs et
+                  confirmez. Aucun dossier fictif n’est créé automatiquement.
+                </p>
+              )}
               <div className="backup-actions">
                 <button
                   onClick={() =>
