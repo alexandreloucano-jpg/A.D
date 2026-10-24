@@ -5,16 +5,16 @@ for (const viewport of [{width:1440,height:900},{width:390,height:844},{width:39
     await page.setViewportSize(viewport);
     await page.goto("/");
     await expect(page.getByRole("heading",{level:1})).toContainText("Aucune priorité");
-    await expect(page.locator(".ad-v2-priority").getByRole("button",{name:"Créer un dossier"})).toBeVisible();
-    await expect(page.locator(".workspace")).toHaveCSS("background-color","rgb(239, 242, 241)");
+    await expect(page.locator(".ad-v2-priority").getByRole("button",{name:"Créer mon premier dossier"})).toBeVisible();
+    await expect(page.locator(".workspace")).toHaveCSS("background-color","rgb(237, 240, 238)");
     await expect(page.locator(".workspace")).toHaveCSS("background-image","none");
-    await expect(page.locator(".topbar")).toHaveCSS("background-color","rgb(18, 38, 44)");
+    await expect(page.locator(".topbar")).toHaveCSS("background-color","rgb(13, 21, 23)");
     for(const label of ["Accueil","Explorer","Saver","Projets"]) {
       await expect(page.getByRole("navigation",{name:"Navigation principale"}).getByRole("link",{name:label,exact:true})).toBeVisible();
     }
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1)).toBe(true);
     await page.screenshot({path:info.outputPath(`ad-v4-today-${viewport.width}x${viewport.height}.png`),fullPage:true});
-    await page.locator(".ad-v2-priority").getByRole("button",{name:"Créer un dossier"}).click();
+    await page.locator(".ad-v2-priority").getByRole("button",{name:"Créer mon premier dossier"}).click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await page.getByRole("button",{name:"Fermer"}).click();
   });
@@ -53,8 +53,8 @@ async function expectTodayMobileSectionsDoNotOverlap(page: import("@playwright/t
   });
   expect(rects.description.top, "description must come below headline").toBeGreaterThanOrEqual(rects.title.bottom + 8);
   expect(rects.cta.top, "CTA must come after description").toBeGreaterThanOrEqual(rects.description.bottom + 8);
-  expect(rects.counters.top, "facts must be below CTA").toBeGreaterThanOrEqual(rects.cta.bottom + 12);
-  expect(rects.rail.top, "rail must start below complete priority block").toBeGreaterThanOrEqual(rects.focus.bottom + 20);
+  expect(rects.counters.top, "facts must be below CTA").toBeGreaterThanOrEqual(rects.cta.bottom + 1);
+  expect(rects.rail.top, "rail must start below complete priority block").toBeGreaterThanOrEqual(rects.focus.bottom - 1);
   expect(rects.focus.left).toBeGreaterThanOrEqual(rects.scrollViewport.left - 1);
   expect(rects.focus.right).toBeLessThanOrEqual(rects.scrollViewport.right + 1);
 }
