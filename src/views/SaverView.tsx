@@ -10,7 +10,8 @@ import { IntakePanel } from "../intake/IntakePanel";
 import { publicImage } from "../intake/model";
 import { ConnectedAccounts } from "../social/ConnectedAccounts";
 import { validateProposals } from "../collections/model";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import "../ui/masonry.css";
 import { Reader } from "../reader/Reader";
 import type { RemoteSaver } from "../remote-saver";
 import { ReferenceMedia } from "../components/ReferenceMedia";
@@ -247,6 +248,23 @@ export function SaverView({
           .find((g) => g.id === groupId)
           ?.referenceIds.includes(r.id)),
   );
+  // Reveal only a small window at a time; the source list and saved data stay unchanged.
+  const [libraryLayout,setLibraryLayout]=useState<"masonry"|"grid">("masonry");
+  const [visibleLimit,setVisibleLimit]=useState(30);
+  const loadSentinel=useRef<HTMLDivElement>(null);
+  const ordered=visible.slice().reverse();
+  const shown=ordered.slice(0,visibleLimit);
+  useEffect(()=>{setVisibleLimit(30);},[query,filter,groupId]);
+  useEffect(()=>{
+    if(visibleLimit>=ordered.length)return;
+    const marker=loadSentinel.current;
+    if(!marker||typeof IntersectionObserver==="undefined")return;
+    const observer=new IntersectionObserver(entries=>{
+      if(entries.some(e=>e.isIntersecting))setVisibleLimit(n=>Math.min(n+24,ordered.length));
+    },{rootMargin:"240px"});
+    observer.observe(marker);
+    return ()=>observer.disconnect();
+  },[visibleLimit,ordered.length,libraryLayout]);
   return (
     <>
       <DeviceSync
@@ -817,12 +835,15 @@ export function SaverView({
           </button>
         ))}
       </div>
+      <div className="ad-library-layout" role="group" aria-label="Affichage de la bibliothèque">
+        <span>{ordered.length} références · {shown.length} affichées</span>
+        <div><button type="button" aria-pressed={libraryLayout==="masonry"} onClick={()=>setLibraryLayout("masonry")}>Mosaïque</button>
+        <button type="button" aria-pressed={libraryLayout==="grid"} onClick={()=>setLibraryLayout("grid")}>Grille</button></div>
+      </div>
       {visible.length ? (
-        <div className="reference-grid">
-          {visible
-            .slice()
-            .reverse()
-            .map((r) => (
+        <>
+        <div className="reference-grid" data-layout={libraryLayout} aria-label="Références enregistrées">
+          {shown.map((r) => (
               <article
                 className="reference-card"
                 key={r.id}
@@ -961,6 +982,12 @@ export function SaverView({
               </article>
             ))}
         </div>
+        {visibleLimit<ordered.length&&<div ref={loadSentinel} className="ad-library-more">
+          <button type="button" onClick={()=>setVisibleLimit(n=>Math.min(n+24,ordered.length))}>
+            Charger les références suivantes · {ordered.length-shown.length} restantes
+          </button>
+        </div>}
+        </>
       ) : (
         <Empty
           icon={<Bookmark size={30} strokeWidth={1} />}

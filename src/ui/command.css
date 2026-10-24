@@ -1,0 +1,20 @@
+/* A.D interaction language: original keyboard search, never glassmorphism. */
+.ad-command { min-width:min(580px,calc(100vw - 68px)); max-width:640px; color:#191919; }
+.ad-command-input { display:flex;align-items:center;gap:12px;border:1px solid #d8d6d1;background:#fffefa;padding:12px 14px; }
+.ad-command-input input {flex:1;min-width:0;border:0;outline:0;background:transparent;color:#191919;font:500 16px Inter,Arial,sans-serif;}
+.ad-command-input button{border:0;background:transparent;min-width:36px;min-height:36px;display:grid;place-items:center;}
+.ad-command-results{max-height:min(54dvh,510px);overflow-y:auto;overscroll-behavior:contain;padding-block:8px;}
+.ad-command-option{width:100%;display:grid;grid-template-columns:22px minmax(0,1fr) 16px;gap:14px;align-items:center;border:0;border-bottom:1px solid #e9e7e2;background:transparent;color:#191919;text-align:left;padding:15px 12px;min-height:62px;cursor:pointer;}
+.ad-command-option>span{min-width:0}.ad-command-option strong{display:block;font-size:14px;font-weight:600;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;}
+.ad-command-option small{display:block;margin-top:3px;font-size:11px;line-height:1.4;color:#6b6964;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ad-command-option[data-active=true],.ad-command-option:hover{background:#efede7}
+.ad-command-option:focus-visible,.ad-command-input:focus-within{outline:2px solid #191919;outline-offset:-2px}
+.ad-command-foot{display:flex;justify-content:space-between;gap:16px;margin:12px 2px 0;font-size:11px;color:#6b6964}
+.ad-command-empty{padding:18px 12px;color:#6b6964;font-size:13px}
+.app-frame .top-actions .ad-command-trigger{border:1px solid #d8d6d1;background:transparent;display:flex;align-items:center;gap:8px;min-height:42px;padding:9px 13px;white-space:nowrap;color:#191919;font:500 12px Inter,Arial,sans-serif;cursor:pointer;}
+.app-frame .top-actions .ad-command-trigger kbd{color:#6b6964;border-left:1px solid #d8d6d1;padding-left:8px;font:11px Inter,Arial,sans-serif}
+.app-frame .top-actions .ad-command-trigger:focus-visible{outline:2px solid #191919;outline-offset:3px}
+@media(max-width:760px){.ad-command{min-width:0;width:calc(100vw - 52px)}.ad-command-foot span:last-child{display:none}
+.app-frame .top-actions .ad-command-trigger{padding:9px 11px;min-width:42px;justify-content:center}
+.app-frame .top-actions .ad-command-trigger kbd,.app-frame .top-actions .ad-command-trigger .ad-command-label{display:none}}
+@media(prefers-reduced-motion:reduce){.ad-command *, .ad-command-trigger{scroll-behavior:auto!important;transition:none!important}}

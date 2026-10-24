@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { useScoutMarket } from "./useScoutMarket";
 import { marketRequest } from "./client";
+import { MarketTimeline } from "./MarketTimeline";
 import { evidenceReceiptSchema, type EvidenceReceipt } from "../opportunity/model";
 import { stages, type Finding, type MarketAction } from "./schema";
 import {
@@ -695,6 +696,7 @@ export function MarketPanel({
                 {label(key)} : {f.value ?? "inconnu"} · {f.reason}
               </p>
             ))}
+            <MarketTimeline finding={selected} history={history}/>
             <h3>Historique de décision</h3>
             {history.length ? (
               history.map((h, i) => (
