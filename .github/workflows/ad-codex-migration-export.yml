@@ -1,0 +1,61 @@
+name: A.D / Codex Complete Source Export
+on:
+  push:
+    branches:
+      - chore/ad-codex-complete-export-20261024
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Fetch code and full revision history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Fetch all code branches
+        run: |
+          git fetch --no-tags origin '+refs/heads/*:refs/remotes/origin/*'
+          mkdir -p export
+          git for-each-ref --format='%(refname:short) %(objectname)' refs/remotes/origin > export/BRANCHES_AND_SHAS.txt
+          git show --no-patch --format='%H%n%cI%n%s' origin/codex/ad-rebuild > export/MAIN_REVISION.txt
+          git show --no-patch --format='%H%n%cI%n%s' origin/feat/ad-v5-editorial-art-direction-20261024 > export/EDITION_05_REVISION.txt
+      - name: Produce unchanged snapshots of source
+        run: |
+          git archive --format=zip --prefix='A.D_MAIN/' origin/codex/ad-rebuild > export/A.D_MAIN_SOURCE.zip
+          git archive --format=zip --prefix='A.D_EDITION_05_DRAFT/' origin/feat/ad-v5-editorial-art-direction-20261024 > export/A.D_EDITION_05_DRAFT_SOURCE.zip
+          python - <<'PY'
+          import zipfile
+          for p in ['export/A.D_MAIN_SOURCE.zip','export/A.D_EDITION_05_DRAFT_SOURCE.zip']:
+              with zipfile.ZipFile(p) as z:
+                  print(p,'files=',len(z.namelist()),'uncompressed=',sum(x.file_size for x in z.infolist()))
+                  assert z.testzip() is None
+          PY
+      - name: Create portable complete Git history
+        run: |
+          git bundle create export/A.D_ALL_BRANCHES.bundle --all
+          git bundle verify export/A.D_ALL_BRANCHES.bundle
+          (cd export && sha256sum A.D_MAIN_SOURCE.zip A.D_EDITION_05_DRAFT_SOURCE.zip A.D_ALL_BRANCHES.bundle > SHA256SUMS.txt)
+      - name: Upload code snapshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: ad-codex-current-and-draft-code
+          path: |
+            export/A.D_MAIN_SOURCE.zip
+            export/A.D_EDITION_05_DRAFT_SOURCE.zip
+            export/BRANCHES_AND_SHAS.txt
+            export/MAIN_REVISION.txt
+            export/EDITION_05_REVISION.txt
+            export/SHA256SUMS.txt
+          retention-days: 7
+          if-no-files-found: error
+      - name: Upload full Git history
+        uses: actions/upload-artifact@v4
+        with:
+          name: ad-codex-all-git-branches
+          path: export/A.D_ALL_BRANCHES.bundle
+          retention-days: 7
+          if-no-files-found: error
