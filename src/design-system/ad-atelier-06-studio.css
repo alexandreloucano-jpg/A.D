@@ -1,0 +1,83 @@
+/* A.D / ATELIER 06 — Studio sister identity.
+   Studio stays gated (no implied public launch, CRM, payment or auth change). */
+.ad-landing{
+  --ad-ink:#23221f;--ad-paper:#f2f0ea;--ad-line:#d2cfc6;--ad-accent:#b65a3c;
+  color:#23221f;background:#f2f0ea;font-family:Inter,system-ui,sans-serif;
+}
+.ad-landing *, .ad-landing *::before,.ad-landing *::after{box-sizing:border-box}
+.ad-landing h1,.ad-landing h2,.ad-landing h3,.ad-landing .ad-logotype,.ad-landing .ad-small-title,.ad-landing .ad-offer h3,.ad-landing .ad-method-steps h3{font-family:"Bodoni Moda",Georgia,serif!important;font-weight:500!important;letter-spacing:-.05em!important;line-height:1.03}
+.ad-landing .ad-nav{display:flex;align-items:center;min-height:86px;padding:16px clamp(22px,4vw,70px);border:0;border-bottom:1px solid #cdc8bc;background:#e8e5dd;color:#23221f}
+.ad-landing .ad-logotype{font-size:42px!important;color:#23221f;letter-spacing:-.055em!important}
+.ad-landing .ad-logo-mark{color:#b65a3c;font:500 13px Inter,system-ui,sans-serif;letter-spacing:0}
+.ad-landing .ad-nav-descriptor{color:#686761;letter-spacing:.12em;font:600 10px Inter,system-ui,sans-serif}
+.ad-landing .ad-links a{color:#23221f;font:500 12px Inter,system-ui,sans-serif;letter-spacing:.01em}
+.ad-landing .ad-links a:hover{text-decoration:underline;text-underline-offset:4px}
+.ad-landing .ad-nav-contact{border:1px solid #23221f!important;background:#23221f!important;color:#f2f0ea!important;padding:11px 20px;border-radius:0}
+.ad-landing .ad-menu-toggle{border:1px solid #bcb6aa;color:#23221f;background:transparent;border-radius:0}
+.ad-landing .ad-hero{position:relative;overflow:hidden;min-height:min(775px,85svh);display:flex;flex-direction:column;padding:clamp(27px,4vw,60px) clamp(22px,5vw,82px);background:#f2f0ea;color:#23221f;border:0}
+.ad-landing .ad-hero::before{display:none!important;content:none!important}
+.ad-landing .ad-hero::after{content:"";position:absolute;right:4%;top:11%;width:16vw;height:16vw;max-width:200px;max-height:200px;border:1px solid #cdc8bc;border-radius:100%;background:transparent;pointer-events:none;z-index:0;opacity:1}
+.ad-landing .ad-hero-top,.ad-landing .ad-hero-bottom{position:relative;z-index:1;color:#686761;letter-spacing:.14em;font:600 10px/1.5 ui-monospace,monospace}
+.ad-landing .ad-hero-top{border-top:1px solid #c9c4b9;padding-top:14px}
+.ad-landing .ad-hero-bottom{border-top:1px solid #c9c4b9;padding-top:14px}
+.ad-landing .ad-hero-core{position:relative;z-index:2;max-width:1250px;margin-block:auto;padding:28px 0 42px}
+.ad-landing .ad-eyebrow,.ad-landing .ad-section-label,.ad-landing .ad-offer-kicker{color:#a45438;font:600 10px/1.5 ui-monospace,monospace;letter-spacing:.12em}
+.ad-landing .ad-hero h1{font:500 clamp(66px,9.6vw,156px)/.91 "Bodoni Moda",Georgia,serif!important;letter-spacing:-.055em!important;color:#23221f;max-width:1000px}
+.ad-landing .ad-hero h1 em{font-style:italic!important;font-weight:400!important;color:#b65a3c}
+.ad-landing .ad-hero-description{color:#686761;max-width:54ch;font:400 clamp(15px,1.5vw,19px)/1.55 Inter,system-ui,sans-serif}
+.ad-landing .ad-hero-watermark{display:none!important}
+.ad-landing .ad-hero-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:30px}
+.ad-landing .ad-button{display:inline-flex;align-items:center;justify-content:space-between;gap:26px;min-height:51px;padding:13px 20px;border-radius:0;box-shadow:none;text-decoration:none;font:600 12px Inter,system-ui,sans-serif;transition:background .14s ease}
+.ad-landing .ad-button-light{background:#23221f;color:#fffaf1;border:1px solid #23221f}
+.ad-landing .ad-button-light:hover{background:#48433e;color:white}
+.ad-landing .ad-button-dark{background:transparent;color:#23221f;border:1px solid #b4ac9f}
+.ad-landing .ad-button-dark:hover{background:#e4ded4;color:#23221f}
+.ad-landing .ad-text-link{color:#23221f;text-decoration:underline;text-underline-offset:4px}
+.ad-landing .ad-section{padding:clamp(55px,7vw,114px) clamp(22px,5vw,82px);background:transparent;border-bottom:1px solid #d2cfc6}
+.ad-landing .ad-statement{background:#262523;color:#fff9f1}
+.ad-landing .ad-statement .ad-section-label,.ad-landing .ad-statement .ad-small-title{color:#dfc8b7}
+.ad-landing .ad-statement h2,.ad-landing .ad-statement p{color:#fff9f1}
+.ad-landing .ad-statement-grid,.ad-landing .ad-friction-grid{gap:clamp(16px,3vw,46px)}
+.ad-landing .ad-friction-grid>*,.ad-landing .ad-statement-grid>*{border-color:#d2cfc6}
+.ad-landing .ad-section-heading h2,.ad-landing .ad-method h2,.ad-landing .ad-focus h2,.ad-landing .ad-contact h2{font-size:clamp(42px,6vw,90px)!important;line-height:1!important;color:#23221f}
+.ad-landing .ad-offer-list{border-top:1px solid #23221f}
+.ad-landing .ad-offer{border-color:#d2cfc6;background:transparent;padding-block:clamp(24px,4vw,48px)}
+.ad-landing .ad-offer-number{color:#b65a3c;font:600 12px ui-monospace,monospace}
+.ad-landing .ad-offer h3{color:#23221f;font-size:clamp(36px,4vw,62px)!important}
+.ad-landing .ad-offer-detail,.ad-landing .ad-offer p{color:#686761}
+.ad-landing .ad-method{background:#e8e5dd}
+.ad-landing .ad-method-steps>*{border-color:#c4bdaf}
+.ad-landing .ad-method-steps h3{color:#23221f}
+.ad-landing .ad-focus{background:#262523;color:#fff9f1}
+.ad-landing .ad-focus h2,.ad-landing .ad-focus p{color:#fff9f1}
+.ad-landing .ad-focus-row{border-color:#57524a}
+.ad-landing .ad-focus-row>*{color:#fff9f1}
+.ad-landing .ad-contact{background:#f2f0ea;color:#23221f}
+.ad-landing .ad-contact-footnote{color:#686761}
+.ad-landing .ad-inquiry-form{background:#fffdf7;border:1px solid #cfc9be;padding:clamp(20px,3vw,38px);box-shadow:none}
+.ad-landing .ad-inquiry-form input,.ad-landing .ad-inquiry-form textarea,.ad-landing .ad-inquiry-form select{background:#f9f7f2;color:#23221f;border:1px solid #bfb8ac;border-radius:0;font:400 16px/1.4 Inter,system-ui,sans-serif}
+.ad-landing .ad-inquiry-form input:focus,.ad-landing .ad-inquiry-form textarea:focus,.ad-landing .ad-inquiry-form select:focus{outline:2px solid #b65a3c;outline-offset:2px}
+.ad-landing .ad-form-note,.ad-landing .ad-form-status{color:#686761}
+.ad-landing .ad-faq{background:transparent}
+.ad-landing .ad-faq details{border-color:#d2cfc6}
+.ad-landing .ad-footer{background:#262523;color:#f2f0ea;padding:40px clamp(22px,5vw,82px)}
+.ad-landing .ad-footer .ad-logotype{color:#f2f0ea}
+.ad-landing .ad-footer span,.ad-landing .ad-footer a{color:#bdb5aa}
+.ad-landing a:focus-visible,.ad-landing button:focus-visible,.ad-landing input:focus-visible{outline:2px solid #b65a3c;outline-offset:3px}
+@media(max-width:800px){
+ .ad-landing .ad-nav{min-height:70px}
+ .ad-landing .ad-nav .ad-links{background:#e8e5dd}
+ .ad-landing .ad-nav .ad-links a{color:#23221f}
+ .ad-landing .ad-hero{min-height:680px}
+ .ad-landing .ad-hero h1{font-size:clamp(59px,12.5vw,94px)!important}
+ .ad-landing .ad-hero::after{width:130px;height:130px;top:14%;right:-28px}
+ .ad-landing .ad-section{padding:58px 21px}
+ .ad-landing .ad-hero-description{font-size:14px}
+}
+@media(max-width:450px){
+ .ad-landing .ad-nav{padding-inline:17px}
+ .ad-landing .ad-hero{padding-inline:19px;min-height:630px}
+ .ad-landing .ad-hero h1{font-size:clamp(51px,13.2vw,64px)!important}
+ .ad-landing .ad-hero-description{font-size:14px}
+}
+@media(prefers-reduced-motion:reduce){.ad-landing *,.ad-landing *::before,.ad-landing *::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
