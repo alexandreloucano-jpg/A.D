@@ -11,7 +11,7 @@ import { PGlite } from "@electric-sql/pglite";
 import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { Store, digest } from "../server/store";
-import { answerQuestion, classificationRoute } from "../server/ai";
+import { answerQuestion, classificationRoute, creativeDraftRoute } from "../server/ai";
 import { ReaderStore } from "../server/reader";
 import { anchorFor } from "../src/reader/model";
 import { tasteRoute } from "../server/taste";
@@ -177,4 +177,28 @@ it("returns grounded group proposals with mandatory approval and creates no coll
   expect((await response.json()).requiresApproval).toBe(true);
   expect(await s.get("collections", c.owner)).toBeNull();
   expect((await s.read(c.owner, ref.id))?.content).toBe(ref.content);
+});
+
+it("keeps Creative AI private, opt-in, draft-only, and refuses ungrounded data",async()=>{
+  const body={projectName:"Maison expérimentale",brief:"Une jeune maison de maroquinerie parisienne cherche une direction singulière pour son objet signature.",references:[]};
+  const url=c.app+"/api/creative/draft";
+  const get=await creativeDraftRoute(new Request(url,{headers:{cookie:"__Host-ad_session=fixture-session"}}),s,c);
+  expect((await get.json()).available).toBe(true);
+  const noCsrf=new Request(url,{method:"POST",headers:{cookie:"__Host-ad_session=fixture-session",origin:c.app},body:JSON.stringify(body)});
+  await expect(creativeDraftRoute(noCsrf,s,c)).rejects.toMatchObject({status:403});
+  await expect(creativeDraftRoute(new Request(url),s,c)).rejects.toMatchObject({status:401});
+  provider({directions:[
+    {letter:"A",title:"Matière",thesis:"Un territoire de fondatrice.",visualGrammar:"Nature et lumière.",production:"Droits à vérifier."},
+    {letter:"B",title:"Objet",thesis:"Un langage produit.",visualGrammar:"Studio et silhouette.",production:"Talents à vérifier."}
+  ],unknowns:["Budget client inconnu."]});
+  const req=()=>new Request(url,{method:"POST",headers:{cookie:"__Host-ad_session=fixture-session",origin:c.app,"x-ad-csrf":"csrf"},body:JSON.stringify(body)});
+  const result=await creativeDraftRoute(req(),s,c);
+  const json=await result.json();
+  expect(json.requiresApproval).toBe(true);
+  expect(json.directions).toHaveLength(2);
+  expect(json.unknowns).toContain("Budget client inconnu.");
+  expect(json.provenance.provider).toBe("xai");
+  expect(await s.get("creative-board",c.owner)).toBeNull();
+  vi.stubEnv("AD_AI_ENABLED","0");
+  await expect(creativeDraftRoute(req(),s,c)).rejects.toMatchObject({status:503});
 });
