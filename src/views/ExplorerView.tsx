@@ -1,4 +1,6 @@
 import { MarketPanel } from "../scout-market/MarketPanel";
+import type { Finding } from "../scout-market/schema";
+import type { EvidenceReceipt } from "../opportunity/model";
 import { ArrowUpRight, Compass, Plus } from "lucide-react";
 import { Empty } from "../components/ui";
 import { dateLabel } from "../display";
@@ -7,14 +9,16 @@ export function ExplorerView({
   signals,
   query,
   onCapture,
+  onOpenDossier,
 }: {
   signals: Workspace["signals"];
   query: string;
   onCapture: (source: { url: string; title: string }) => void;
+  onOpenDossier:(finding:Finding,evidence:EvidenceReceipt[])=>Promise<void>;
 }) {
   return (
     <>
-      <MarketPanel query={query} />
+      <MarketPanel query={query} onOpenDossier={onOpenDossier}/>
       {signals.length ? (
         <div className="signal-list">
           {signals
