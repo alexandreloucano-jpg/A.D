@@ -75,3 +75,19 @@ M4 REPEAT: second client served; only then explore subscriptions and automated f
 
 ## Acceptance vetoes
 No unauthenticated GET of enquiries; no bots accepted without valid Turnstile; no raw IP list; no payment-status action on page redirect; no public client portal without tenancy; no customer data sent into model prompts by default; no contract or external send by autonomous agent; no production migration without backup; no invented payment URL or promise of Stripe account.
+
+
+## Confirmed legal form — Entrepreneur individuel (EI), France (2026-10-24)
+The operator confirmed an existing EI (entreprise individuelle). This does NOT establish a micro-entrepreneur regime or exemption from VAT. Do not register or market a fictitious SASU. A.D Studio is the commercial brand only: the invoice issuer is the verified physical-person entrepreneur, with personal name followed or preceded by "EI"/"entrepreneur individuel", SIREN/SIRET and business address per applicable obligations.
+
+Public intake now requires AD_BUSINESS_LEGAL_FORM=EI and a 14-digit AD_BUSINESS_SIRET, plus the existing professional legal name, privacy notice and Turnstile configuration. The form stays off until real verified values are entered; the example file never contains a user's actual number. A valid format is not proof the SIRET is active: verify against INSEE/Annuaire des entreprises and the operator's official documents before publication.
+
+Payment setup: verify legal merchant name, SIRET, commercial bank account and legal trading identity at Stripe. An accepted scoped quote and legally applicable TVA regime precede any amount/invoice/Payment Link. EI is not the same thing as micro-entreprise, nor a synonym for TVA franchise. Do not calculate an artificial 20% TVA if the status is not yet known. Never make a payment link for a generic bespoke project automatically.
+
+Invoices must identify the supplier, customer, unique chronological number, date, services, total and applicable VAT/exemption; financial and business details required by law and commercial terms must be reviewed by the operator or accountant. As of 2026-09-01, in-scope French companies must be capable of receiving structured e-invoices; in-scope smaller enterprises generally issue from 2027-09-01. Do not imply that a hosted PDF, Stripe checkout page or PDF receipt alone meets platform-mediated e-invoicing obligations.
+
+Official references to validate at implementation:
+- EI naming and documents: https://www.entreprises.gouv.fr/files/files/Espace-entreprises/Reglementation/foire-aux-questions-statut-entrepreneur%20individuel.pdf
+- EI invoice mentions: https://www.service-public.gouv.fr/entreprendre/vosdroits/F31808?profil=entrepreneur-individuel
+- VAT regime and required invoice mentions: https://www.economie.gouv.fr/entreprises/gerer-son-entreprise-au-quotidien/gerer-sa-comptabilite-et-ses-demarches/mentions-obligatoires-dune-facture-tout-savoir
+- E-invoicing timetable: https://www.impots.gouv.fr/professionnel/questions/partir-de-quand-suis-je-concerne-par-la-reforme-de-la-facturation
