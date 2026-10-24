@@ -456,9 +456,9 @@ export function App() {
             A.D
             <span className="brand-line" />
             <span className="brand-caption">
-              THE SIGNAL
+              CREATIVE
               <br />
-              OFFICE
+              INTELLIGENCE
             </span>
           </a>
           <nav aria-label="Navigation principale">
@@ -513,7 +513,7 @@ export function App() {
           <div className="section-meta">
             <span>
               <span className="workspace-label">
-                SIGNAL DESK <span className="meta-divider">/</span>{" "}
+                A.D OFFICE <span className="meta-divider">/</span>{" "}
               </span>
               {selected[1].toUpperCase()}
             </span>
