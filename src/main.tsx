@@ -11,6 +11,6 @@ import "./styles.css";
 import "./design-system/ad-v2.css";
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    {/^\\/studio\\/?$/.test(window.location.pathname) ? <StudioLanding /> : <App />}
+    {window.location.pathname === "/studio" || window.location.pathname === "/studio/" ? <StudioLanding /> : <App />}
   </React.StrictMode>,
 );
