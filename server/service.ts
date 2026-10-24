@@ -2,6 +2,7 @@ import { mediaRoute } from "./media.js";
 import { studioInquiryRoute } from "./studio.js";
 import { marketJob } from "./market/job-route.js";
 import { marketRoute } from "./market.js";
+import { workspaceSyncRoute } from "./workspace-sync.js";
 import { intakeRoute } from "./intake.js";
 import {
   mcpProtocol,
@@ -195,6 +196,7 @@ async function route(
     if (path === "/api/studio/availability" || path === "/api/studio/inquiries") return studioInquiryRoute(r,s,c);
     if (path === "/api/jobs/market") return marketJob(r, s, c);
     if (path.startsWith("/api/market/")) return marketRoute(r, s, c);
+    if (path === "/api/workspace/snapshot") return workspaceSyncRoute(r,s,c);
     if (path === "/api/intake") return intakeRoute(r, s, c);
     if (path === "/api/admin/automation") {
       method(r, "GET");
