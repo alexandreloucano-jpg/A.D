@@ -59,7 +59,7 @@ for(const width of [390,1440]){
     await expect(timeline).toContainText("Publication source");
     await expect(timeline).toContainText("Décision · reviewed");
     await timeline.getByRole("button",{name:/Publication source/}).click();
-    await expect(timeline).toContainText("La marque prépare");
+    await expect(timeline).toContainText(f.reportedFact);
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1)).toBe(true);
     await page.screenshot({path:info.outputPath(`ad-v3-interactions-${width}.png`),fullPage:true});
   });
