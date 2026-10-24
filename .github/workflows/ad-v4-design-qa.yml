@@ -1,15 +1,15 @@
-name: A.D INDEX / Full visual redesign QA
+name: A.D V4 / Original Design QA
 on:
   push:
     branches:
-      - feat/ad-index-identity-v4-20261024
+      - feat/ad-v4-original-visual-language-20261024
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  visual:
+  browser:
     runs-on: ubuntu-latest
-    timeout-minutes: 24
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -19,19 +19,19 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npx playwright install --with-deps chromium
-      - name: Locate Chromium
+      - name: Find Chromium binary
         shell: bash
         run: |
           BROWSER_PATH="$(find "$HOME/.cache/ms-playwright" -type f \( -name "chrome-headless-shell" -o -name "chrome" \) | grep -E '/(chrome-headless-shell-linux64|chrome-linux64)/' | head -n 1)"
           test -n "$BROWSER_PATH"
           echo "CHROMIUM_PATH=$BROWSER_PATH" >> "$GITHUB_ENV"
-      - name: Visual and critical flow regression
-        run: npx playwright test tests/browser/ad-index-v4.spec.ts tests/browser/ad-interactions.spec.ts tests/browser/ad-v2-design.spec.ts tests/browser/opportunity-room.spec.ts tests/browser/studio-revenue.spec.ts
-      - name: Capture real screens and traces
+      - name: Validate redesigned public/private mobile and desktop journeys
+        run: npx playwright test tests/browser/ad-v4-visual.spec.ts tests/browser/ad-v2-design.spec.ts tests/browser/ad-interactions.spec.ts tests/browser/opportunity-room.spec.ts tests/browser/creative-canvas.spec.ts tests/browser/studio-revenue.spec.ts
+      - name: Save visual screenshots and failure traces
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ad-index-v4-mobile-desktop
+          name: ad-v4-original-art-direction
           path: test-results/
           if-no-files-found: ignore
           retention-days: 7

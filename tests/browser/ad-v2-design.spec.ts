@@ -1,24 +1,25 @@
 import { test, expect } from "@playwright/test";
 
 for (const viewport of [{width:1440,height:900},{width:390,height:844},{width:390,height:640}]) {
-  test(`A.D V2 editorial desk and navigation at ${viewport.width}x${viewport.height}`, async ({page}, info) => {
+  test(`A.D V4 editorial desk and navigation at ${viewport.width}x${viewport.height}`, async ({page}, info) => {
     await page.setViewportSize(viewport);
     await page.goto("/");
     await expect(page.getByRole("heading",{level:1})).toContainText("Aucune priorité");
     await expect(page.locator(".ad-v2-priority").getByRole("button",{name:"Créer un dossier"})).toBeVisible();
-    await expect(page.locator(".workspace")).toHaveCSS("background-color","rgb(232, 235, 234)");
+    await expect(page.locator(".workspace")).toHaveCSS("background-color","rgb(239, 242, 241)");
     await expect(page.locator(".workspace")).toHaveCSS("background-image","none");
+    await expect(page.locator(".topbar")).toHaveCSS("background-color","rgb(18, 38, 44)");
     for(const label of ["Accueil","Explorer","Saver","Projets"]) {
       await expect(page.getByRole("navigation",{name:"Navigation principale"}).getByRole("link",{name:label,exact:true})).toBeVisible();
     }
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1)).toBe(true);
-    await page.screenshot({path:info.outputPath(`ad-v2-today-${viewport.width}x${viewport.height}.png`),fullPage:true});
+    await page.screenshot({path:info.outputPath(`ad-v4-today-${viewport.width}x${viewport.height}.png`),fullPage:true});
     await page.locator(".ad-v2-priority").getByRole("button",{name:"Créer un dossier"}).click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await page.getByRole("button",{name:"Fermer"}).click();
   });
 }
-test("A.D V2 preserves current actions and source navigation",async({page})=>{
+test("A.D V4 preserves current actions and source navigation",async({page})=>{
   await page.goto("/");
   await page.getByRole("navigation",{name:"Navigation principale"}).getByRole("link",{name:"Explorer"}).click();
   await expect(page.getByRole("heading",{level:1})).toBeVisible();
@@ -29,7 +30,7 @@ test("A.D V2 preserves current actions and source navigation",async({page})=>{
 });
 
 
-// Geometry regressions: prior 390px screenshots showed THE DESK painting on top
+// Geometry regressions: preserve strictly non-overlapping TODAY sections
 // of "Aucune priorité", recent projects and the three factual counters.
 // Horizontal-overflow-only checks did not detect the collision.
 async function expectTodayMobileSectionsDoNotOverlap(page: import("@playwright/test").Page) {
@@ -59,7 +60,7 @@ async function expectTodayMobileSectionsDoNotOverlap(page: import("@playwright/t
 }
 
 for (const height of [844, 640]) {
-  test(`A.D V2 populated TODAY has no overlapping mobile sections at 390×${height}`, async ({page}, info) => {
+  test(`A.D V4 populated TODAY has no overlapping mobile sections at 390×${height}`, async ({page}, info) => {
     await page.setViewportSize({width:390,height});
     await page.goto("/");
     await expectTodayMobileSectionsDoNotOverlap(page);
@@ -72,9 +73,9 @@ for (const height of [844, 640]) {
     await expect(page.locator(".ad-v2-rail")).toContainText("Projet de test mobile V2");
     await expectTodayMobileSectionsDoNotOverlap(page);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
-    await page.screenshot({path:info.outputPath(`ad-v2-mobile-populated-top-390x${height}.png`)});
+    await page.screenshot({path:info.outputPath(`ad-v4-mobile-populated-top-390x${height}.png`)});
     await page.locator(".ad-v2-home").evaluate(node => node.scrollTo({top:node.scrollHeight,behavior:"instant"}));
-    await page.screenshot({path:info.outputPath(`ad-v2-mobile-populated-bottom-390x${height}.png`)});
+    await page.screenshot({path:info.outputPath(`ad-v4-mobile-populated-bottom-390x${height}.png`)});
   });
 }
 

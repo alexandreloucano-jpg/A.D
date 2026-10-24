@@ -456,9 +456,9 @@ export function App() {
             A.D
             <span className="brand-line" />
             <span className="brand-caption">
-              CREATIVE
+              WORKSPACE
               <br />
-              OPERATIONS
+              PRIVATE
             </span>
           </a>
           <nav aria-label="Navigation principale">
@@ -489,6 +489,7 @@ export function App() {
               className={
                 "capture-button" + (route === "saver" ? " saver-capture" : "")
               }
+              aria-label="Capturer"
               onClick={() => {
                 setError("");
                 setCaptureContext(null);
@@ -512,7 +513,7 @@ export function App() {
           <div className="section-meta">
             <span>
               <span className="workspace-label">
-                ESPACE PERSONNEL <span className="meta-divider">/</span>{" "}
+                FIELDNOTES <span className="meta-divider">/</span>{" "}
               </span>
               {selected[1].toUpperCase()}
             </span>
@@ -734,7 +735,7 @@ export function App() {
           )}
         </main>
         <footer className="statusbar">
-          <span>A.D / INDEX 04 · PRIVATE DESK</span>
+          <span>A.D / PRIVATE WORKSPACE</span>
           <button onClick={() => setModal("settings")}>
             <ShieldCheck size={13} />{" "}
             {remote.connected

@@ -1,0 +1,83 @@
+/* Studio / V4: public presentation shares the original A.D Fieldnotes language.
+   Visual changes only. No payment, lead intake, consent or navigation behavior changed. */
+.ad-landing{
+ --ad-ink:#162e34;--ad-paper:#eff2f1;--ad-line:#cbd6d4;--ad-accent:#d85a3c;
+ color:#162e34;background:#eff2f1;font-family:Inter,-apple-system,sans-serif;
+}
+.ad-landing h1,.ad-landing h2,.ad-landing h3,.ad-landing .ad-logotype,
+.ad-landing .ad-small-title,.ad-landing .ad-friction-grid h3,
+.ad-landing .ad-offer h3,.ad-landing .ad-method-steps h3{
+ font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
+ font-weight:700!important;letter-spacing:-.065em;line-height:1.04;
+}
+.ad-landing em{font-style:normal;font-weight:inherit;color:var(--ad-accent)}
+.ad-landing .ad-nav{background:#eff2f1;border-bottom:1px solid #bcccca}
+.ad-landing .ad-logotype{font-weight:800!important;font-size:36px;letter-spacing:-.10em}
+.ad-landing .ad-nav-descriptor,.ad-landing .ad-section-label,.ad-landing .ad-hero-top,
+.ad-landing .ad-hero-bottom,.ad-landing .ad-offer-kicker,.ad-landing .ad-eyebrow{
+ font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
+ letter-spacing:.1em;font-weight:600;
+}
+.ad-landing .ad-nav-descriptor{color:#587377}
+.ad-landing .ad-links a{font-size:12px;font-weight:600}
+.ad-landing .ad-nav-contact{border:1px solid #92aaa8;padding:10px 13px;border-radius:3px}
+.ad-landing .ad-hero{background:#143037;color:#fff;border:0;overflow:hidden}
+.ad-landing .ad-hero::before{content:none!important;display:none!important}
+.ad-landing .ad-hero-watermark{font-family:Inter,-apple-system,sans-serif!important;
+ font-weight:800;letter-spacing:-.11em;color:#254b52;opacity:.22}
+.ad-landing .ad-hero-top,.ad-landing .ad-hero-bottom,.ad-landing .ad-eyebrow{color:#add0d0}
+.ad-landing .ad-hero h1{font-size:clamp(48px,6.6vw,106px);letter-spacing:-.078em}
+.ad-landing .ad-hero h1 em{color:#e59a81}
+.ad-landing .ad-hero-description{color:#c6d8d8}
+.ad-landing .ad-button{border-radius:3px;box-shadow:none;transition:background .15s ease}
+.ad-landing .ad-button:hover{transform:none}
+.ad-landing .ad-button-light{background:#d85a3c;color:#fff}
+.ad-landing .ad-button-light:hover{background:#b8482f}
+.ad-landing .ad-button-dark{background:#20414a;color:#fff}
+.ad-landing .ad-button-dark:hover{background:#345c64}
+.ad-landing .ad-text-link{border-bottom-color:#8faeb1}
+.ad-landing .ad-section{border-bottom-color:#ced9d6}
+.ad-landing .ad-section-label{color:#62777b}
+.ad-landing .ad-statement h2,.ad-landing .ad-section-heading h2,
+.ad-landing .ad-method h2,.ad-landing .ad-focus h2,
+.ad-landing .ad-contact h2,.ad-landing .ad-faq h2{
+ font-size:clamp(39px,5.5vw,86px);font-weight:750!important;letter-spacing:-.07em;
+}
+.ad-landing .ad-statement h2 em,.ad-landing .ad-section-heading h2 em,
+.ad-landing .ad-focus h2 em,.ad-landing .ad-contact-heading h2 em{color:#d85a3c}
+.ad-landing .ad-friction-grid article{border-top:2px solid #d85a3c}
+.ad-landing .ad-friction-grid h3{font-size:clamp(21px,2vw,29px)}
+.ad-landing .ad-friction-grid p,.ad-landing .ad-statement-grid p,
+.ad-landing .ad-section-heading>p,.ad-landing .ad-focus>p,
+.ad-landing .ad-contact-heading>p,.ad-landing .ad-offer div:nth-child(3)>p,
+.ad-landing .ad-faq details p{color:#52696d}
+.ad-landing .ad-offer-list{border-top:2px solid #183940}
+.ad-landing .ad-offer{border-bottom-color:#c4d1ce}
+.ad-landing .ad-offer h3{font-size:clamp(24px,3vw,46px);letter-spacing:-.06em}
+.ad-landing .ad-offer-number,.ad-landing .ad-offer-kicker,.ad-landing .ad-offer-detail{color:#688083}
+.ad-landing .ad-method{background:#143037;color:#fff}
+.ad-landing .ad-method h2{color:#fff}
+.ad-landing .ad-method h2 em{color:#db866a}
+.ad-landing .ad-method .ad-section-label{color:#9fbdc0}
+.ad-landing .ad-method-layout>div>p,.ad-landing .ad-method-steps p{color:#c4d6d6}
+.ad-landing .ad-method-steps li{border-bottom-color:#375962}
+.ad-landing .ad-method-steps h3{font-size:clamp(22px,2.3vw,33px);color:white}
+.ad-landing .ad-inquiry-form input,.ad-landing .ad-inquiry-form textarea,.ad-landing .ad-inquiry-form select{
+ border:1px solid #b5c8c5;background:#fff;border-radius:3px;color:#1b3a40;
+}
+.ad-landing .ad-inquiry-form input:focus,.ad-landing .ad-inquiry-form textarea:focus,
+.ad-landing .ad-inquiry-form select:focus{outline:2px solid #d85a3c}
+.ad-landing .ad-footer{background:#112a31;color:#fff}
+.ad-landing .ad-footer>div{color:#b4ccce}
+@media(max-width:760px){
+ .ad-landing .ad-nav{background:#eff2f1}
+ .ad-landing .ad-links{background:#eff2f1;border-color:#afc4c0}
+ .ad-landing .ad-hero{min-height:min(760px,100svh)}
+ .ad-landing .ad-hero h1{font-size:clamp(43px,10vw,65px)}
+ .ad-landing .ad-statement h2,.ad-landing .ad-section-heading h2,
+ .ad-landing .ad-method h2,.ad-landing .ad-focus h2,
+ .ad-landing .ad-contact h2,.ad-landing .ad-faq h2{font-size:clamp(39px,9vw,58px)}
+}
+@media(prefers-reduced-motion:reduce){
+ .ad-landing *, .ad-landing *::before,.ad-landing *::after{transition:none!important;animation:none!important}
+}
