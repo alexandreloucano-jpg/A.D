@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { creativeBoardSchema } from "./creative/model";
+import { creativeBoardSchema } from "./creative/model.js";
 const text = z.string().trim().min(1).max(10000);
 export const safeUrl = z
   .string()
