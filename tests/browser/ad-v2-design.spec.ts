@@ -1,25 +1,25 @@
 import { test, expect } from "@playwright/test";
 
 for (const viewport of [{width:1440,height:900},{width:390,height:844},{width:390,height:640}]) {
-  test(`A.D V4 editorial desk and navigation at ${viewport.width}x${viewport.height}`, async ({page}, info) => {
+  test(`A.D Atelier 06 operational desk and navigation at ${viewport.width}x${viewport.height}`, async ({page}, info) => {
     await page.setViewportSize(viewport);
     await page.goto("/");
     await expect(page.getByRole("heading",{level:1})).toContainText("Aucune priorité");
     await expect(page.locator(".ad-v2-priority").getByRole("button",{name:"Créer mon premier dossier"})).toBeVisible();
-    await expect(page.locator(".workspace")).toHaveCSS("background-color","rgb(237, 240, 238)");
+    await expect(page.locator(".workspace")).toHaveCSS("background-color","rgb(242, 240, 234)");
     await expect(page.locator(".workspace")).toHaveCSS("background-image","none");
-    await expect(page.locator(".topbar")).toHaveCSS("background-color","rgb(13, 21, 23)");
+    await expect(page.locator(".topbar")).toHaveCSS("background-color","rgb(232, 229, 221)");
     for(const label of ["Accueil","Explorer","Saver","Projets"]) {
       await expect(page.getByRole("navigation",{name:"Navigation principale"}).getByRole("link",{name:label,exact:true})).toBeVisible();
     }
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1)).toBe(true);
-    await page.screenshot({path:info.outputPath(`ad-v4-today-${viewport.width}x${viewport.height}.png`),fullPage:true});
+    await page.screenshot({path:info.outputPath(`ad-atelier06-today-${viewport.width}x${viewport.height}.png`),fullPage:true});
     await page.locator(".ad-v2-priority").getByRole("button",{name:"Créer mon premier dossier"}).click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await page.getByRole("button",{name:"Fermer"}).click();
   });
 }
-test("A.D V4 preserves current actions and source navigation",async({page})=>{
+test("A.D Atelier 06 preserves current actions and source navigation",async({page})=>{
   await page.goto("/");
   await page.getByRole("navigation",{name:"Navigation principale"}).getByRole("link",{name:"Explorer"}).click();
   await expect(page.getByRole("heading",{level:1})).toBeVisible();
@@ -60,7 +60,7 @@ async function expectTodayMobileSectionsDoNotOverlap(page: import("@playwright/t
 }
 
 for (const height of [844, 640]) {
-  test(`A.D V4 populated TODAY has no overlapping mobile sections at 390×${height}`, async ({page}, info) => {
+  test(`A.D Atelier 06 populated TODAY has no overlapping mobile sections at 390×${height}`, async ({page}, info) => {
     await page.setViewportSize({width:390,height});
     await page.goto("/");
     await expectTodayMobileSectionsDoNotOverlap(page);
