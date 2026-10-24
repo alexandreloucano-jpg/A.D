@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { useScoutMarket } from "./useScoutMarket";
 import { marketRequest } from "./client";
+import { evidenceReceiptSchema, type EvidenceReceipt } from "../opportunity/model";
 import { stages, type Finding, type MarketAction } from "./schema";
 import {
   compareFindings,
@@ -64,10 +65,12 @@ export function MarketPanel({
   mode = "explorer",
   query = "",
   projects = [],
+  onOpenDossier,
 }: {
   mode?: "explorer" | "home" | "pipeline";
   query?: string;
   projects?: { id: string; title: string }[];
+  onOpenDossier?: (finding: Finding, evidence: EvidenceReceipt[]) => Promise<void>;
 }) {
   const returnFocus = useRef<HTMLElement | null>(null);
   const m = useScoutMarket(query, mode),
@@ -90,7 +93,9 @@ export function MarketPanel({
     [draft, setDraft] = useState(""),
     [interaction, setInteraction] = useState(""),
     [nextStage, setNextStage] = useState("qualified"),
-    [linkedProject, setLinkedProject] = useState("");
+    [linkedProject, setLinkedProject] = useState(""),
+    [verifiedEvidence, setVerifiedEvidence] = useState<EvidenceReceipt[]>([]),
+    [openingDossier, setOpeningDossier] = useState(false);
   function closeDetail() {
     setSelected(null);
     requestAnimationFrame(() => returnFocus.current?.focus());
@@ -100,6 +105,7 @@ export function MarketPanel({
     setDetailError("");
     setSelected(f);
     setReason("");
+    setVerifiedEvidence([]);
     setDraft(
       f.nextAction ||
         "Vérifier le calendrier, les prestataires et le besoin créatif pour " +
@@ -109,15 +115,21 @@ export function MarketPanel({
     try {
       const detail = await marketRequest<{
         actions: MarketAction[];
+        evidence?: unknown[];
         timeline?: typeof history;
       }>("/opportunities/" + f.id);
       setActions(detail.actions);
+      setVerifiedEvidence((detail.evidence||[]).flatMap(raw=>{
+        const parsed=evidenceReceiptSchema.safeParse(raw);
+        return parsed.success?[parsed.data]:[];
+      }));
       setHistory(detail.timeline || []);
     } catch {
       setDetailError(
         "La lecture du détail a échoué. Fermez puis réessayez ; la référence reste conservée.",
       );
       setActions([]);
+      setVerifiedEvidence([]);
     }
   }
   async function operation(path: string, body: unknown) {
@@ -723,6 +735,23 @@ export function MarketPanel({
                 </button>
               ))}
             </div>
+            {onOpenDossier && (
+              <section className="market-room-start" aria-label="Opportunity Room">
+                <h3>Opportunity Room / Dossier sourcé</h3>
+                <p>Créer un dossier avec un instantané daté des preuves Radar, de l'hypothèse et des inconnues. Les images et propositions créatives restent à ajouter dans WORK.</p>
+                <p>{verifiedEvidence.length} preuve(s) validée(s) par le schéma · aucune prise de contact automatique.</p>
+                <button type="button"
+                  disabled={openingDossier||m.busy||selected.reviewState!=="saved"||!verifiedEvidence.some(e=>e.id===selected.evidenceId)}
+                  onClick={()=>void (async()=>{
+                    setOpeningDossier(true);setDetailError("");
+                    try{await onOpenDossier(selected,verifiedEvidence);closeDetail();}
+                    catch(e){setDetailError(e instanceof Error?e.message:"Dossier non confirmé. Réessayez sans créer un doublon.");}
+                    finally{setOpeningDossier(false);}
+                  })()}>
+                  {openingDossier?"Liaison en cours…":selected.projectId?"Ouvrir le dossier associé":"Créer un dossier depuis cette opportunité"}
+                </button>
+              </section>
+            )}
             <h3>Associer un projet existant</h3>
             {projects.length ? (
               <label>
