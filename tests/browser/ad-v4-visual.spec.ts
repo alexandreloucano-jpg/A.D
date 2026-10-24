@@ -30,6 +30,19 @@ for(const size of [{width:390,height:844},{width:390,height:640},{width:768,heig
     expect(flow.railTop,"Intelligence rail must not overlap counters").toBeGreaterThanOrEqual(flow.counterBottom+12);
     expect(flow.railHeadingTop,"Rail text must start after counters").toBeGreaterThanOrEqual(flow.counterBottom+12);
   }
+  if(size.width>760 && size.width<=1120){
+   const flow=await page.evaluate(()=>{
+     const rect=(q:string)=>document.querySelector(q)!.getBoundingClientRect();
+     return {
+       hero:rect(".ad-v2-priority"),counters:rect(".ad-v2-counters"),
+       focus:rect(".ad-v2-focus"),rail:rect(".ad-v2-rail"),
+       railHeading:rect(".ad-v2-rail .ad-v2-heading-line"),
+     };
+   });
+   expect(flow.focus.bottom,"Tablet focus must enclose decision and counters").toBeGreaterThanOrEqual(flow.counters.bottom-1);
+   expect(flow.rail.top,"Tablet feed must start below counters").toBeGreaterThanOrEqual(flow.counters.bottom+12);
+   expect(flow.railHeading.top,"Tablet feed heading must not paint behind decision").toBeGreaterThanOrEqual(flow.counters.bottom+12);
+  }
   if(size.width>760){
    expect(infoBox.top.w).toBeGreaterThan(170);
    expect(infoBox.main.x).toBeGreaterThanOrEqual(infoBox.top.right-1);
