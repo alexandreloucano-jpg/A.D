@@ -409,6 +409,9 @@ export async function marketRoute(r: Request, s: Store, c: Config) {
           .object({ projectId: uuid, humanApproval: z.literal(true) })
           .strict()
           .parse(body);
+        if(f.projectId && f.projectId!==b.projectId)
+          throw new ServiceError(409,"market_opportunity_already_linked");
+        if(f.projectId===b.projectId)return json(f);
         return json(
           await repository.patch(
             id,

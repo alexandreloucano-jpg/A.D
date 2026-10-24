@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { creativeBoardSchema } from "./creative/model.js";
+import { opportunityLinkSchema } from "./opportunity/model.js";
 const text = z.string().trim().min(1).max(10000);
 export const safeUrl = z
   .string()
@@ -73,10 +74,11 @@ export const workspaceSchema = z
     tasks: z.array(taskSchema).max(10000),
     signals: z.array(signalSchema).max(10000),
     creativeBoards: z.array(creativeBoardSchema).max(1000).optional(),
+    opportunityLinks: z.array(opportunityLinkSchema).max(1000).optional(),
   })
   .strict()
   .superRefine((s, ctx) => {
-    const ids = [...s.references, ...s.projects, ...s.tasks, ...s.signals, ...(s.creativeBoards || [])].map(
+    const ids = [...s.references, ...s.projects, ...s.tasks, ...s.signals, ...(s.creativeBoards || []),...(s.opportunityLinks || [])].map(
       (x) => x.id,
     );
     if (new Set(ids).size !== ids.length)
@@ -86,6 +88,9 @@ export const workspaceSchema = z
       s.creativeBoards?.some((board) => !projects.has(board.projectId)) ||
       new Set((s.creativeBoards || []).map((board) => board.projectId)).size !== (s.creativeBoards || []).length
     ) ctx.addIssue({ code: "custom", message: "Dossier créatif associé introuvable ou dupliqué." });
+    if (s.opportunityLinks?.some(l=>!projects.has(l.projectId)) ||
+      new Set((s.opportunityLinks||[]).map(l=>l.opportunityId)).size!==(s.opportunityLinks||[]).length)
+      ctx.addIssue({code:"custom",message:"Liaison opportunité orpheline ou dupliquée."});
     if (
       s.tasks.some((t) => !projects.has(t.projectId)) ||
       s.references.some((r) => r.projectId && !projects.has(r.projectId))
@@ -103,6 +108,7 @@ export const emptyWorkspace = (): Workspace => ({
   tasks: [],
   signals: [],
   creativeBoards: [],
+  opportunityLinks: [],
 });
 export function newTask(
   projectId: string,

@@ -5,6 +5,10 @@ import {
 } from "./intake/local-archive";
 import { canonicalSource, type IntakeItem } from "./intake/model";
 import { AccountSettings } from "./AccountSettings";
+import { marketRequest } from "./scout-market/client";
+import type { Finding } from "./scout-market/schema";
+import type { EvidenceReceipt } from "./opportunity/model";
+import { stageOpportunity,markOpportunityLinked } from "./opportunity/open";
 import { WorkspaceCloudPanel } from "./cloud/WorkspaceCloudPanel";
 import { parseSharedCapture } from "./share";
 import { useRemoteSaver, RemoteSaverSettings } from "./remote-saver";
@@ -286,6 +290,31 @@ export function App() {
       return false;
     }
   }
+  async function openRadarDossier(finding:Finding,evidence:EvidenceReceipt[]) {
+    if(fatal)throw Error("La lecture des données locales est bloquée. Exportez votre sauvegarde avant toute création.");
+    const staged=stageOpportunity(repository.read(),finding,evidence);
+    if(staged.changed&&!commit(staged.workspace,"Opportunity Room créée localement avec preuves sourcées. Liaison serveur à confirmer."))
+      throw Error("Le dossier n'a pas été sauvegardé localement.");
+    if(staged.link.status!=="LINKED"){
+      try{
+        const response=await marketRequest<Finding>(
+          "/opportunities/"+finding.id+"/project",
+          {projectId:staged.projectId,humanApproval:true}
+        );
+        if(response.projectId!==staged.projectId)throw Error("La liaison distante n'a pas été confirmée.");
+        const verify=await marketRequest<{opportunity:Finding}>("/opportunities/"+finding.id);
+        if(verify.opportunity.projectId!==staged.projectId)
+          throw Error("La relecture de la liaison Radar est incohérente.");
+        if(!commit(markOpportunityLinked(repository.read(),finding.id,staged.projectId),
+          "Opportunity Room liée et relue côté serveur."))
+          throw Error("Lien serveur enregistré, mais confirmation locale refusée. Réessayez depuis le Radar.");
+      }catch(e){
+        throw Error("Dossier local conservé, liaison serveur non confirmée : "+
+          (e instanceof Error?e.message:"Réessayez depuis le Radar sans recréer un dossier."));
+      }
+    }
+    navigate("projets");setProjectId(staged.projectId);setArchive(false);
+  }
   async function importLocal(items: IntakeItem[], preferredIds?: string[]) {
     const current = repository.read(),
       references = [...current.references],
@@ -506,6 +535,7 @@ export function App() {
                   setModal={setModal}
                   remote={remote}
                   onRestore={() => setModal("settings")}
+                  onOpenDossier={openRadarDossier}
                 />
               )}
               {route !== "accueil" && (
@@ -644,6 +674,7 @@ export function App() {
                       <ExplorerView
                         signals={signals}
                         query={query}
+                        onOpenDossier={openRadarDossier}
                         onCapture={(source) => {
                           setError("");
                           setCaptureContext(source);
@@ -674,6 +705,7 @@ export function App() {
                           setCaptureContext(null);
                           setModal("capture");
                         }}
+                        onOpenDossier={openRadarDossier}
                       />
                     )}
                   </div>

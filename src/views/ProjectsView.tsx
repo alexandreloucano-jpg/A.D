@@ -1,4 +1,6 @@
 import { MarketPanel } from "../scout-market/MarketPanel";
+import type { Finding } from "../scout-market/schema";
+import type { EvidenceReceipt } from "../opportunity/model";
 import { CreativeCanvas } from "../creative/CreativeCanvas";
 import type { RemoteSaver } from "../remote-saver";
 import { ArrowUpRight, Bookmark, Folder } from "lucide-react";
@@ -19,6 +21,7 @@ export function ProjectsView({
   openReference,
   remote,
   onCapture,
+  onOpenDossier,
 }: {
   project: Workspace["projects"][number] | undefined;
   archive: boolean;
@@ -32,6 +35,7 @@ export function ProjectsView({
   openReference: (id: string) => void;
   remote: RemoteSaver;
   onCapture: () => void;
+  onOpenDossier:(finding:Finding,evidence:EvidenceReceipt[])=>Promise<void>;
 }) {
   const acceptedCount = (id: string) =>
     data.tasks.filter((t) => t.projectId === id && t.lane === "NOW").length;
@@ -40,10 +44,24 @@ export function ProjectsView({
   return (
     <>
       {!project && (
-        <MarketPanel mode="pipeline" query={query} projects={data.projects} />
+        <MarketPanel mode="pipeline" query={query} projects={data.projects} onOpenDossier={onOpenDossier}/>
       )}
       {project ? (
         <>
+          {(data.opportunityLinks||[]).filter(link=>link.projectId===project.id).map(link=>(
+            <section key={link.id} className="opportunity-room-evidence" aria-label="Preuves de l'opportunité" style={{borderTop:"1px solid #d8d6d1",padding:"18px 0",marginBottom:24}}>
+              <p className="eyebrow">RADAR → WORK · {link.status==="LINKED"?"LIEN SERVEUR CONFIRMÉ":"LIEN SERVEUR À REPRENDRE"}</p>
+              <h2>{link.companyName}</h2>
+              <p><strong>Fait rapporté :</strong> {link.reportedFact}</p>
+              <p><strong>Source :</strong> <a href={link.sourceUrl} target="_blank" rel="noreferrer noopener">{link.publisher||"Voir la publication"} ↗</a> · Capturée le {new Date(link.capturedAt).toLocaleDateString("fr-FR")}</p>
+              <details>
+                <summary>Preuves figées ({link.evidence.length}) et inconnues ({link.unknowns.length})</summary>
+                {link.evidence.map(e=><p key={e.id}><a href={e.url} target="_blank" rel="noreferrer noopener">{e.publisher||"Source originale"} ↗</a> — {e.claimSupported}</p>)}
+                {link.unknowns.map((u,i)=><p key={i}>À vérifier : {u}</p>)}
+              </details>
+              {link.status!=="LINKED"&&<p role="status">Le dossier est localement conservé. Retournez sur l'opportunité Radar pour confirmer la liaison au serveur.</p>}
+            </section>
+          ))}
           <CreativeCanvas key={project.id} project={project} data={data} references={data.references} remote={remote} commit={commit} openReference={openReference} capture={onCapture} />
           <div className="project-controls">
             <h2>{archive ? "Actions écartées" : "Actions du projet"}</h2>
