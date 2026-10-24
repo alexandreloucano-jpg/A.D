@@ -3,80 +3,83 @@ import type { Finding } from "../scout-market/schema";
 import type { EvidenceReceipt } from "../opportunity/model";
 import { StudioLeadsPanel } from "../marketing/StudioLeadsPanel";
 import type { RemoteSaver } from "../remote-saver";
-import { ArrowUpRight, ArrowRight, Plus, Upload, MoveUpRight, Layers2, ScanEye, Bookmark, Activity } from "lucide-react";
+import { ArrowUpRight, ArrowRight, Plus, Upload, Layers2, ScanEye, Bookmark, ArrowDownRight } from "lucide-react";
 import { dateLabel, type Route } from "../display";
 import { rediscover, type Task, type Workspace } from "../domain";
 
-/** A.D / NEW ISSUE. Operational editorial desk. All content is from the real workspace. */
-export function HomeView({data,now,navigate,setProjectId,openReference,setModal,remote,onRestore,onOpenDossier}: {
-  data:Workspace; now:Task[]; navigate:(r:Route)=>void; setProjectId:(id:string|null)=>void;
-  openReference:(id:string)=>void; setModal:(v:"project")=>void; remote:RemoteSaver;
-  onRestore:()=>void; onOpenDossier:(finding:Finding,evidence:EvidenceReceipt[])=>Promise<void>;
-}) {
+/** A.D V4 / Operational index. Every count and title comes from the current workspace. */
+export function HomeView({data,now,navigate,setProjectId,openReference,setModal,remote,onRestore,onOpenDossier}:{
+  data:Workspace;now:Task[];navigate:(r:Route)=>void;setProjectId:(id:string|null)=>void;
+  openReference:(id:string)=>void;setModal:(v:"project")=>void;remote:RemoteSaver;
+  onRestore:()=>void;onOpenDossier:(finding:Finding,evidence:EvidenceReceipt[])=>Promise<void>;
+}){
   const priority=now[0];
   const project=priority?data.projects.find(p=>p.id===priority.projectId):undefined;
   const pending=data.tasks.filter(t=>t.lane==="LATER").length;
   const references=rediscover(data);
   const recent=data.projects.slice().sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)).slice(0,4);
   const latest=references.at(-1);
-  const start=()=>{
+  const act=()=>{
     if(project){navigate("projets");setProjectId(project.id);return;}
     if(data.projects.length){navigate("projets");return;}
     setModal("project");
   };
-  return <div className="home-layout ad-v2-home ad-issue-home">
-    <section className="home-focus ad-v2-focus ad-issue-stage" aria-label="Décision principale">
-      <div className="ad-issue-topline">
-        <span className="ad-issue-index">01 / THE DESK</span>
-        <span className="ad-issue-edition">A.D PRIVATE OFFICE <span aria-hidden="true">●</span> LIVE WORKSPACE</span>
+  const currentDate=new Intl.DateTimeFormat("fr-FR",{weekday:"long",day:"numeric",month:"long"}).format(new Date());
+  return <div className="home-layout ad-v2-home v4-desk">
+    <section className="home-focus ad-v2-focus v4-mission" aria-label="Décision principale">
+      <div className="v4-mission-top">
+        <div className="v4-micro"><span className="v4-index-no">01</span><span>THE OPERATING DESK</span></div>
+        <span className="v4-desk-date">{currentDate}</span>
       </div>
-      <div className="ad-v2-priority ad-issue-hero">
-        <p className="ad-v2-overline ad-issue-kicker"><span className="ad-issue-kicker-mark" aria-hidden="true"/> YOUR NEXT MOVE / {priority?"APPROVED":"UNASSIGNED"}</p>
-        <h1>{priority?priority.title:<>Aucune priorité<br/><em>en cours.</em></>}</h1>
-        <p className="ad-v2-description ad-issue-lead">{priority?
-          "Cette action a été validée. Elle est prête à avancer — son dossier conserve le contexte.":
-          pending?pending+" piste"+(pending>1?"s":"")+" en attente de ta décision. Aucune priorité fabriquée automatiquement.":
-          "Rien ne réclame une décision immédiate. Explore de nouvelles opportunités ou reprends ton travail."}</p>
-        {priority?.acceptedAt&&<p className="ad-v2-date">VALIDÉE LE {dateLabel(priority.acceptedAt)}</p>}
-        <button className="ad-v2-cta ad-issue-main-action" onClick={start}>
-          {priority?"Continuer cette mission":data.projects.length?"Ouvrir mes dossiers":"Créer mon premier dossier"}
-          <MoveUpRight size={20} aria-hidden="true"/>
+      <div className="ad-v2-priority v4-mission-hero">
+        <p className="ad-v2-overline v4-signal-line"><span className="v4-signal-dot" aria-hidden="true"/> {priority?"ACTION APPROUVÉE":"AUCUNE ACTION NOW"} <span className="v4-signal-slash">/</span> YOUR NEXT MOVE</p>
+        <h1>{priority?priority.title:<>Aucune priorité<span className="v4-heading-break"> en cours.</span></>}</h1>
+        <p className="ad-v2-description v4-mission-copy">{priority
+          ?"Cette décision est enregistrée. Son dossier contient le contexte pour avancer."
+          :pending?pending+" piste"+(pending>1?"s":"")+" à examiner. A.D ne transforme pas une suggestion en priorité sans ton accord."
+          :"Ton espace ne contient pas d’action urgente validée. Examine le Radar ou reprends un dossier existant."}</p>
+        {priority?.acceptedAt&&<p className="ad-v2-date v4-approved">APPROUVÉE · {dateLabel(priority.acceptedAt)}</p>}
+        <button className="ad-v2-cta v4-action" onClick={act}>
+          <span>{priority?"Continuer la mission":data.projects.length?"Voir mes dossiers":"Créer un dossier"}</span>
+          <ArrowUpRight size={19} aria-hidden="true"/>
         </button>
-        {!data.projects.length&&<div className="ad-v2-restore ad-issue-restore">
-          <span>Déjà des dossiers sur une ancienne version ?</span>
-          <button type="button" onClick={onRestore}>Récupérer mes anciens dossiers <Upload size={15} aria-hidden="true"/></button>
+        {!data.projects.length&&<div className="ad-v2-restore v4-restore">
+          <span>Dossiers créés sur un autre domaine ?</span>
+          <button type="button" onClick={onRestore}>Importer une sauvegarde <Upload size={14} aria-hidden="true"/></button>
         </div>}
       </div>
-      <div className="ad-v2-counters ad-issue-numbers" aria-label="État de l'espace de travail">
-        <div><Layers2 size={16} aria-hidden="true"/><strong>{String(data.projects.length).padStart(2,"0")}</strong><span>Dossiers</span></div>
-        <div><ScanEye size={16} aria-hidden="true"/><strong>{String(pending).padStart(2,"0")}</strong><span>À examiner</span></div>
-        <div><Bookmark size={16} aria-hidden="true"/><strong>{String(references.length).padStart(2,"0")}</strong><span>Références</span></div>
+      <div className="ad-v2-counters v4-mission-stats" aria-label="État réel de l'espace de travail">
+        <div><span className="v4-stat-label"><Layers2 size={15}/> DOSSIERS</span><strong>{String(data.projects.length).padStart(2,"0")}</strong></div>
+        <div><span className="v4-stat-label"><ScanEye size={15}/> À EXAMINER</span><strong>{String(pending).padStart(2,"0")}</strong></div>
+        <div><span className="v4-stat-label"><Bookmark size={15}/> RÉFÉRENCES</span><strong>{String(references.length).padStart(2,"0")}</strong></div>
       </div>
+      <p className="v4-stage-foot">Source : ton espace privé. Aucun chiffre de démonstration.</p>
     </section>
-    <aside className="home-rail ad-v2-rail ad-issue-activity" aria-label="Intelligence et travail récent">
-      <div className="ad-issue-activity-head">
-        <span className="ad-issue-index">02 / THE SIGNAL</span>
-        <span className="ad-issue-live"><Activity size={15} aria-hidden="true"/> SOURCED INTELLIGENCE</span>
+    <aside className="home-rail ad-v2-rail v4-intelligence" aria-label="Radar et travail récent">
+      <div className="v4-panel-head">
+        <div className="v4-micro"><span className="v4-index-no">02</span><span>THE INTELLIGENCE INDEX</span></div>
+        <span className="v4-panel-icon"><ArrowDownRight size={18}/></span>
       </div>
+      <div className="v4-panel-intro"><h2>What matters now.</h2><p>Des opportunités vérifiables, puis ton travail en cours.</p></div>
       <MarketPanel mode="home" onOpenDossier={onOpenDossier}/>
       <StudioLeadsPanel remote={remote}/>
-      <section className="ad-issue-module">
-        <div className="ad-issue-module-head"><h2>Dossiers en mouvement</h2><button aria-label="Voir les projets" onClick={()=>navigate("projets")}><ArrowUpRight size={18}/></button></div>
-        {recent.length?recent.map((p,i)=><button key={p.id} className="project-row ad-issue-project" onClick={()=>{navigate("projets");setProjectId(p.id);}}>
-          <span className="row-index">{String(i+1).padStart(2,"0")}</span>
-          <span>{p.title}<small>{dateLabel(p.updatedAt)}</small></span>
-          <ArrowUpRight size={17} aria-hidden="true"/>
-        </button>):<div className="ad-v2-no-content"><p>Aucun dossier actif.</p><button className="text-button" onClick={()=>setModal("project")}>Ouvrir un dossier <Plus size={15}/></button></div>}
+      <section className="v4-module">
+        <header className="v4-module-head"><h2>Dossiers récents</h2><button aria-label="Voir les projets" onClick={()=>navigate("projets")}><ArrowUpRight size={17}/></button></header>
+        {recent.length?recent.map((p,i)=><button className="project-row v4-record" key={p.id} onClick={()=>{navigate("projets");setProjectId(p.id);}}>
+          <span className="v4-record-index">{String(i+1).padStart(2,"0")}</span>
+          <span className="v4-record-main">{p.title}<small>{dateLabel(p.updatedAt)}</small></span>
+          <ArrowUpRight size={15}/>
+        </button>):<p className="v4-empty">Aucun dossier enregistré.</p>}
       </section>
-      <section className="ad-issue-module">
-        <div className="ad-issue-module-head"><h2>Dernière capture</h2><span className="ad-issue-module-count">{String(references.length).padStart(2,"0")}</span></div>
-        {latest?<button className="reference-row ad-issue-reference" onClick={()=>openReference(latest.id)}>
-          <span className="row-index">SAVER</span>
-          <span>{latest.title}<small>{latest.url?"Source conservée":"Note personnelle"}</small></span>
-          <ArrowUpRight size={16}/>
-        </button>:<p className="ad-v2-no-content">Ta mémoire créative commence avec une capture.</p>}
+      <section className="v4-module">
+        <header className="v4-module-head"><h2>Dernière capture</h2><span className="v4-count">{String(references.length).padStart(2,"0")}</span></header>
+        {latest?<button className="reference-row v4-record" onClick={()=>openReference(latest.id)}>
+          <span className="v4-record-index">LIB</span>
+          <span className="v4-record-main">{latest.title}<small>{latest.url?"Source conservée":"Note personnelle"}</small></span>
+          <ArrowUpRight size={15}/>
+        </button>:<p className="v4-empty">Capture une référence pour alimenter ta mémoire.</p>}
       </section>
-      <button className="ad-v2-plain-link ad-issue-radar-link" onClick={()=>navigate("explorer")}>Explorer le Radar <ArrowRight size={18}/></button>
+      <button className="v4-radar-action" onClick={()=>navigate("explorer")}>Accéder au Radar <ArrowRight size={18}/></button>
     </aside>
   </div>;
 }
