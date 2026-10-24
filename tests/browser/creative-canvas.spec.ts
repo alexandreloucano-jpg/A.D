@@ -33,7 +33,7 @@ for (const width of [390,1440]) {
     await expect(reload.getByText("Référence originale",{exact:true})).toBeVisible();
     await reload.getByRole("button",{name:"Valider la direction B"}).click();
     await expect(reload.getByRole("status")).toContainText("Piste B validée");
-    await expect(reload.getByText("PISTE B VALIDÉE")).toBeVisible();
+    await expect(reload.locator(".ad-create-state").getByText("PISTE B VALIDÉE")).toBeVisible();
     await expect(reload.getByText("Historique des versions (2)")).toBeVisible();
     const downloading=page.waitForEvent("download");
     await reload.getByRole("button",{name:"Exporter le traitement"}).click();
