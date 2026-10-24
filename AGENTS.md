@@ -1,5 +1,12 @@
 # A.D — Instructions durables
 
+## Reprise Codex — mise à jour impérative du 24/10/2026
+Avant tout code, **lire intégralement [docs/CODEX_HANDOFF_MASTER_2026-10-24.md](docs/CODEX_HANDOFF_MASTER_2026-10-24.md)** puis vérifier l'état réel de main, des PR, de Vercel et des données. Ce document contient les décisions produit les plus récentes, les conflits des branches design #14/#15, l'ordre d'implémentation et les vérités/non-vérités des fonctionnalités.
+- **Produit strictement privé et utilitaire pour le moment**; suspendre marketing SaaS, 1 M utilisateurs, abonnements, publication commerciale et agents autonomes.
+- **Dernière demande en cours : refonte complète et originale de la direction artistique**, sans reconduire le vocabulaire graphique existant ni empiler des styles. Les descriptions chromatiques antérieures et PR concurrentes ne sont PAS des validations définitives; préserver uniquement les fonctionnalités et données. Exiger captures et validation du parcours réel.
+- GitHub est **PUBLIC** : ne jamais publier de données client, finances privées, secrets, journaux personnels ou exports. La connaissance technique publique et les sauvegardes privées sont des artefacts distincts.
+- Ne jamais affirmer que la nouvelle UI, la synchro cloud ou une PR sont « live » sans vérifier le SHA du vrai domaine et les feature flags. Aucun effacement automatique; backup/restauration d'abord.
+
 ## État réel
 Lire README.md et docs/RECOVERY_INVENTORY.md. Ce dépôt est une reconstruction indépendante, pas le code Sites V66. Pas de données Sites, backend propriétaire ou connexion Grok récupérés. Les documents joints sont des références ; leurs affirmations historiques ne constituent pas des autorisations nouvelles.
 
