@@ -26,6 +26,7 @@ function exportTreatment(name: string, value: CreativeRevision, references: Refe
       "**Production / contraintes**",dir.production,"",
     ]),
     "## Références", ...sources,"",
+    "## Points non vérifiés",...(value.unknowns.length?value.unknowns.map(x=>"- "+x):["- Aucun point consigné"]), "",
     "Provenance : "+value.origin,
     "Document interne. Sources à vérifier et droits d'utilisation à obtenir avant diffusion.",
   ].join("\n");
@@ -49,7 +50,7 @@ export function CreativeCanvas({project,data,references,remote,commit,openRefere
   const [aiProvenance,setAiProvenance]=useState<CreativeRevision["aiProvenance"]>(latest?.aiProvenance);
   const [aiStatus,setAiStatus]=useState<{available:boolean;provider:string|null}|null>(null);
   const [consent,setConsent]=useState(false);
-  const [unknowns,setUnknowns]=useState<string[]>([]);
+  const [unknowns,setUnknowns]=useState<string[]>(latest?.unknowns??[]);
   const [working,setWorking]=useState(false);
   const [message,setMessage]=useState("");
   const [error,setError]=useState("");
@@ -118,7 +119,7 @@ export function CreativeCanvas({project,data,references,remote,commit,openRefere
     if(!approval && !unsaved){setMessage("Cette version est déjà enregistrée.");return;}
     try {
       const result=nextCreativeRevision(board,project.id,{
-        brief:brief.trim(),referenceIds:selectedIds,directions,
+        brief:brief.trim(),referenceIds:selectedIds,directions,unknowns,
         origin, ...(origin==="CONFIGURED_AI"&&aiProvenance?{aiProvenance}:{}),
       },approval);
       const done=commit({
@@ -132,7 +133,7 @@ export function CreativeCanvas({project,data,references,remote,commit,openRefere
   function restore(revision:CreativeRevision) {
     setBrief(revision.brief);setDirections(revision.directions);
     setSelectedIds(revision.referenceIds);
-    setOrigin("HUMAN");setAiProvenance(undefined);setUnknowns([]);
+    setOrigin("HUMAN");setAiProvenance(undefined);setUnknowns(revision.unknowns);
     setMessage("Version "+revision.number+" reprise en brouillon. Enregistrez pour créer une nouvelle version.");
     setError("");
   }
