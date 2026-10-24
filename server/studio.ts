@@ -37,7 +37,9 @@ export function studioReady() {
     !!process.env.AD_TURNSTILE_SECRET_KEY &&
     !!process.env.VITE_AD_STUDIO_TURNSTILE_SITE_KEY &&
     !!process.env.AD_PRIVACY_NOTICE_URL &&
-    !!process.env.AD_BUSINESS_LEGAL_NAME;
+    !!process.env.AD_BUSINESS_LEGAL_NAME &&
+    process.env.AD_BUSINESS_LEGAL_FORM==="EI" &&
+    /^\\d{14}$/.test(process.env.AD_BUSINESS_SIRET||"");
 }
 async function verifyTurnstile(token:string, c:Config) {
   const secret=process.env.AD_TURNSTILE_SECRET_KEY;
