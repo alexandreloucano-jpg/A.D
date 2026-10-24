@@ -77,3 +77,33 @@ for (const height of [844, 640]) {
     await page.screenshot({path:info.outputPath(`ad-v2-mobile-populated-bottom-390x${height}.png`)});
   });
 }
+
+test("A.D beta restores one genuine prior dossier using a backup, never fabricates one",async({page})=>{
+  const {readFile}=await import("node:fs/promises");
+  await page.setViewportSize({width:390,height:844});
+  await page.goto("/");
+  await page.getByRole("button",{name:"Créer un dossier"}).click();
+  await page.getByLabel("Nom du projet").fill("Dossier historique de test");
+  await page.getByRole("button",{name:"Créer le projet",exact:true}).click();
+  await page.getByRole("button",{name:"Réglages et sauvegarde"}).click();
+  await page.getByText("Sauvegarde et restauration",{exact:true}).click();
+  const wait=page.waitForEvent("download");
+  await page.getByRole("button",{name:"Exporter mes données"}).click();
+  const backup=await wait;
+  const bytes=await readFile(await backup.path());
+  await page.evaluate(()=>localStorage.removeItem("ad.workspace.v1"));
+  await page.reload();
+  await expect(page.getByRole("button",{name:"Récupérer mes anciens dossiers"})).toBeVisible();
+  await page.getByRole("button",{name:"Récupérer mes anciens dossiers"}).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page.getByText("Importer une sauvegarde")).toBeVisible();
+  await page.locator('input[type="file"][accept*=".json"]').setInputFiles({
+    name:"ad-workspace-backup.json",mimeType:"application/json",buffer:bytes,
+  });
+  await expect(page.getByText(/1 projet\(s\)/)).toBeVisible();
+  await page.getByRole("button",{name:"Confirmer le remplacement"}).click();
+  await page.getByRole("button",{name:"Fermer"}).click();
+  await page.reload();
+  await page.getByRole("navigation",{name:"Navigation principale"}).getByRole("link",{name:"Projets"}).click();
+  await expect(page.getByText("Dossier historique de test").first()).toBeVisible();
+});
