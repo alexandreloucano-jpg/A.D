@@ -1,0 +1,62 @@
+/* A.D / EDITION 05 — original visual direction, editorial instrument.
+   No external template, image, or pre-existing component copied.
+   Pure presentation layer: no mutations of data, routes, auth or API. */
+:root{--paper:#f7f5f0;--ink:#181818;--muted:#76716a;--line:#d8d4cd;--ad-surface:#fffefa;--ad-hover:#eeeae2;--ad-deep:#181818;--accent:#181818;--font-ui:Inter,-apple-system,BlinkMacSystemFont,sans-serif;--font-data:ui-monospace,SFMono-Regular,monospace;--serif:"Bodoni Moda",Georgia,serif;background:var(--paper);color:var(--ink)}
+html,body,#root{background:var(--paper);color:var(--ink)}
+.app-frame{background:var(--paper);color:var(--ink)}
+.app-frame .workspace{background:var(--paper);box-shadow:none;border:0}
+.app-frame .topbar{background:#171717;color:#f9f7f2;border-right:1px solid #343434}
+.app-frame .brand{font-family:var(--serif);font-weight:500;font-size:clamp(35px,4vw,48px);letter-spacing:-.055em;border-color:#494949;color:#f9f7f2}
+.app-frame .brand-caption{color:#b3aea6;letter-spacing:.2em}
+.app-frame .topbar nav::before{content:"A.D / INDEX";color:#928d86;letter-spacing:.2em}
+.app-frame .topbar nav a{color:#c5c0b9;border-radius:0;font-weight:450;letter-spacing:-.015em}
+.app-frame .topbar nav a:hover{background:#2a2a2a;color:#fff}
+.app-frame .topbar nav a[aria-current=page],.app-frame .topbar nav a.active{background:#f5f2eb;color:#191919;border-color:#f5f2eb}
+.app-frame .topbar .top-actions{border-color:#454545}
+.app-frame .topbar .top-actions button{border-radius:0}
+.app-frame .topbar .top-actions .ad-command-trigger{border-color:#68625a;color:#f7f5f0}
+.app-frame .topbar .top-actions .ad-command-trigger kbd{color:#a5a19a;border-color:#5a5650}
+.app-frame .topbar .top-actions .capture-button{background:#f5f2eb;color:#181818;border-color:#f5f2eb}
+.app-frame .content-page,.app-frame .main-content{background:var(--paper)}
+.app-frame .page-heading{border-bottom:1px solid var(--ink);padding-bottom:20px;margin-bottom:20px}
+.app-frame .page-heading h1,.app-frame .ad-v2-priority h1,.app-frame .content-page h1{font-family:var(--serif);font-weight:500;letter-spacing:-.045em;line-height:1.02;color:var(--ink)}
+.app-frame .page-heading h1{font-size:clamp(42px,5.4vw,76px)}
+.app-frame .page-heading p,.app-frame .eyebrow,.app-frame .section-kicker{color:var(--muted)}
+.app-frame .eyebrow,.app-frame .section-kicker,.app-frame .ad-timeline-overline{font-family:var(--font-data);font-size:10px;letter-spacing:.13em;text-transform:uppercase}
+.app-frame .project-card,.app-frame .reference-card,.app-frame .market-finding,.app-frame .market-card,.app-frame .ad-v2-priority{background:var(--ad-surface);border:1px solid var(--line);border-radius:0;box-shadow:none}
+.app-frame .project-card:hover,.app-frame .reference-card:hover{border-color:#55514c;transform:none}
+.app-frame .project-card h2,.app-frame .reference-card h2,.app-frame .market-heading h2{font-family:var(--serif);font-weight:500;letter-spacing:-.025em}
+.app-frame button,.app-frame input,.app-frame select,.app-frame textarea{border-radius:0}
+.app-frame button.primary,.app-frame .primary{background:#191919;color:#f8f6f1;border-color:#191919}
+.app-frame button.primary:hover,.app-frame .primary:hover{background:#393939;color:#fff}
+.app-frame .market-panel,.app-frame .market-detail{background:var(--paper);color:var(--ink)}
+.app-frame .market-detail{border-left:1px solid var(--line)}
+.app-frame .ad-market-timeline .ad-timeline-header h3{font-family:var(--serif);font-weight:500}
+.app-frame .ad-timeline-context{background:#ebe7df}
+.app-frame .ad-library-layout button[aria-pressed=true]{background:#191919;color:#f8f6f1}
+.app-frame .ad-command-input{background:#faf8f3;border-color:var(--line)}
+.app-frame .ad-command-option[data-active=true]{background:#ece8e0}
+.app-frame .ad-command-option{border-color:var(--line)}
+.app-frame .workspace-footer{background:#171717;color:#b5b0a8}
+.app-frame a:focus-visible,.app-frame button:focus-visible,.app-frame input:focus-visible{outline:2px solid #8d7e65;outline-offset:3px}
+.ad-landing{--ad-ink:#191919;--ad-paper:#f7f5f0;--ad-line:#d8d4cd;--ad-accent:#191919;background:var(--ad-paper);color:var(--ad-ink);font-family:var(--font-ui)}
+.ad-landing h1,.ad-landing h2,.ad-landing h3,.ad-landing .ad-logotype,.ad-landing .ad-small-title,.ad-landing .ad-offer h3,.ad-landing .ad-method-steps h3{font-family:var(--serif)!important;font-weight:500!important;letter-spacing:-.045em!important}
+.ad-landing .ad-nav,.ad-landing .ad-links{background:#f7f5f0;border-color:#d8d4cd}
+.ad-landing .ad-logotype{font-size:38px;letter-spacing:-.07em!important}
+.ad-landing .ad-nav-descriptor,.ad-landing .ad-section-label,.ad-landing .ad-eyebrow{color:#76716a}
+.ad-landing .ad-hero{background:#171717;color:#f8f6f1}
+.ad-landing .ad-hero-watermark{font-family:var(--serif)!important;font-weight:400;letter-spacing:-.065em;color:#aaa49a;opacity:.12}
+.ad-landing .ad-hero h1{font-size:clamp(50px,7.5vw,118px);line-height:.97}
+.ad-landing .ad-hero h1 em{color:#d6cabb;font-style:italic}
+.ad-landing .ad-hero-top,.ad-landing .ad-hero-bottom,.ad-landing .ad-eyebrow,.ad-landing .ad-hero-description{color:#d4cfc7}
+.ad-landing .ad-button{border-radius:0;box-shadow:none}
+.ad-landing .ad-button-light{background:#f7f5f0;color:#191919}
+.ad-landing .ad-button-light:hover{background:#e6e0d5;color:#191919}
+.ad-landing .ad-button-dark{background:#191919;color:#f7f5f0}
+.ad-landing .ad-button-dark:hover{background:#373737}
+.ad-landing .ad-section,.ad-landing .ad-offer{border-color:#d8d4cd}
+.ad-landing .ad-footer{background:#171717;color:#f7f5f0}
+.ad-landing .ad-inquiry-form input,.ad-landing .ad-inquiry-form textarea,.ad-landing .ad-inquiry-form select{border-radius:0;border-color:#bfb9b0;background:#fffefa;color:#191919}
+.ad-landing .ad-inquiry-form input:focus,.ad-landing .ad-inquiry-form textarea:focus,.ad-landing .ad-inquiry-form select:focus{outline:2px solid #191919}
+@media(max-width:760px){.app-frame .page-heading h1{font-size:clamp(38px,10vw,57px)}.app-frame .topbar{border-color:#343434}.ad-landing .ad-hero h1{font-size:clamp(46px,11vw,75px)}}
+@media(prefers-reduced-motion:reduce){.app-frame *, .ad-landing *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
