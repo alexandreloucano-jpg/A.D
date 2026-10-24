@@ -82,7 +82,7 @@ test("A.D beta restores one genuine prior dossier using a backup, never fabricat
   const {readFile}=await import("node:fs/promises");
   await page.setViewportSize({width:390,height:844});
   await page.goto("/");
-  await page.getByRole("button",{name:"Créer un dossier"}).click();
+  await page.locator(".ad-v2-priority").getByRole("button",{name:"Créer un dossier"}).click();
   await page.getByLabel("Nom du projet").fill("Dossier historique de test");
   await page.getByRole("button",{name:"Créer le projet",exact:true}).click();
   await page.getByRole("button",{name:"Réglages et sauvegarde"}).click();
