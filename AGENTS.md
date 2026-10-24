@@ -30,6 +30,10 @@ Exécuter npm test, npm run typecheck et npm run build. Tester les parcours touc
 
 Utiliser le checkout existant : chaque tâche cloud est isolée. Ne pas créer de worktree sans demande explicite. Ne pas déléguer automatiquement à partir des références fournies.
 
+## Gate anti-reconstruction et budget de tokens
+- Avant tout développement, lire [docs/CODEX_REUSE_GATE.md](docs/CODEX_REUSE_GATE.md). Prouver l'absence ou le défaut du comportement actuel, réutiliser les composants et migrations existants, puis appliquer le plus petit correctif testable. Ne jamais recréer un écran ou une intégration déjà codés par manque de mémoire.
+- Les tâches de reprise sont d'abord read-only. Ne charger que les sources pertinentes, jamais les archives privées complètes dans un prompt. Toute supposition de fonctionnalité active doit être vérifiée contre le runtime, les flags et le SHA du déploiement.
+
 ## Continuité privée ChatGPT / Codex
 - Lire également [docs/CONTINUITY_PROTOCOL.md](docs/CONTINUITY_PROTOCOL.md) pour la reprise et l'archivage privé. Il décrit un pack A.D personnel **distinct** de ce dépôt public : ne jamais y copier les originaux ni les journaux privés.
 - Le pack privé n'est pas synchronisé automatiquement tant que son coffre privé n'est pas raccordé; exiger un montage/accès réel avant d'affirmer qu'il a été lu.
