@@ -503,6 +503,7 @@ export function App() {
                   setProjectId={setProjectId}
                   openReference={openReference}
                   setModal={setModal}
+                  remote={remote}
                 />
               )}
               {route !== "accueil" && (

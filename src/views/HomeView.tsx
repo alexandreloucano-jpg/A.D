@@ -1,11 +1,13 @@
 import { MarketPanel } from "../scout-market/MarketPanel";
+import { StudioLeadsPanel } from "../marketing/StudioLeadsPanel";
+import type { RemoteSaver } from "../remote-saver";
 import { ArrowUpRight, Plus } from "lucide-react";
 import { dateLabel, type Route } from "../display";
 import { rediscover, type Task, type Workspace } from "../domain";
 
-export function HomeView({data,now,navigate,setProjectId,openReference,setModal}: {
+export function HomeView({data,now,navigate,setProjectId,openReference,setModal,remote}: {
  data:Workspace; now:Task[]; navigate:(r:Route)=>void; setProjectId:(id:string|null)=>void;
- openReference:(id:string)=>void; setModal:(v:"project")=>void;
+ openReference:(id:string)=>void; setModal:(v:"project")=>void; remote:RemoteSaver;
 }) {
  const priority=now[0];
  const project=priority?data.projects.find(p=>p.id===priority.projectId):undefined;
@@ -43,6 +45,7 @@ export function HomeView({data,now,navigate,setProjectId,openReference,setModal}
    <aside className="home-rail ad-v2-rail" aria-label="Intelligence et travail récent">
     <div className="ad-v2-heading-line"><span>THE DESK</span><span>RECENT ACTIVITY</span></div>
     <MarketPanel mode="home"/>
+    <StudioLeadsPanel remote={remote}/>
     <section>
       <div className="section-label">
        <h2>Dossiers récents</h2>
