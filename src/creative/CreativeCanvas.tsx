@@ -59,8 +59,8 @@ export function CreativeCanvas({project,data,references,remote,commit,openRefere
     Number(b.projectId===project.id)-Number(a.projectId===project.id)
     || b.capturedAt.localeCompare(a.capturedAt)).slice(0,100);
   const chosenRefs=selectedIds.map(id=>references.find(r=>r.id===id)).filter((r):r is Reference=>!!r);
-  const lastFields=latest?JSON.stringify({brief:latest.brief,referenceIds:latest.referenceIds,directions:latest.directions}):"";
-  const currentFields=JSON.stringify({brief:brief.trim(),referenceIds:selectedIds,directions});
+  const lastFields=latest?JSON.stringify({brief:latest.brief,referenceIds:latest.referenceIds,directions:latest.directions,unknowns:latest.unknowns,origin:latest.origin}):"";
+  const currentFields=JSON.stringify({brief:brief.trim(),referenceIds:selectedIds,directions,unknowns,origin});
   const unsaved=!latest||lastFields!==currentFields;
   useEffect(()=>{
     if(!remote.connected){setAiStatus(null);return;}
