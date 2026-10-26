@@ -44,3 +44,26 @@ test("Studio identity remains independent from the private dashboard",async({pag
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.screenshot({path:info.outputPath("v4-studio-mobile.png"),fullPage:true});
 });
+
+
+test("phone tabs and settings use a bottom sheet",async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ await page.goto("/");
+ const nav=page.getByRole("navigation",{name:"Navigation principale"});
+ await expect(nav).toHaveCSS("position","fixed");
+ await expect(nav).toHaveCSS("background-color","rgb(255, 255, 255)");
+ const tabs=await nav.getByRole("link").evaluateAll(links=>links.map(link=>{
+  const rect=link.getBoundingClientRect();
+  return {width:rect.width,height:rect.height};
+ }));
+ expect(tabs).toHaveLength(4);
+ expect(tabs.every(tab=>tab.width>=44&&tab.height>=44)).toBe(true);
+ await page.getByRole("button",{name:"Réglages et sauvegarde"}).click();
+ const sheet=await page.locator("dialog[open]").boundingBox();
+ expect(sheet).not.toBeNull();
+ if(sheet){
+  expect(sheet.x).toBe(0);
+  expect(sheet.width).toBe(390);
+  expect(Math.abs(sheet.y+sheet.height-844)).toBeLessThanOrEqual(1);
+ }
+});
