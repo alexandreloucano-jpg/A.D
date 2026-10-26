@@ -155,6 +155,22 @@ html, body, #root { background: var(--paper); color: var(--ink); }
 .app-frame .home-next-step h2 { margin: 0; font-size: clamp(19px, 2vw, 24px); font-weight: 550; letter-spacing: -.035em; }
 .app-frame .home-next-step p:not(.eyebrow) { margin: 5px 0 0; color: #626262; font-size: 13px; line-height: 1.5; }
 .app-frame .home-next-step > button { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 11px 16px; border-radius: 4px; }
+.app-frame .home-onboarding { display: grid; grid-template-columns: minmax(0,1fr) minmax(310px,.82fr); gap: clamp(22px,4vw,56px); align-items: center; padding: 22px 0; border-bottom: 1px solid var(--line); }
+.app-frame .home-onboarding-copy { max-width: 560px; }
+.app-frame .home-onboarding-copy .eyebrow { margin: 0 0 8px; color: #777; font: 600 10px/1.5 var(--font-data); letter-spacing: .09em; }
+.app-frame .home-onboarding-copy h2 { max-width: 520px; margin: 0; font-size: clamp(23px,3vw,34px); font-weight: 550; line-height: 1.12; letter-spacing: -.04em; }
+.app-frame .home-onboarding-copy > p:last-child { max-width: 480px; margin: 10px 0 0; color: #626262; font-size: 13px; line-height: 1.55; }
+.app-frame .home-onboarding-options { display: grid; gap: 7px; }
+.app-frame .home-start-option { display: grid; grid-template-columns: 38px minmax(0,1fr) 18px; align-items: center; gap: 11px; min-height: 58px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 4px; color: var(--ink); background: #FFF; text-align: left; cursor: pointer; }
+.app-frame .home-start-option:hover { background: #F7F7F7; border-color: #BDBDBD; }
+.app-frame .home-start-option:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.app-frame .home-start-option > span:nth-child(2) { display: grid; gap: 2px; min-width: 0; }
+.app-frame .home-start-option strong { font-size: 13px; font-weight: 600; }
+.app-frame .home-start-option small { color: #686868; font-size: 11px; line-height: 1.35; }
+.app-frame .home-start-icon { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid var(--line); border-radius: 50%; }
+.app-frame .home-start-primary { border-color: var(--ink); }
+.app-frame .home-minimal-empty { min-height: 60px; }
+.app-frame .home-minimal-empty p { margin: 0; line-height: 1.55; }
 .app-frame .home-workspace-grid { display: grid; grid-template-columns: minmax(0,1.2fr) minmax(280px,.8fr); align-items: start; gap: clamp(24px, 4vw, 56px); }
 .app-frame .home-next-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 60px; border-bottom: 1px solid var(--line); }
 .app-frame .home-next-row > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
@@ -213,6 +229,9 @@ html, body, #root { background: var(--paper); color: var(--ink); }
   .app-frame .home-minimal-section { padding-top: 16px; }
   .app-frame .home-next-step { align-items: flex-start; flex-direction: column; gap: 13px; padding: 16px 0; }
   .app-frame .home-next-step > button { width: 100%; }
+  .app-frame .home-onboarding { grid-template-columns: minmax(0,1fr); gap: 15px; padding: 17px 0; }
+  .app-frame .home-onboarding-copy h2 { max-width: 420px; font-size: 27px; }
+  .app-frame .home-start-option { min-height: 56px; }
   .app-frame .home-workspace-grid { grid-template-columns: minmax(0,1fr); gap: 4px; }
   .app-frame .home-minimal-section { padding-top: 18px; }
   .app-frame .home-market-lists { grid-template-columns: minmax(0,1fr); gap: 14px; }

@@ -622,6 +622,15 @@ export function App() {
                   navigate={navigate}
                   setProjectId={setProjectId}
                   onOpenDossier={openRadarDossier}
+                  onCapture={() => {
+                    setError("");
+                    setCaptureContext(null);
+                    setModal("capture");
+                  }}
+                  onCreateProject={() => {
+                    setError("");
+                    setModal("project");
+                  }}
                 />
               )}
               {route !== "accueil" && (
