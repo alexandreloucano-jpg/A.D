@@ -45,10 +45,11 @@ for (const width of [390, 1440])
       return route.fulfill({ status: 404, json: { error: "not_found" } });
     });
     await page.goto("/#/saver");
+    await page.locator(".saver-service-drawer > summary").click();
     await expect(
-      page.getByText("Saver privé connecté", { exact: false }),
+      page.locator(".saver-service-drawer").getByText("Saver privé disponible", { exact: true }),
     ).toBeVisible();
-    await page.getByRole("button", { name: "Capturer", exact: true }).click();
+    await page.getByRole("button", { name: "Ajouter une référence", exact: true }).click();
     await page
       .getByLabel("Titre (facultatif)")
       .fill("Server acknowledgement fixture");
@@ -65,10 +66,11 @@ for (const width of [390, 1440])
       "Server acknowledgement fixture",
     );
     await page.reload();
+    await page.locator(".saver-service-drawer > summary").click();
     await expect(
-      page.getByText("Saver privé connecté", { exact: false }),
+      page.locator(".saver-service-drawer").getByText("Saver privé disponible", { exact: true }),
     ).toBeVisible();
-    await page.getByRole("button", { name: "Capturer", exact: true }).click();
+    await page.getByRole("button", { name: "Ajouter une référence", exact: true }).click();
     await expect(page.getByLabel("Titre (facultatif)")).toHaveValue(
       "Server acknowledgement fixture",
     );

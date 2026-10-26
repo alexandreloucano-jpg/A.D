@@ -86,6 +86,7 @@ for (const width of [390, 1440])
       }),
     );
     await page.goto("/#/saver");
+    await page.locator(".saver-service-drawer > summary").click();
     await page.getByText("Mes connexions", { exact: true }).click();
     await expect(
       page.getByRole("heading", { name: "X · non configuré" }),
@@ -123,7 +124,9 @@ for (const width of [390, 1440])
       path: `artifacts/connected-accounts-${width}.png`,
     });
     // Account-link recovery is preserved only in the back office.
-    await page.goto("/#/saver?admin=1&settings=1");
+    await page.getByRole("dialog").getByRole("button", { name: "Fermer" }).click();
+    await page.goto("/#/saver?admin=1");
+    await page.getByRole("button", { name: "Réglages et sauvegarde" }).click();
     await expect(
       page.getByRole("heading", { name: "Google · non lié" }),
     ).toBeVisible();
@@ -133,7 +136,8 @@ for (const width of [390, 1440])
     await page.waitForURL("https://accounts.google.com/**");
     expect(linkRequests).toBe(1);
     linked = true;
-    await page.goto("/#/saver?admin=1&settings=1");
+    await page.goto("/#/saver?admin=1");
+    await page.getByRole("button", { name: "Réglages et sauvegarde" }).click();
     await expect(
       page.getByRole("heading", { name: "Google · lié au propriétaire" }),
     ).toBeVisible();

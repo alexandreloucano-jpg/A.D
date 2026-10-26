@@ -111,8 +111,29 @@ export class MarketRepository {
     value: number | null = null,
   ) {
     const stamp = new Date().toISOString();
+    const eventTypes =
+      patch.reviewState !== undefined
+        ? [
+            "opportunity_reviewed",
+            ...(event === "accepted" || event === "rejected"
+              ? ["decision_confirmed"]
+              : []),
+          ]
+        : patch.projectId !== undefined
+          ? ["work_dossier_linked"]
+          : patch.stage === "won" && value !== null
+            ? ["measurable_outcome_recorded"]
+            : [];
+    const outcomeOccurredAt =
+      patch.stage === "won" &&
+      typeof patch.stageEvidence === "object" &&
+      patch.stageEvidence !== null &&
+      "occurredAt" in patch.stageEvidence &&
+      typeof patch.stageEvidence.occurredAt === "string"
+        ? patch.stageEvidence.occurredAt
+        : stamp;
     const [r] = await this.store.query(
-      `WITH changed AS (UPDATE ad_market_opportunities SET data=data||$3::jsonb WHERE owner_id=$1 AND id=$2 AND NOT(data @> $6::jsonb) RETURNING data), feedback AS (INSERT INTO ad_market_feedback(owner_id,id,opportunity_id,data) SELECT $1,$4,$2,$5::jsonb FROM changed) SELECT data FROM changed`,
+      `WITH changed AS (UPDATE ad_market_opportunities SET data=data||$3::jsonb WHERE owner_id=$1 AND id=$2 AND NOT(data @> $6::jsonb) RETURNING data), feedback AS (INSERT INTO ad_market_feedback(owner_id,id,opportunity_id,data) SELECT $1,$4,$2,$5::jsonb FROM changed RETURNING id), lifecycle AS (INSERT INTO ad_records(namespace,key,data) SELECT 'lifecycle-event:'||$1,feedback.id::text||':'||event_type,jsonb_build_object('id',feedback.id::text||':'||event_type,'owner',$1,'type',event_type,'occurredAt',CASE WHEN event_type='measurable_outcome_recorded' THEN $8::text ELSE $9::text END,'recordedAt',$9::text,'sourceType','market_feedback','sourceId',$2::text) FROM feedback CROSS JOIN unnest($7::text[]) AS event_type ON CONFLICT(namespace,key) DO NOTHING) SELECT data FROM changed`,
       [
         this.owner,
         id,
@@ -127,6 +148,9 @@ export class MarketRepository {
           createdAt: stamp,
         }),
         JSON.stringify(patch),
+        eventTypes,
+        outcomeOccurredAt,
+        stamp,
       ],
     );
     return r?.data || (await this.get(id));

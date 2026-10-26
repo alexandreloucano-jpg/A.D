@@ -392,6 +392,10 @@ describe("Resource-bound MCP OAuth", () => {
     );
     expect((await appRead.json()).reference.id).toBe(uuid);
     expect((await s.query("SELECT count(*) AS n FROM ad_saver"))[0].n).toBe(1);
+    // The least-privilege Scout gateway must not write to the app-only lifecycle namespace.
+    expect(
+      (await s.query("SELECT count(*) AS n FROM ad_records WHERE namespace=$1", ["lifecycle-event:" + app.owner]))[0].n,
+    ).toBe(0);
   });
   it("rejects oversized batches before writes, and quotas persist across service instances", async () => {
     const { token } = await access();

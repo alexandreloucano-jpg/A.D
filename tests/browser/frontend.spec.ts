@@ -10,10 +10,10 @@ async function dismiss(page: Page) {
   if (await button.isVisible()) await button.click();
 }
 async function createProject(page: Page, title: string) {
-  await nav(page, "Projets");
+  await nav(page, "Travail");
   const back = page.getByRole("button", { name: "Tous les projets" });
   if (await back.isVisible()) await back.click();
-  await page.getByRole("button", { name: "Nouveau projet" }).click();
+  await page.getByRole("button", { name: "Nouveau dossier" }).click();
   await page.getByLabel("Nom du projet").fill(title);
   await page
     .getByRole("button", { name: "Créer le projet", exact: true })
@@ -21,7 +21,9 @@ async function createProject(page: Page, title: string) {
   await dismiss(page);
 }
 async function capture(page: Page, title: string, url = "") {
-  await page.getByRole("button", { name: "Capturer", exact: true }).click();
+  const addReference = page.getByRole("button", { name: "Ajouter une référence", exact: true });
+  if (await addReference.isVisible()) await addReference.click();
+  else await page.getByRole("button", { name: "Capturer", exact: true }).click();
   await page.getByLabel("Titre (facultatif)").fill(title);
   await page
     .getByLabel("Votre pensée")
@@ -46,8 +48,8 @@ for (const width of [390, 1440]) {
     await dismiss(page);
     await page.getByRole("button", { name: "Archives (1)" }).click();
     const archiveURL = page.url();
-    await nav(page, "Explorer");
-    await nav(page, "Projets");
+    await nav(page, "Radar");
+    await nav(page, "Travail");
     await expect(page).toHaveURL(archiveURL);
     await expect(page.getByText("KILL · ÉCARTÉ")).toBeVisible();
     await page.reload();
@@ -66,8 +68,8 @@ for (const width of [390, 1440]) {
       .fill("recherche");
     await expect(page.locator(".reference-card")).toHaveCount(1);
     const searchURL = page.url();
-    await nav(page, "Explorer");
-    await nav(page, "Saver");
+    await nav(page, "Radar");
+    await nav(page, "Bibliothèque");
     await expect(page).toHaveURL(searchURL);
     await expect(
       page.getByRole("textbox", { name: "Rechercher", exact: true }),
@@ -130,7 +132,7 @@ for (const width of [390, 1440]) {
       page.locator(".reference-media[data-state=ready]"),
     ).toBeVisible();
     await page.getByRole("button", { name: "Réduire", exact: true }).click();
-    await nav(page, "Explorer");
+    await nav(page, "Radar");
     for (const [brand, fact, inference] of [
       [
         "Étude de rythme",
@@ -160,9 +162,9 @@ for (const width of [390, 1440]) {
     await expect(
       page.getByRole("link", { name: "Voir la source" }).first(),
     ).toBeInViewport();
-    for (const route of ["Accueil", "Explorer", "Saver", "Projets"]) {
+    for (const route of ["Aujourd’hui", "Radar", "Bibliothèque", "Travail"]) {
       await nav(page, route);
-      if (route === "Projets")
+      if (route === "Travail")
         await page.getByRole("button", { name: "Tous les projets" }).click();
       await page.mouse.move(0, 0);
       await page.screenshot({
@@ -187,8 +189,8 @@ for (const width of [390, 1440]) {
     });
     await page.getByRole("button", { name: "Accepter dans NOW" }).click();
     await dismiss(page);
-    await nav(page, "Accueil");
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    await nav(page, "Aujourd’hui");
+    await expect(page.getByRole("region", { name: "Votre prochain pas" })).toContainText(
       "Comparer les pistes de composition",
     );
     await page.screenshot({
@@ -207,12 +209,12 @@ test("clavier : accès direct au contenu et filtre vide explicite", async ({
   ).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(page.locator("main")).toBeFocused();
-  await nav(page, "Saver");
+  await nav(page, "Bibliothèque");
   await page.getByRole("button", { name: "Liens 0" }).click();
   await expect(
     page.getByRole("heading", { name: "Aucune correspondance." }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Capturer", exact: true }),
+    page.getByRole("button", { name: "Ajouter une référence", exact: true }),
   ).toHaveCount(1);
 });

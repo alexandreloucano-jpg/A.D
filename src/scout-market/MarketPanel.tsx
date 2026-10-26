@@ -1,12 +1,11 @@
-import { useRef, useState } from "react";
-import { useScoutMarket } from "./useScoutMarket";
+import { useEffect, useRef, useState } from "react";
+import { useScoutMarket, type MarketStatus } from "./useScoutMarket";
 import { marketRequest } from "./client";
 import { MarketTimeline } from "./MarketTimeline";
 import { evidenceReceiptSchema, type EvidenceReceipt } from "../opportunity/model";
 import { stages, type Finding, type MarketAction } from "./schema";
 import {
   compareFindings,
-  homepageFinding,
   existingRelationship,
 } from "./qualification";
 import "./market.css";
@@ -62,16 +61,19 @@ const labels: Record<string, string> = {
 const label = (v: string) => labels[v] || v;
 const date = (v: string | null) =>
   v ? new Date(v).toLocaleDateString("fr-FR") : "Non établie";
+export type HomeMarketState={items:Finding[];status:MarketStatus|null;loading:boolean;error:string};
 export function MarketPanel({
   mode = "explorer",
   query = "",
   projects = [],
   onOpenDossier,
+  onHomeState,
 }: {
   mode?: "explorer" | "home" | "pipeline";
   query?: string;
   projects?: { id: string; title: string }[];
   onOpenDossier?: (finding: Finding, evidence: EvidenceReceipt[]) => Promise<void>;
+  onHomeState?:(state:HomeMarketState)=>void;
 }) {
   const returnFocus = useRef<HTMLElement | null>(null);
   const m = useScoutMarket(query, mode),
@@ -97,6 +99,9 @@ export function MarketPanel({
     [linkedProject, setLinkedProject] = useState(""),
     [verifiedEvidence, setVerifiedEvidence] = useState<EvidenceReceipt[]>([]),
     [openingDossier, setOpeningDossier] = useState(false);
+  useEffect(()=>{
+    if(mode==="home")onHomeState?.({items:m.items,status:m.status,loading:m.loading,error:m.error});
+  },[mode,m.items,m.status,m.loading,m.error,onHomeState]);
   function closeDetail() {
     setSelected(null);
     requestAnimationFrame(() => returnFocus.current?.focus());
@@ -153,11 +158,15 @@ export function MarketPanel({
       }
     }
   }
-  const items = (mode === "home" ? m.observations : m.items)
+  const items = m.items
     .filter(
       (f) =>
         (mode !== "pipeline" || f.reviewState === "saved") &&
-        (mode !== "home" || homepageFinding(f)) &&
+        (mode !== "home" ||
+          (f.classification === "commercial"
+            ? !["reference_only", "past", "cultural"].includes(f.lookalike?.gate || "") &&
+              !f.sourceError && f.relationshipStatus !== "blocked"
+            : f.classification === "strategic" || f.classification === "cultural")) &&
         (view === "Rejetées" || f.relationshipStatus !== "blocked") &&
         (!sector || f.sector === sector) &&
         (!referenceFilter || f.lookalike?.archetype === referenceFilter) &&
@@ -171,7 +180,9 @@ export function MarketPanel({
           !f.publishedAt ||
           Date.now() - Date.parse(f.publishedAt) < Number(days) * 86400000) &&
         (mode !== "home" || !["rejected", "snoozed"].includes(f.reviewState)) &&
-        (mode === "pipeline"
+        (mode === "home"
+          ? true
+          : mode === "pipeline"
           ? true
           : view === "Rejetées"
             ? f.reviewState === "rejected" || f.relationshipStatus === "blocked"
@@ -198,17 +209,17 @@ export function MarketPanel({
                         : !["rejected", "snoozed"].includes(f.reviewState)),
     )
     .sort(compareFindings);
-  const displayed =
-    mode === "home" || (mode === "explorer" && view === "Nouveaux clients")
+  const displayed = mode === "home"
+    ? items
+    : mode === "explorer" && view === "Nouveaux clients"
       ? items.slice(0, 5)
       : items;
-  if (mode === "home" && !m.status?.enabled) return null;
-  if (!m.loading && !m.status?.enabled)
-    return mode === "home" ? null : (
+  if (!m.loading && !m.status?.enabled && mode !== "home")
+    return (
       <section className="market-unavailable" aria-label="Radar marché">
         <p>
           {m.error || "Radar privé non activé."}{" "}
-          <a href="/api/auth/google/login">Se connecter à A.D</a>
+          <a href="/api/auth/login">Se connecter à A.D</a>
         </p>
       </section>
     );
@@ -228,7 +239,7 @@ export function MarketPanel({
           </p>
           <h2>
             {mode === "home"
-              ? "À examiner."
+              ? "Radar & actualités"
               : mode === "pipeline"
                 ? "Opportunités enregistrées"
                 : "Vos prochains clients."}
@@ -237,27 +248,48 @@ export function MarketPanel({
         {mode === "explorer" && m.status?.enabled && (
           <button disabled={m.busy} onClick={() => void m.runScan()}>
             {m.busy
-              ? "Collecte en cours…"
+              ? "Actualisation en cours…"
               : m.status.lastRun?.paused
                 ? "Reprendre le scan"
-                : "Lancer un scan manuel"}
+                : m.status.lastRun
+                  ? "Actualiser le Radar"
+                  : "Lancer le premier scan"}
           </button>
         )}
       </header>
+      {mode === "explorer" && m.status?.enabled && (
+        <div className="market-live-status" aria-live="polite">
+          <span className={m.busy ? "is-running" : m.status.stale ? "is-stale" : "is-ready"}>
+            <i aria-hidden="true" />
+            {m.busy
+              ? "Analyse des sources en cours"
+              : m.status.stale
+                ? "Radar à actualiser"
+                : "Radar à jour"}
+          </span>
+          <small>
+            {m.busy && m.status.lastRun
+              ? `${m.status.lastRun.itemsSeen} pages examinées`
+              : m.status.lastRun?.finishedAt
+                ? `Dernier scan · ${date(m.status.lastRun.finishedAt)}`
+                : "Aucun scan enregistré"}
+          </small>
+        </div>
+      )}
       {m.error && (
         <p role="alert">
           {m.error} <button onClick={() => void m.refresh()}>Actualiser</button>
         </p>
       )}
       {m.loading && <p role="status">Lecture du radar privé…</p>}
-      {m.status && !m.status.enabled && (
+      {m.status && !m.status.enabled && mode !== "home" && (
         <p>
           Le radar n’est pas activé. Vos observations locales restent
           disponibles.
         </p>
       )}
       {m.status?.enabled && mode !== "home" && (
-        <details className="market-scan-details">
+        <details className="market-scan-details" open={m.status.stale}>
           <summary>
             {m.items.filter((f) => f.classification === "commercial").length}{" "}
             opportunités ·{" "}
@@ -446,9 +478,6 @@ export function MarketPanel({
           </details>
         </>
       )}
-      {mode === "home" && m.actions[0] && (
-        <p>PROCHAINE ACTION · NOW acceptée : {m.actions[0].proposalText}</p>
-      )}
       {mode === "explorer" && view === "Recherche manuelle" && (
         <div>
           <p>
@@ -466,7 +495,24 @@ export function MarketPanel({
             ))}
         </div>
       )}
-      <div className="market-findings">
+      {mode === "home" ? <div className="home-market-lists">
+        {([
+          {title:"Radar",rows:displayed.filter(f=>f.classification==="commercial"),label:"OPPORTUNITÉ"},
+          {title:"Actualités",rows:displayed.filter(f=>f.classification==="strategic"||f.classification==="cultural"),label:"ACTUALITÉ"},
+        ]).map(group=><section className="home-market-group" key={group.title} aria-label={group.title}>
+          <div className="home-market-group-heading"><h3>{group.title}</h3><span>{group.rows.length}</span></div>
+          {group.rows.length?group.rows.map(f=><article className="home-market-row" key={f.id}>
+            <button type="button" className="home-market-open" onClick={()=>void inspect(f)}>
+              <span className="home-market-kind">{group.label} · {label(f.reviewState)}</span>
+              <strong>{f.companyName}</strong>
+              <span className="home-market-headline">{f.headline}</span>
+              <small>{f.publisher} · publié le {date(f.publishedAt)}</small>
+            </button>
+            <a href={f.canonicalUrl} target="_blank" rel="noreferrer" aria-label={"Source originale : "+f.companyName}>↗</a>
+          </article>):<p className="home-market-empty">Aucun élément qualifié pour le moment.</p>}
+        </section>)}
+        <a className="home-market-all" href="#/explorer">Voir tout le Radar <span aria-hidden="true">↗</span></a>
+      </div> : <div className="market-findings">
         {displayed.map((f) => (
           <article className="market-finding" key={f.id}>
             <div className="market-card-head">
@@ -532,27 +578,31 @@ export function MarketPanel({
             <button onClick={() => void inspect(f)}>Examiner</button>
           </article>
         ))}
-      </div>
+      </div>}
       {items.length > displayed.length && (
         <p className="market-meta">
           Les cinq premières opportunités sont priorisées. Les filtres
           permettent de cibler un autre secteur ou événement.
         </p>
       )}
-      {!m.loading &&
+      {mode !== "home" && !m.loading &&
         m.status?.enabled &&
-        !items.length &&
+        !displayed.length &&
         view !== "Recherche manuelle" && (
           <p>
-            {mode === "home"
-              ? "Aucune opportunité actuelle corroborée à faire remonter."
-              : "Aucune opportunité suffisamment qualifiée dans cette sélection."}
+            Aucune opportunité suffisamment qualifiée dans cette sélection.
             Consultez les signaux culturels ou actualisez les sources.{" "}
             {m.status.lastRun
               ? "Les résultats précédents restent conservés."
               : "Lancez une collecte publique."}
           </p>
         )}
+        {mode === "home" && !m.loading && !m.status?.enabled && (
+        <section className="market-unavailable" aria-label="Radar marché">
+          <p>{m.error || "Connectez-vous pour retrouver le Radar et les actualités."}</p>
+          <a href="/api/auth/login">Se connecter à A.D</a>
+        </section>
+      )}
       {selected && (
         <div
           className="market-overlay"

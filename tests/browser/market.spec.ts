@@ -62,7 +62,7 @@ for (const width of [390, 1440])
     );
     await page.goto("/#/explorer");
     await expect(
-      page.getByRole("heading", { name: "Où créer de la valeur." }),
+      page.getByRole("heading", { name: "Radar." }),
     ).toBeVisible();
     await page.getByRole("button", { name: "Examiner", exact: true }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
@@ -88,9 +88,10 @@ for (const width of [390, 1440])
       fullPage: true,
     });
     await page.reload();
+    await page.getByRole("button", { name: "Enregistrées", exact: true }).click();
     await expect(
       page.getByRole("heading", {
-        name: "Maison Orbe ouvrira un hôtel à Paris 8e",
+        name: f.companyName,
       }),
     ).toBeVisible();
     const overflow = await page.evaluate(
@@ -101,11 +102,13 @@ for (const width of [390, 1440])
 test("one explicit scan continues bounded slices and shows only server-confirmed findings", async ({
   page,
 }) => {
+  const now = new Date();
   const f = parseArticle(
-    '<h1>Dior ouvre une boutique à Paris</h1><time datetime="2026-10-15"></time><article class="article-content">Annonce de boutique.</article>',
-    "https://www.journalduluxe.fr/fr/mode/qa-scan",
-    new Date("2026-10-16"),
+    `<h1>Maison Test 0 ouvrira un hôtel à Paris 8e</h1><time datetime="${now.toISOString()}"></time><article>La marque prépare une ouverture le 20 novembre 2026 au 75008 Paris.</article>`,
+    "https://www.journalduluxe.fr/fr/business/test-0",
+    now,
   )!;
+  f.corroboratingPrimarySource = "https://issuer.example/press/fixture";
   let calls = 0;
   let run: Record<string, unknown> | null = null;
   await page.route("**/api/session", (r) =>
@@ -141,7 +144,7 @@ test("one explicit scan continues bounded slices and shows only server-confirmed
     await route.fulfill({ json: b });
   });
   await page.goto("/#/explorer");
-  await page.getByRole("button", { name: "Lancer un scan manuel" }).click();
-  await expect(page.getByRole("heading", { name: f.headline })).toBeVisible();
+  await page.getByRole("button", { name: "Lancer le premier scan" }).click();
+    await expect(page.getByRole("heading", { name: f.companyName })).toBeVisible();
   expect(calls).toBe(2);
 });

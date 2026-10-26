@@ -20,9 +20,11 @@ const stats=(s:Workspace)=>[
   (s.creativeBoards||[]).length+" traitements",
   s.references.length+" références locales",
 ].join(" · ");
-export function WorkspaceCloudPanel({local,remote,commit,fatal}:{
+export function WorkspaceCloudPanel({local,remote,commit,fatal,onSynced,syncActive}:{
   local:Workspace;remote:RemoteSaver;fatal:boolean;
   commit:(next:Workspace,message:string)=>boolean;
+  onSynced:(serverRevision:number,workspace:Workspace)=>void;
+  syncActive:boolean;
 }){
   const [snapshot,setSnapshot]=useState<Snapshot|null>(null);
   const [message,setMessage]=useState("");
@@ -59,7 +61,7 @@ export function WorkspaceCloudPanel({local,remote,commit,fatal}:{
       if(confirmed.serverRevision!==saved.serverRevision ||
         !confirmed.workspace || exportBackup(confirmed.workspace)!==exportBackup(workspaceSchema.parse(local)))
         throw Error("Relecture cloud incohérente. La copie locale a été conservée.");
-      setSnapshot(confirmed);setConfirmUpload(false);
+      setSnapshot(confirmed);setConfirmUpload(false);onSynced(confirmed.serverRevision,confirmed.workspace!);
       setMessage("Sauvegarde cloud vérifiée (version "+confirmed.serverRevision+"). Copie locale conservée.");
     }catch(e){setError(e instanceof Error?e.message:"Synchronisation non confirmée. Conservez la copie locale.");}
     finally{setBusy(false);}
@@ -68,18 +70,19 @@ export function WorkspaceCloudPanel({local,remote,commit,fatal}:{
     if(!snapshot?.workspace||!confirmRestore||fatal)return;
     // Do not let a stale browser overwrite edits made in another tab.
     const ok=commit(snapshot.workspace,"Sauvegarde cloud relue et restaurée sur cet appareil.");
-    if(ok){setConfirmRestore(false);setMessage("Restauration locale confirmée. Le cloud n'a pas été modifié.");}
+    if(ok){setConfirmRestore(false);onSynced(snapshot.serverRevision,snapshot.workspace);setMessage("Restauration locale confirmée. Synchronisation cloud continue activée sur cet appareil.");}
     else setError("Restauration refusée : le contenu local n'a pas été modifié.");
   }
   return <section className="ad-cloud" aria-label="Sauvegarde cloud des dossiers" style={{borderTop:"1px solid currentColor",paddingTop:16,marginTop:18}}>
     <h3>Sauvegarde cloud des dossiers</h3>
-    <p>D'abord une copie locale, puis une copie serveur volontaire. Aucune fusion automatique, aucune suppression et aucun transfert vers un nouveau compte.</p>
+    <p>Le premier transfert est confirmé ici. Ensuite, les changements de cet appareil sont sauvegardés automatiquement. Sur un nouvel appareil, restaurez d’abord la version cloud ; les conflits sont bloqués et les copies conservées.</p>
     <p><strong>Sur cet appareil :</strong> {stats(local)}</p>
     {!remote.connected?<p>Connectez le compte propriétaire pour accéder à la sauvegarde cloud privée.</p>:
       <>
         {snapshot?.workspace?<p><strong>Dans le cloud (version {snapshot.serverRevision}) :</strong> {stats(snapshot.workspace)} · {snapshot.updatedAt?new Date(snapshot.updatedAt).toLocaleString("fr-FR"):"Date inconnue"}</p>
         :snapshot?<p>Aucune version cloud existante.</p>:null}
-        <button type="button" disabled={busy} onClick={()=>void refresh()}><RefreshCw size={15}/> Vérifier les versions</button>
+          <button type="button" disabled={busy} onClick={()=>void refresh()}><RefreshCw size={15}/> Vérifier les versions</button>
+          {syncActive&&<p role="status">Synchronisation automatique active sur cet appareil.</p>}
         {!!snapshot&&<>
           <label style={{display:"flex",alignItems:"start",gap:8,marginTop:12}}>
             <input type="checkbox" checked={confirmUpload} onChange={e=>setConfirmUpload(e.target.checked)}/>
@@ -101,6 +104,6 @@ export function WorkspaceCloudPanel({local,remote,commit,fatal}:{
       </>}
     {!!error&&<p role="alert">{error}</p>}
     {!!message&&<p role="status">{message}</p>}
-    <small>La copie cloud est une fonction bêta désactivée tant que sa migration et sa configuration serveur ne sont pas validées. Ce n'est pas encore une synchronisation automatique multi-appareil.</small>
+    <small>Les versions restent conservées côté cloud. La première copie doit être confirmée et relue avant activation.</small>
   </section>;
 }

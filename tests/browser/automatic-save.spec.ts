@@ -57,7 +57,7 @@ for (const width of [390, 1440])
       return route.fulfill({ status: 404, json: { error: "not_found" } });
     });
     await page.goto("/#/saver");
-    await page.getByRole("button", { name: "Capturer", exact: true }).click();
+    await page.getByRole("button", { name: "Ajouter une référence", exact: true }).click();
     await page
       .getByLabel("Titre (facultatif)")
       .fill("Référence locale à conserver");

@@ -1,6 +1,10 @@
 import { neon } from "@neondatabase/serverless";
 import { createHash, randomUUID } from "node:crypto";
 import { referenceSchema, type Reference } from "../src/domain.js";
+import {
+  lifecycleEventSchema,
+  type LifecycleEvent,
+} from "../src/lifecycle/model.js";
 export type Query = (
   sql: string,
   params?: unknown[],
@@ -67,17 +71,54 @@ export class Store {
       [randomUUID(), owner, principal, operation, outcome],
     );
   }
-  async save(owner: string, input: unknown) {
+  async recordLifecycleEvent(
+    owner: string,
+    input: Omit<LifecycleEvent, "owner" | "recordedAt" | "id"> & {
+      idempotencyKey: string;
+    },
+  ) {
+    const recordedAt = new Date().toISOString();
+    const event = lifecycleEventSchema.parse({
+      id: input.type + ":" + input.idempotencyKey,
+      owner,
+      type: input.type,
+      occurredAt: input.occurredAt,
+      recordedAt,
+      sourceType: input.sourceType,
+      sourceId: input.sourceId,
+    });
+    await this.query(
+      "INSERT INTO ad_records(namespace,key,data) VALUES($1,$2,$3::jsonb) ON CONFLICT(namespace,key) DO NOTHING",
+      [
+        "lifecycle-event:" + owner,
+        event.id,
+        JSON.stringify(event),
+      ],
+    );
+    return event;
+  }
+  async save(
+    owner: string,
+    input: unknown,
+    options: { trackLifecycle?: boolean } = {},
+  ) {
     const reference = referenceSchema.parse(input);
     const fingerprint = digest(JSON.stringify(reference));
+    const trackLifecycle =
+      options.trackLifecycle !== false && !reference.isInternalQA;
+    const verifiedWriteAt = new Date().toISOString();
+    const sql = trackLifecycle
+      ? "WITH saved AS (INSERT INTO ad_saver(owner_id,id,reference,fingerprint,captured_at) VALUES($1,$2,$3::jsonb,$4,$5) ON CONFLICT(owner_id,id) DO NOTHING RETURNING id), saved_event AS (INSERT INTO ad_records(namespace,key,data) SELECT 'lifecycle-event:'||$1,'reference_saved:'||$2::text,jsonb_build_object('id','reference_saved:'||$2::text,'owner',$1,'type','reference_saved','occurredAt',$6::text,'recordedAt',$6::text,'sourceType','saver_reference','sourceId',$2::text) FROM saved ON CONFLICT(namespace,key) DO NOTHING), first_event AS (INSERT INTO ad_records(namespace,key,data) SELECT 'lifecycle-event:'||$1,'first_reference_saved:account-first-save',jsonb_build_object('id','first_reference_saved:account-first-save','owner',$1,'type','first_reference_saved','occurredAt',$6::text,'recordedAt',$6::text,'sourceType','saver_reference','sourceId',$2::text) FROM saved WHERE NOT EXISTS(SELECT 1 FROM ad_saver WHERE owner_id=$1 AND id<>$2) ON CONFLICT(namespace,key) DO NOTHING) SELECT id FROM saved"
+      : "INSERT INTO ad_saver(owner_id,id,reference,fingerprint,captured_at) VALUES($1,$2,$3::jsonb,$4,$5) ON CONFLICT(owner_id,id) DO NOTHING RETURNING id";
     await this.query(
-      "INSERT INTO ad_saver(owner_id,id,reference,fingerprint,captured_at) VALUES($1,$2,$3::jsonb,$4,$5) ON CONFLICT(owner_id,id) DO NOTHING",
+      sql,
       [
         owner,
         reference.id,
         JSON.stringify(reference),
         fingerprint,
         reference.capturedAt,
+        ...(trackLifecycle ? [verifiedWriteAt] : []),
       ],
     );
     const readback = await this.read(owner, reference.id);

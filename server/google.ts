@@ -314,7 +314,7 @@ export async function googleRoute(
       if (read?.sub !== sub || read.client !== cfg.client)
         throw new ServiceError(409, "google_already_linked");
       await s.audit(c.owner, "owner", "google_link", "verified");
-      return redirect(c.app + "/?google=linked#/saver", browserCookie("", 0));
+      return redirect(c.app + "/?google=linked#/accueil", browserCookie("", 0));
     }
     const binding = await s.get<Binding>("google-owner", c.owner);
     if (!binding || binding.client !== cfg.client || !equal(binding.sub, sub))
@@ -335,7 +335,7 @@ export async function googleRoute(
     );
     await s.audit(c.owner, "owner", "google_login", "verified");
     return redirect(
-      c.app + "/#/saver",
+      c.app + "/#/accueil",
       `__Host-ad_session=${session}; Path=/; Max-Age=43200; Secure; HttpOnly; SameSite=Lax`,
     );
   }

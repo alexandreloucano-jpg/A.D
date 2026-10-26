@@ -1,84 +1,106 @@
-import { MarketPanel } from "../scout-market/MarketPanel";
+import { useCallback, useState } from "react";
+import { MarketPanel, type HomeMarketState } from "../scout-market/MarketPanel";
 import type { Finding } from "../scout-market/schema";
 import type { EvidenceReceipt } from "../opportunity/model";
-import { StudioLeadsPanel } from "../marketing/StudioLeadsPanel";
-import type { RemoteSaver } from "../remote-saver";
-import { ArrowUpRight, Plus, Upload } from "lucide-react";
-import { dateLabel, type Route } from "../display";
-import { rediscover, type Task, type Workspace } from "../domain";
+import { latestCreative } from "../creative/model";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
+import type { Route } from "../display";
+import type { Task, Workspace } from "../domain";
 
-export function HomeView({data,now,navigate,setProjectId,openReference,setModal,remote,onRestore,onOpenDossier}: {
- data:Workspace; now:Task[]; navigate:(r:Route)=>void; setProjectId:(id:string|null)=>void;
- openReference:(id:string)=>void; setModal:(v:"project")=>void; remote:RemoteSaver; onRestore:()=>void; onOpenDossier:(finding:Finding,evidence:EvidenceReceipt[])=>Promise<void>;
+export function HomeView({data,now,navigate,setProjectId,onOpenDossier}: {
+ now:Task[]; data:Workspace; navigate:(r:Route)=>void; setProjectId:(id:string|null)=>void;
+ onOpenDossier:(finding:Finding,evidence:EvidenceReceipt[])=>Promise<void>;
 }) {
+ const [market,setMarket]=useState<HomeMarketState>({items:[],status:null,loading:true,error:""});
+ const receiveMarket=useCallback((value:HomeMarketState)=>setMarket(value),[]);
+ const directions=(data.creativeBoards||[])
+   .flatMap(board=>{
+     const project=data.projects.find(p=>p.id===board.projectId);
+     const revision=latestCreative(board);
+     return project&&revision?[{board,project,revision}]:[];
+   })
+   .sort((a,b)=>b.revision.createdAt.localeCompare(a.revision.createdAt));
+ const projects=data.projects.slice().sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt));
  const priority=now[0];
- const project=priority?data.projects.find(p=>p.id===priority.projectId):undefined;
- const pending=data.tasks.filter(t=>t.lane==="LATER").length;
- const references=rediscover(data);
- const recent=data.projects.slice().sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)).slice(0,3);
- const latest=references.at(-1);
- function continueWork(){
-   if(data.projects.length){navigate("projets");if(project)setProjectId(project.id);}
-   else setModal("project");
- }
- return (
-  <div className="home-layout ad-v2-home">
-   <section className={"home-focus ad-v2-focus"+(priority?" has-priority":"")}>
-    <div className="ad-v2-heading-line"><span>A.D / DAILY CONTROL</span><span>YOUR WORKSPACE, IN CONTEXT</span></div>
-    <div className="ad-v2-priority">
-      <p className="ad-v2-overline">{priority?"DECISION / APPROVED":"DECISION / NO ACTION ACCEPTED"}</p>
-      <h1>{priority?priority.title:<>Aucune priorité<br/><em>en cours.</em></>}</h1>
-      <p className="ad-v2-description">{priority
-       ?"Vous avez validé cette action. Ouvrez son dossier pour poursuivre."
-       :pending?pending+" proposition"+(pending>1?"s":"")+" à examiner. Aucune priorité n'a été créée automatiquement."
-       :"Aucune décision en attente. Consultez vos dossiers ou les nouvelles opportunités."}</p>
-      {priority?.acceptedAt&&<p className="ad-v2-date">Décision du {dateLabel(priority.acceptedAt)}</p>}
-      <button className="primary ad-v2-cta" onClick={continueWork}>
-       {priority?"Ouvrir le dossier":data.projects.length?"Examiner les dossiers":"Créer un dossier"}
-       <ArrowUpRight size={17} aria-hidden="true"/>
-      </button>
-      {!data.projects.length && (
-       <div className="ad-v2-restore">
-        <p>Déjà des dossiers dans une ancienne version d’A.D ? Les données locales ne suivent pas automatiquement un changement de domaine.</p>
-        <button type="button" onClick={onRestore}>Récupérer mes anciens dossiers <Upload size={15} aria-hidden="true"/></button>
-       </div>
-      )}
-    </div>
-    <div className="ad-v2-counters" aria-label="État de l'espace de travail">
-      <div><strong>{String(data.projects.length).padStart(2,"0")}</strong><span>Dossiers</span></div>
-      <div><strong>{String(pending).padStart(2,"0")}</strong><span>À examiner</span></div>
-      <div><strong>{String(references.length).padStart(2,"0")}</strong><span>Références</span></div>
-    </div>
-   </section>
-   <aside className="home-rail ad-v2-rail" aria-label="Intelligence et travail récent">
-    <div className="ad-v2-heading-line"><span>INTELLIGENCE FEED</span><span>SOURCED / PRIVATE</span></div>
-    <MarketPanel mode="home" onOpenDossier={onOpenDossier}/>
-    <StudioLeadsPanel remote={remote}/>
-    <section>
-      <div className="section-label">
-       <h2>Dossiers actifs</h2>
-       <button aria-label="Voir les projets" onClick={()=>navigate("projets")}><ArrowUpRight size={17}/></button>
-      </div>
-      {recent.length?recent.map((p,i)=>
-       <button key={p.id} className="project-row" onClick={()=>{navigate("projets");setProjectId(p.id);}}>
-         <span className="row-index">{String(i+1).padStart(2,"0")}</span>
-         <span>{p.title}<small>Mis à jour le {dateLabel(p.updatedAt)}</small></span>
-         <ArrowUpRight size={16} aria-hidden="true"/>
-       </button>
-      ):<div className="ad-v2-no-content"><p>Aucun dossier pour le moment.</p>
-       <button className="text-button" onClick={()=>setModal("project")}>Créer un dossier <Plus size={15}/></button>
-      </div>}
-    </section>
-    <section>
-      <div className="section-label"><h2>Mémoire récente</h2><span>{String(references.length).padStart(2,"0")}</span></div>
-      {latest?<button className="reference-row" onClick={()=>openReference(latest.id)}>
-       <span className="row-index">SAVER</span>
-       <span>{latest.title}<small>{latest.url?"Source enregistrée":"Note personnelle"}</small></span>
-       <ArrowUpRight size={16} aria-hidden="true"/>
-      </button>:<p className="ad-v2-no-content">Aucune référence enregistrée.</p>}
-    </section>
-    <button className="ad-v2-plain-link" onClick={()=>navigate("explorer")}>Explorer les opportunités <ArrowUpRight size={17}/></button>
-   </aside>
-  </div>
- );
+ const priorityProject=priority&&data.projects.find(project=>project.id===priority.projectId);
+ const nextDirection=directions.find(row=>!row.revision.approvedDirection)||directions[0];
+ const radarItems=market.items.filter(f=>f.classification==="commercial");
+ const newsItems=market.items.filter(f=>f.classification==="strategic"||f.classification==="cultural");
+ const nextStep=priority&&priorityProject?{
+   eyebrow:"ACTION VALIDÉE PAR VOUS",
+   title:priority.title,
+   detail:"Reprenez cette action dans le dossier « "+priorityProject.title+" ».",
+   label:"Reprendre le travail",
+   run:()=>{navigate("projets");setProjectId(priorityProject.id);},
+ }:nextDirection?{
+   eyebrow:"DIRECTION EN COURS",
+   title:nextDirection.project.title,
+   detail:"Poursuivez la revue des pistes A et B de la version "+nextDirection.revision.number+".",
+   label:"Reprendre cette direction",
+   run:()=>{navigate("projets");setProjectId(nextDirection.project.id);},
+ }:projects[0]?{
+   eyebrow:"PROCHAINE ÉTAPE",
+   title:"Développer une direction artistique",
+   detail:"Ouvrez « "+projects[0].title+" » puis travaillez son brief avec vos références et son contexte.",
+   label:"Ouvrir le dossier",
+   run:()=>{navigate("projets");setProjectId(projects[0].id);},
+ }:{
+   eyebrow:"PROCHAINE ÉTAPE · RADAR",
+   title:"Choisir une opportunité sourcée",
+   detail:"Examinez les faits et leurs sources, puis créez un dossier de travail pour bâtir une direction adaptée.",
+   label:"Ouvrir le Radar",
+   run:()=>navigate("explorer"),
+ };
+ const radarCount=radarItems.length;
+ const newsCount=newsItems.length;
+ const radarLabel=market.loading?"Lecture en cours…":!market.status?.enabled?"Connexion requise":radarCount+" opportunités · "+newsCount+" actualités";
+
+ return <div className="home-minimal">
+  <header className="home-minimal-heading">
+   <p className="eyebrow">A.D / ESPACE DE DIRECTION ARTISTIQUE</p>
+   <h1>Aujourd’hui</h1>
+   <p>De vos références à une opportunité, puis à une direction que vous choisissez.</p>
+  </header>
+
+  <section className="home-next-step" aria-label="Votre prochain pas">
+   <div><p className="eyebrow">{nextStep.eyebrow}</p><h2>{nextStep.title}</h2><p>{nextStep.detail}</p></div>
+   <button type="button" className="primary" onClick={nextStep.run}>{nextStep.label}<ArrowRight size={17}/></button>
+  </section>
+
+  <nav className="home-workflow" aria-label="Parcours A.D">
+   <button type="button" onClick={()=>navigate("saver")}>
+    <span className="home-workflow-index">01</span><span><strong>Bibliothèque</strong><small>{data.references.length} référence{data.references.length===1?"":"s"} conservée{data.references.length===1?"":"s"}</small></span><ArrowUpRight size={15}/>
+   </button>
+   <span className="home-workflow-arrow" aria-hidden="true">→</span>
+   <button type="button" onClick={()=>navigate("explorer")}>
+    <span className="home-workflow-index">02</span><span><strong>Radar</strong><small>{radarLabel}</small></span><ArrowUpRight size={15}/>
+   </button>
+   <span className="home-workflow-arrow" aria-hidden="true">→</span>
+   <button type="button" onClick={()=>navigate("projets")}>
+    <span className="home-workflow-index">03</span><span><strong>Travail</strong><small>{directions.length} direction{directions.length===1?"":"s"} · {projects.length} dossier{projects.length===1?"":"s"}</small></span><ArrowUpRight size={15}/>
+   </button>
+  </nav>
+
+  <section className="home-minimal-section" aria-label="Directions artistiques">
+   <div className="home-minimal-section-heading">
+    <div><p className="eyebrow">DOSSIERS ET TRAITEMENTS</p><h2>Vos directions</h2></div>
+    <button type="button" className="home-minimal-link" onClick={()=>navigate("projets")}>Tout le travail <ArrowUpRight size={16}/></button>
+   </div>
+   {directions.length?directions.map(({board,project,revision})=>
+    <article key={board.id} className="home-da-row">
+     <button type="button" className="home-da-open" onClick={()=>{navigate("projets");setProjectId(project.id);}}>
+      <span className="home-da-project">{project.title}</span>
+      <span className="home-da-approval">{revision.approvedDirection?"Choix humain · piste "+revision.approvedDirection:"À revoir · version "+revision.number}</span>
+      <ArrowUpRight size={16} aria-hidden="true"/>
+     </button>
+     <p><span>A</span> {revision.directions[0].title||"Sans titre"}<span className="home-da-separator"> / </span><span>B</span> {revision.directions[1].title||"Sans titre"}</p>
+    </article>
+   ):<div className="home-minimal-empty">
+    <p>Aucune direction enregistrée ici. Commencez par une piste Radar, puis développez-la en dossier.</p>
+    <button type="button" className="home-minimal-link" onClick={()=>navigate("explorer")}>Explorer le Radar <ArrowUpRight size={16}/></button>
+   </div>}
+  </section>
+
+  <MarketPanel mode="home" onOpenDossier={onOpenDossier} onHomeState={receiveMarket}/>
+ </div>;
 }

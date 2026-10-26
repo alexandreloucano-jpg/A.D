@@ -56,10 +56,10 @@ import { ProjectsView } from "./views/ProjectsView";
 import { SaverView } from "./views/SaverView";
 
 const routes = [
-  ["accueil", "Accueil", House],
-  ["explorer", "Explorer", Compass],
-  ["saver", "Saver", Bookmark],
-  ["projets", "Projets", Folder],
+  ["accueil", "Aujourd’hui", House],
+  ["explorer", "Radar", Compass],
+  ["projets", "Travail", Folder],
+  ["saver", "Bibliothèque", Bookmark],
 ] as const;
 function errorLabel(error: unknown): string {
   if (error instanceof Error && error.name === "ZodError")
@@ -78,6 +78,13 @@ function download(text: string, name: string) {
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+const WORKSPACE_CLOUD_META_KEY = "ad.workspace.cloud-sync.v1";
+type WorkspaceCloudMeta = { serverRevision:number; fingerprint:string };
+async function workspaceFingerprint(workspace:Workspace):Promise<string>{
+  const bytes=new TextEncoder().encode(exportBackup(workspace));
+  const digest=await crypto.subtle.digest("SHA-256",bytes);
+  return Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,"0")).join("");
+}
 export function App() {
   const [repository] = useState(() => new WorkspaceRepository(localStorage));
   const [initial] = useState(() => {
@@ -89,6 +96,16 @@ export function App() {
   });
   const [data, setData] = useState(initial.data);
   const [fatal, setFatal] = useState(initial.error);
+  const [cloudMeta,setCloudMeta]=useState<WorkspaceCloudMeta|null>(()=>{
+    try{
+      const raw=localStorage.getItem(WORKSPACE_CLOUD_META_KEY);
+      if(!raw)return null;
+      const value=JSON.parse(raw) as WorkspaceCloudMeta;
+      return Number.isInteger(value.serverRevision)&&typeof value.fingerprint==="string"?value:null;
+    }catch{return null;}
+  });
+  const [cloudSyncMessage,setCloudSyncMessage]=useState("");
+  const cloudSyncFlight=useRef(false);
   const [paletteOpen,setPaletteOpen]=useState(false);
   useEffect(()=>{
     const handle=(e:KeyboardEvent)=>{
@@ -101,6 +118,55 @@ export function App() {
     return ()=>window.removeEventListener("keydown",handle);
   },[paletteOpen]);
   const remote = useRemoteSaver();
+  function rememberCloudRevision(serverRevision:number,workspace:Workspace){
+    void workspaceFingerprint(workspace).then(fingerprint=>{
+      const next={serverRevision,fingerprint};
+      localStorage.setItem(WORKSPACE_CLOUD_META_KEY,JSON.stringify(next));
+      setCloudMeta(next);
+      setCloudSyncMessage("Version cloud vérifiée · synchronisation automatique active.");
+    }).catch(()=>setCloudSyncMessage("Version cloud enregistrée, mais son repère local n’a pas pu être écrit."));
+  }
+  useEffect(()=>{
+    if(!remote.connected||!cloudMeta||fatal||cloudSyncFlight.current)return;
+    cloudSyncFlight.current=true;
+    const sync=async()=>{
+      try{
+        type Snapshot={exists:boolean;serverRevision:number;workspace:Workspace|null};
+        const snapshot=await remote.reader<Snapshot>("/api/workspace/snapshot");
+        if(!snapshot.exists||!snapshot.workspace){
+          setCloudSyncMessage("Version cloud introuvable : la copie locale est conservée, vérifiez dans Réglages.");
+          return;
+        }
+        const remoteFingerprint=await workspaceFingerprint(snapshot.workspace);
+        const localFingerprint=await workspaceFingerprint(data);
+        if(snapshot.serverRevision!==cloudMeta.serverRevision){
+          if(remoteFingerprint===cloudMeta.fingerprint||remoteFingerprint===localFingerprint){
+            rememberCloudRevision(snapshot.serverRevision,snapshot.workspace);
+          }else setCloudSyncMessage("Conflit entre appareils : les deux versions sont conservées. Vérifiez dans Réglages avant de reprendre.");
+          return;
+        }
+        if(localFingerprint===cloudMeta.fingerprint){
+          setCloudSyncMessage("Cloud à jour · version "+snapshot.serverRevision+".");
+          return;
+        }
+        await remote.reader("/api/workspace/snapshot","POST",{
+          expectedServerRevision:snapshot.serverRevision,
+          workspace:data,
+          explicitUserAction:true,
+        });
+        const confirmed=await remote.reader<Snapshot>("/api/workspace/snapshot");
+        if(!confirmed.exists||!confirmed.workspace||confirmed.serverRevision!==snapshot.serverRevision+1||
+          await workspaceFingerprint(confirmed.workspace)!==localFingerprint)
+          throw Error("Relecture cloud incohérente.");
+        rememberCloudRevision(confirmed.serverRevision,confirmed.workspace);
+      }catch{
+        setCloudSyncMessage("Synchronisation suspendue : le brouillon reste sauvegardé sur cet appareil. Vérifiez la connexion ou un conflit dans Réglages.");
+      }finally{
+        cloudSyncFlight.current=false;
+      }
+    };
+    void sync();
+  },[remote.connected,cloudMeta,data,fatal]);
   const [readerMatches, setReaderMatches] = useState<
     {
       referenceId: string;
@@ -513,15 +579,19 @@ export function App() {
           <div className="section-meta">
             <span>
               <span className="workspace-label">
-                FIELDNOTES <span className="meta-divider">/</span>{" "}
+                A.D <span className="meta-divider">/</span>{" "}
               </span>
               {selected[1].toUpperCase()}
             </span>
             <span className="local-state">
               <span />{" "}
               {remote.connected
-                ? "Saver privé connecté"
-                : "Local · Sites non connecté"}
+                ? cloudMeta
+                  ? cloudSyncMessage.startsWith("Cloud à jour") || cloudSyncMessage.startsWith("Version cloud vérifiée")
+                    ? "Cloud · dossiers synchronisés"
+                    : "Cloud · vérification requise"
+                  : "Saver connecté · dossiers encore locaux"
+                : "Mode local · non synchronisé"}
             </span>
           </div>
           {fatal ? (
@@ -551,10 +621,6 @@ export function App() {
                   now={now}
                   navigate={navigate}
                   setProjectId={setProjectId}
-                  openReference={openReference}
-                  setModal={setModal}
-                  remote={remote}
-                  onRestore={() => setModal("settings")}
                   onOpenDossier={openRadarDossier}
                 />
               )}
@@ -569,10 +635,10 @@ export function App() {
                     <div>
                       <p className="eyebrow">
                         {route === "saver"
-                          ? "SOURCES ET MÉMOIRE CRÉATIVE"
+                          ? "RÉFÉRENCES ET GOÛT CONFIRMÉ"
                           : route === "explorer"
-                            ? "OBSERVER AVANT D’INTERPRÉTER"
-                            : "DOSSIERS ET DÉCISIONS"}
+                            ? "OPPORTUNITÉS SOURCÉES"
+                            : "DOSSIERS, CRÉATION ET DÉCISIONS"}
                       </p>
                       <h1>
                         {project && route === "projets"
@@ -582,12 +648,12 @@ export function App() {
                       </h1>
                       <p>
                         {route === "saver"
-                          ? "Les références que vous avez choisi de garder."
+                          ? "Vos sources réelles et les références qui nourrissent votre travail."
                           : route === "explorer"
-                            ? "Des faits sourcés, des pistes à examiner."
+                            ? "Examinez les preuves, puis ouvrez une opportunité dans Travail."
                             : project
-                              ? "Idées à examiner, actions acceptées et références."
-                              : "Projets, tâches et références enregistrés."}
+                              ? "Preuves, directions créatives et décisions de ce dossier."
+                              : "Les opportunités que vous avez choisi de développer."}
                       </p>
                     </div>
                     <button
@@ -606,10 +672,10 @@ export function App() {
                     >
                       <Plus size={17} />
                       {route === "saver"
-                        ? "Capturer"
+                        ? "Ajouter une référence"
                         : route === "explorer"
                           ? "Ajouter un signal"
-                          : "Nouveau projet"}
+                          : "Nouveau dossier"}
                     </button>
                   </header>
                   <div className="collection-toolbar">
@@ -628,10 +694,12 @@ export function App() {
                           aria-label="Rechercher"
                           value={query}
                           onChange={(e) => setQuery(e.target.value)}
-                          placeholder={
+                        placeholder={
                             route === "saver"
-                              ? "Retrouver une référence…"
-                              : "Rechercher…"
+                              ? "Rechercher une référence…"
+                              : route === "explorer"
+                                ? "Rechercher une opportunité…"
+                                : "Rechercher un dossier…"
                           }
                         />
                       </label>
@@ -739,7 +807,9 @@ export function App() {
           <button onClick={() => setModal("settings")}>
             <ShieldCheck size={13} />{" "}
             {remote.connected
-              ? "Saver privé · autres données locales"
+              ? cloudMeta
+                ? "Espace cloud privé · synchronisation continue"
+                : "Saver privé · dossiers à transférer"
               : "Données dans ce navigateur"}{" "}
             <ArrowUpRight size={12} />
           </button>
@@ -1029,7 +1099,11 @@ export function App() {
               )}
             </details>
             {import.meta.env.VITE_AD_WORKSPACE_SYNC_UI === "1" && (
-              <WorkspaceCloudPanel local={data} remote={remote} commit={commit} fatal={!!fatal}/>
+              <WorkspaceCloudPanel
+                local={data} remote={remote} commit={commit} fatal={!!fatal}
+                syncActive={!!cloudMeta&&remote.connected}
+                onSynced={rememberCloudRevision}
+              />
             )}
             {adminMode && (
               <>

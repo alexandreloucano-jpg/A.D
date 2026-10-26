@@ -30,7 +30,7 @@ for(const width of [390,1440]){
     await page.keyboard.press("Control+k");
     await expect(page.getByRole("combobox",{name:"Rechercher partout"})).toBeVisible();
     await page.keyboard.press("Escape");
-    await page.getByRole("navigation",{name:"Navigation principale"}).getByRole("link",{name:"Saver"}).click();
+    await page.getByRole("navigation",{name:"Navigation principale"}).getByRole("link",{name:"Bibliothèque"}).click();
     const library=page.locator(".reference-grid");
     await expect(library).toHaveAttribute("data-layout","masonry");
     await expect(library.locator(".reference-card")).toHaveCount(12);
@@ -52,7 +52,7 @@ for(const width of [390,1440]){
       else out={opportunity:f,actions:[],timeline:[{event:"reviewed",reason:"Source enregistrée",occurredAt:"2026-10-22T10:00:00.000Z"}],evidence:[]};
       await r.fulfill({json:out});
     });
-    await page.getByRole("navigation",{name:"Navigation principale"}).getByRole("link",{name:"Explorer"}).click();
+    await page.getByRole("navigation",{name:"Navigation principale"}).getByRole("link",{name:"Radar"}).click();
     await page.getByRole("button",{name:"Examiner",exact:true}).click();
     const timeline=page.getByRole("region",{name:"Chronologie sourcée de l'entreprise"});
     await expect(timeline).toBeVisible();

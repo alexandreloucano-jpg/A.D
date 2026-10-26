@@ -25,9 +25,10 @@ for(const width of [390,1440]){
     await page.screenshot({path:info.outputPath(`ad-studio-public-${width}.png`),fullPage:true});
   });
 }
-test("existing owner private dashboard remains independent",async({page})=>{
+test("private Studio inbox stays out of the local workspace",async({page})=>{
   await page.goto("/");
-  await expect(page.getByRole("heading",{level:1})).toContainText("Aucune priorité");
-  await expect(page.locator(".ad-studio-inbox")).toBeVisible();
-  await expect(page.getByText("Connectez votre compte propriétaire pour voir les demandes commerciales.")).toBeVisible();
+  await expect(page.getByRole("heading",{level:1})).toHaveText("Aujourd’hui");
+  await expect(page.locator(".ad-studio-inbox")).toHaveCount(0);
+  await page.getByRole("navigation").getByRole("link",{name:"Travail"}).click();
+  await expect(page.locator(".ad-studio-inbox")).toHaveCount(0);
 });

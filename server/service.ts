@@ -3,6 +3,7 @@ import { studioInquiryRoute } from "./studio.js";
 import { marketJob } from "./market/job-route.js";
 import { marketRoute } from "./market.js";
 import { workspaceSyncRoute } from "./workspace-sync.js";
+import { lifecycleRoute } from "./lifecycle/route.js";
 import { intakeRoute } from "./intake.js";
 import {
   mcpProtocol,
@@ -196,6 +197,7 @@ async function route(
     if (path === "/api/studio/availability" || path === "/api/studio/inquiries") return studioInquiryRoute(r,s,c);
     if (path === "/api/jobs/market") return marketJob(r, s, c);
     if (path.startsWith("/api/market/")) return marketRoute(r, s, c);
+    if (path.startsWith("/api/lifecycle/")) return lifecycleRoute(r, s, c);
     if (path === "/api/workspace/snapshot") return workspaceSyncRoute(r,s,c);
     if (path === "/api/intake") return intakeRoute(r, s, c);
     if (path === "/api/admin/automation") {
@@ -349,7 +351,7 @@ async function route(
             ? "/api/oauth/authorize?pending=" + login.pending
             : login.googleSetup
               ? "/api/auth/google/setup"
-              : "/#/saver"),
+              : "/#/accueil"),
         { "set-cookie": sessionCookie("__Host-ad_session", session, 43200) },
       );
     }
@@ -1064,7 +1066,7 @@ async function mcp(r: Request, s: Store, c: Config) {
             approvedAt: now,
             revision: 1,
             isInternalQA: false,
-          });
+          }, { trackLifecycle: false });
           results.push({ id: saved.id, verified: true, reference: saved });
         } catch (e) {
           results.push({

@@ -216,6 +216,16 @@ export function SaverView({
       window.removeEventListener("hashchange", change);
     };
   }, []);
+  useEffect(() => {
+    if (
+      new URLSearchParams(location.hash.split("?")[1] || "").get("connections") === "1"
+    ) {
+      const drawer = document.querySelector<HTMLDetailsElement>(
+        ".saver-service-drawer",
+      );
+      if (drawer) drawer.open = true;
+    }
+  }, []);
   function openReader(id: string) {
     setExpanded(id);
     setReading(id);
@@ -267,12 +277,6 @@ export function SaverView({
   },[visibleLimit,ordered.length,libraryLayout]);
   return (
     <>
-      <DeviceSync
-        rows={data.references}
-        remote={remote}
-        serverIds={serverIds}
-        onSynced={() => void collections.reload()}
-      />
       <IntakePanel
         remote={remote}
         onLocalImport={onLocalImport}
@@ -297,7 +301,23 @@ export function SaverView({
           );
         }}
       />
-      {data.references.length > 0 && (
+      {mediaProgress.total > 0 && (
+        <p role="status" className="saver-global-media-status">
+          {mediaProgress.running ? "Conservation en cours" : "Passage terminé"} : {mediaProgress.done}/{mediaProgress.total} fichiers traités · {mediaProgress.saved} conservés · {mediaProgress.failed} non récupérés.
+        </p>
+      )}
+      <details className="saver-service-drawer">
+        <summary>
+          <span>{remote.connected ? "Compte A.D connecté" : "Synchronisation et connexions"}</span>
+          <small>{remote.connected ? "Saver privé disponible" : "État local · ouvrir les options"}</small>
+        </summary>
+        <DeviceSync
+          rows={data.references}
+          remote={remote}
+          serverIds={serverIds}
+          onSynced={() => void collections.reload()}
+        />
+        {data.references.length > 0 && (
         <div className="saver-media-retry">
           <button
             disabled={mediaRetrying || mediaProgress.running}
@@ -319,20 +339,10 @@ export function SaverView({
               ? "Reprise des médias en cours…"
               : "Reprendre tous les médias locaux"}
           </button>
-          {mediaProgress.total > 0 && (
-            <p role="status">
-              {mediaProgress.running
-                ? "Conservation en cours"
-                : "Passage terminé"}{" "}
-              : {mediaProgress.done}/{mediaProgress.total} fichiers traités ·{" "}
-              {mediaProgress.saved} conservés · {mediaProgress.failed} non
-              récupérés.
-            </p>
-          )}
           {mediaRetryMessage && <p role="status">{mediaRetryMessage}</p>}
         </div>
       )}
-      <ConnectedAccounts remote={remote} onCapture={onCapture} />
+        <ConnectedAccounts remote={remote} onCapture={onCapture} />
       {remote.connected && adminMode && (
         <details className="scout-check">
           <summary>Vérifier la passerelle MCP</summary>
@@ -382,6 +392,7 @@ export function SaverView({
           )}
         </details>
       )}
+      </details>
       <div className="saver-groups">
         <label>
           Collection

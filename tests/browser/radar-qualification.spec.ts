@@ -80,14 +80,14 @@ for (const width of [390, 1440])
         .click();
       await expect(page.locator(".market-finding")).toHaveCount(1);
       await expect(
-        page.getByRole("heading", { name: strategic.headline }),
+        page.getByRole("heading", { name: strategic.companyName }),
       ).toBeVisible();
       await page
         .getByRole("button", { name: "Signaux culturels", exact: true })
         .click();
       await expect(page.locator(".market-finding")).toHaveCount(1);
       await expect(
-        page.getByRole("heading", { name: culture.headline }),
+        page.getByRole("heading", { name: culture.companyName }),
       ).toBeVisible();
       await page
         .getByText("Sources et état réel des connexions", { exact: true })
@@ -129,14 +129,14 @@ for (const width of [390, 1440])
       );
       await page
         .getByRole("navigation")
-        .getByRole("link", { name: "Accueil", exact: true })
+        .getByRole("link", { name: "Aujourd’hui", exact: true })
         .click();
-      await expect(page.locator(".market-home .market-finding")).toHaveCount(5);
+      await expect(page.locator(".market-home .home-market-row")).toHaveCount(9);
       await expect(
         page
           .locator(".market-home")
-          .getByRole("heading", { name: culture.headline }),
-      ).toHaveCount(0);
+          .getByText(culture.companyName, { exact: true }),
+      ).toBeVisible();
       await page.screenshot({ path: `artifacts/radar-home-${width}.png` });
     },
   );
