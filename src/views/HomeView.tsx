@@ -1,6 +1,7 @@
 import { MarketPanel } from "../scout-market/MarketPanel";
 import type { Finding } from "../scout-market/schema";
 import type { EvidenceReceipt } from "../opportunity/model";
+import { latestCreative } from "../creative/model";
 import { ArrowUpRight, Plus, Upload } from "lucide-react";
 import { dateLabel, type Route } from "../display";
 import { rediscover, type Task, type Workspace } from "../domain";
@@ -14,6 +15,13 @@ export function HomeView({data,now,navigate,setProjectId,openReference,setModal,
  const pending=data.tasks.filter(t=>t.lane==="LATER").length;
  const references=rediscover(data);
  const recent=data.projects.slice().sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)).slice(0,3);
+ const directions=(data.creativeBoards||[])
+   .flatMap(board=>{
+     const project=data.projects.find(p=>p.id===board.projectId);
+     const revision=latestCreative(board);
+     return project&&revision?[{board,project,revision}]:[];
+   })
+   .sort((a,b)=>b.revision.createdAt.localeCompare(a.revision.createdAt));
  const latest=references.at(-1);
  function continueWork(){
    if(data.projects.length){navigate("projets");if(project)setProjectId(project.id);}
@@ -49,9 +57,27 @@ export function HomeView({data,now,navigate,setProjectId,openReference,setModal,
       <div><strong>{String(references.length).padStart(2,"0")}</strong><span>Références</span></div>
     </div>
    </section>
-   <aside className="home-rail ad-v2-rail" aria-label="Intelligence et travail récent">
-    <div className="ad-v2-heading-line"><span>RADAR &amp; ACTIVITÉ</span><span>SOURCES PRIVÉES</span></div>
+   <aside className="home-rail ad-v2-rail" aria-label="Radar, directions artistiques et actualités">
+    <div className="ad-v2-heading-line"><span>RADAR · DA · NEWS</span><span>AU MÊME ENDROIT</span></div>
     <MarketPanel mode="home" onOpenDossier={onOpenDossier}/>
+    <section aria-label="Directions artistiques">
+      <div className="section-label">
+       <h2>Directions artistiques</h2>
+       <button aria-label="Voir le travail" onClick={()=>navigate("projets")}><ArrowUpRight size={17}/></button>
+      </div>
+      {directions.length?directions.map(({board,project,revision})=>
+       <article key={board.id} className="home-direction-row">
+        <button className="project-row" onClick={()=>{navigate("projets");setProjectId(project.id);}}>
+         <span className="row-index">DA</span>
+         <span>{project.title}<small>V{revision.number} · {revision.approvedDirection?"Piste "+revision.approvedDirection+" approuvée":"Deux pistes à examiner"}</small></span>
+         <ArrowUpRight size={16} aria-hidden="true"/>
+        </button>
+        <p className="market-meta">A · {revision.directions[0].title || "Sans titre"} <span aria-hidden="true"> · </span> B · {revision.directions[1].title || "Sans titre"}</p>
+       </article>
+      ):<div className="ad-v2-no-content"><p>Aucune direction enregistrée.</p>
+       <button className="text-button" onClick={continueWork}>Ouvrir un dossier et créer sa DA <ArrowUpRight size={15}/></button>
+      </div>}
+    </section>
     <section>
       <div className="section-label">
        <h2>Dossiers actifs</h2>

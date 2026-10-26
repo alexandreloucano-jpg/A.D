@@ -130,6 +130,13 @@ html, body, #root { background: var(--paper); color: var(--ink); }
 .app-frame .ad-v2-rail .row-index { color: var(--accent); }
 .app-frame .ad-v2-rail .project-row small, .app-frame .ad-v2-rail .reference-row small { color: var(--muted); }
 .app-frame .ad-v2-rail .ad-v2-plain-link { border-bottom-color: #B9B9B9; color: var(--ink); }
+.app-frame .ad-v2-rail .home-direction-row { border-bottom: 1px solid var(--line); }
+.app-frame .ad-v2-rail .home-direction-row .project-row { border-bottom: 0; }
+.app-frame .ad-v2-rail .home-direction-row > .market-meta { margin: 0 0 14px 44px; color: #656565; }
+.app-frame .market-home { max-height: none; overflow: visible; border-top-color: var(--line); }
+.app-frame .market-home .market-findings { max-height: none; overflow: visible; }
+.app-frame .market-home .market-finding { border-bottom-color: var(--line); }
+.app-frame .market-home .market-unavailable { padding: 12px 0; }
 
 /* Page shell and library controls use a single surface vocabulary. */
 .app-frame .page-heading { border-bottom-color: var(--line); }

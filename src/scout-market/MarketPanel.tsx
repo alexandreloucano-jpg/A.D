@@ -6,7 +6,6 @@ import { evidenceReceiptSchema, type EvidenceReceipt } from "../opportunity/mode
 import { stages, type Finding, type MarketAction } from "./schema";
 import {
   compareFindings,
-  homepageFinding,
   existingRelationship,
 } from "./qualification";
 import "./market.css";
@@ -153,11 +152,15 @@ export function MarketPanel({
       }
     }
   }
-  const items = (mode === "home" ? m.observations : m.items)
+  const items = m.items
     .filter(
       (f) =>
         (mode !== "pipeline" || f.reviewState === "saved") &&
-        (mode !== "home" || homepageFinding(f)) &&
+        (mode !== "home" ||
+          (f.classification === "commercial"
+            ? !["reference_only", "past", "cultural"].includes(f.lookalike?.gate || "") &&
+              !f.sourceError && f.relationshipStatus !== "blocked"
+            : f.classification === "strategic" || f.classification === "cultural")) &&
         (view === "Rejetées" || f.relationshipStatus !== "blocked") &&
         (!sector || f.sector === sector) &&
         (!referenceFilter || f.lookalike?.archetype === referenceFilter) &&
@@ -171,7 +174,9 @@ export function MarketPanel({
           !f.publishedAt ||
           Date.now() - Date.parse(f.publishedAt) < Number(days) * 86400000) &&
         (mode !== "home" || !["rejected", "snoozed"].includes(f.reviewState)) &&
-        (mode === "pipeline"
+        (mode === "home"
+          ? true
+          : mode === "pipeline"
           ? true
           : view === "Rejetées"
             ? f.reviewState === "rejected" || f.relationshipStatus === "blocked"
@@ -198,13 +203,16 @@ export function MarketPanel({
                         : !["rejected", "snoozed"].includes(f.reviewState)),
     )
     .sort(compareFindings);
-  const displayed =
-    mode === "home" || (mode === "explorer" && view === "Nouveaux clients")
+  const displayed = mode === "home"
+    ? [
+        ...items.filter((f) => f.classification === "commercial").slice(0, 3),
+        ...items.filter((f) => f.classification === "strategic" || f.classification === "cultural").slice(0, 3),
+      ]
+    : mode === "explorer" && view === "Nouveaux clients"
       ? items.slice(0, 5)
       : items;
-  if (mode === "home" && !m.status?.enabled) return null;
-  if (!m.loading && !m.status?.enabled)
-    return mode === "home" ? null : (
+  if (!m.loading && !m.status?.enabled && mode !== "home")
+    return (
       <section className="market-unavailable" aria-label="Radar marché">
         <p>
           {m.error || "Radar privé non activé."}{" "}
@@ -488,6 +496,11 @@ export function MarketPanel({
         </div>
       )}
       <div className="market-findings">
+        {mode === "home" && m.status?.enabled && !m.loading && (
+          <p className="market-meta">
+            {items.filter((f) => f.classification === "commercial").length} opportunités · {items.filter((f) => f.classification === "strategic" || f.classification === "cultural").length} news et signaux culturels
+          </p>
+        )}
         {displayed.map((f) => (
           <article className="market-finding" key={f.id}>
             <div className="market-card-head">
@@ -562,11 +575,11 @@ export function MarketPanel({
       )}
       {!m.loading &&
         m.status?.enabled &&
-        !items.length &&
+        !displayed.length &&
         view !== "Recherche manuelle" && (
           <p>
             {mode === "home"
-              ? "Aucune opportunité actuelle corroborée à faire remonter."
+              ? "Aucune opportunité ou news qualifiée dans le Radar pour le moment."
               : "Aucune opportunité suffisamment qualifiée dans cette sélection."}
             Consultez les signaux culturels ou actualisez les sources.{" "}
             {m.status.lastRun
@@ -574,6 +587,12 @@ export function MarketPanel({
               : "Lancez une collecte publique."}
           </p>
         )}
+      {mode === "home" && !m.loading && !m.status?.enabled && (
+        <section className="market-unavailable" aria-label="Radar marché">
+          <p>{m.error || "Connectez le compte propriétaire pour charger Radar et news depuis le cloud."}</p>
+          <a href="/api/auth/google/login">Se connecter à A.D</a>
+        </section>
+      )}
       {selected && (
         <div
           className="market-overlay"
