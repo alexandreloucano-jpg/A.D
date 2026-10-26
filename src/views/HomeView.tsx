@@ -100,7 +100,7 @@ export function HomeView({data,now,navigate,setProjectId,onOpenDossier,onCapture
     <p>{projects.length
       ? "Aucune direction enregistrée dans vos dossiers pour le moment. Vos projets et références restent accessibles dans Travail et Bibliothèque."
       : "Vos directions apparaîtront ici lorsqu’un dossier contiendra une première version de travail."}</p>
-   </div>}}
+   </div>}
    </section>
   </div>
  </div>;
