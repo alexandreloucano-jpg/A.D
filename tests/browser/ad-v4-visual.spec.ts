@@ -4,9 +4,9 @@ for(const size of [{width:390,height:844},{width:390,height:640},{width:768,heig
  test(`A.D V5 canvas visual instrument at ${size.width}×${size.height}`,async({page},info)=>{
   await page.setViewportSize(size);await page.goto("/");
   const shell=page.locator(".workspace");
-  await expect(shell).toHaveCSS("background-color","rgb(246, 244, 238)");
-  await expect(page.locator(".topbar")).toHaveCSS("background-color","rgb(246, 244, 238)");
-  await expect(page.locator(".ad-v2-priority")).toHaveCSS("background-color","rgb(238, 234, 252)");
+  await expect(shell).toHaveCSS("background-color","rgb(255, 255, 255)");
+  await expect(page.locator(".topbar")).toHaveCSS("background-color","rgb(255, 255, 255)");
+  await expect(page.locator(".ad-v2-priority")).toHaveCSS("background-color","rgb(246, 247, 251)");
   await expect(page.getByRole("heading",{name:/Aucune priorité/})).toBeVisible();
   await expect(page.getByRole("navigation",{name:"Navigation principale"})).toBeVisible();
   const infoBox=await page.evaluate(()=>{
