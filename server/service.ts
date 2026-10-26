@@ -349,7 +349,7 @@ async function route(
             ? "/api/oauth/authorize?pending=" + login.pending
             : login.googleSetup
               ? "/api/auth/google/setup"
-              : "/#/saver"),
+              : "/#/accueil"),
         { "set-cookie": sessionCookie("__Host-ad_session", session, 43200) },
       );
     }

@@ -27,7 +27,7 @@ for(const width of [390,1440]){
 }
 test("existing owner private dashboard remains independent",async({page})=>{
   await page.goto("/");
-  await expect(page.getByRole("heading",{level:1})).toContainText("Aucune priorité");
+  await expect(page.getByRole("heading",{level:1})).toHaveText("Aujourd’hui");
   await expect(page.locator(".ad-studio-inbox")).toBeVisible();
   await expect(page.getByText("Connectez votre compte propriétaire pour voir les demandes commerciales.")).toBeVisible();
 });

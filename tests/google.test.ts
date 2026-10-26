@@ -174,12 +174,14 @@ it("links Google only after verified GitHub, then signs into the same owner and 
   await s.save(c.owner, reference);
   const linked = await callback(await start());
   expect(linked.status).toBe(303);
+  expect(linked.headers.get("location")).toBe(c.app + "/?google=linked#/accueil");
   expect(await s.get("google-owner", c.owner)).toMatchObject({
     sub: "owner-google",
   });
   const begin = await start("login");
   const logged = await callback(begin, "owner-google", begin.cookie);
   expect(logged.status).toBe(303);
+  expect(logged.headers.get("location")).toBe(c.app + "/#/accueil");
   const cookie = logged.headers.get("set-cookie")!.split(";")[0];
   expect(cookie).toContain("__Host-ad_session=");
   const session = await handle(

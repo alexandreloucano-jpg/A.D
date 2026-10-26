@@ -621,9 +621,6 @@ export function App() {
                   now={now}
                   navigate={navigate}
                   setProjectId={setProjectId}
-                  openReference={openReference}
-                  setModal={setModal}
-                  onRestore={() => setModal("settings")}
                   onOpenDossier={openRadarDossier}
                 />
               )}

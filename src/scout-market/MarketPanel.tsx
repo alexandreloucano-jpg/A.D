@@ -204,10 +204,7 @@ export function MarketPanel({
     )
     .sort(compareFindings);
   const displayed = mode === "home"
-    ? [
-        ...items.filter((f) => f.classification === "commercial").slice(0, 3),
-        ...items.filter((f) => f.classification === "strategic" || f.classification === "cultural").slice(0, 3),
-      ]
+    ? items
     : mode === "explorer" && view === "Nouveaux clients"
       ? items.slice(0, 5)
       : items;
@@ -236,7 +233,7 @@ export function MarketPanel({
           </p>
           <h2>
             {mode === "home"
-              ? "À examiner."
+              ? "Radar & actualités"
               : mode === "pipeline"
                 ? "Opportunités enregistrées"
                 : "Vos prochains clients."}
@@ -279,7 +276,7 @@ export function MarketPanel({
         </p>
       )}
       {m.loading && <p role="status">Lecture du radar privé…</p>}
-      {m.status && !m.status.enabled && (
+      {m.status && !m.status.enabled && mode !== "home" && (
         <p>
           Le radar n’est pas activé. Vos observations locales restent
           disponibles.
@@ -475,9 +472,6 @@ export function MarketPanel({
           </details>
         </>
       )}
-      {mode === "home" && m.actions[0] && (
-        <p>PROCHAINE ACTION · NOW acceptée : {m.actions[0].proposalText}</p>
-      )}
       {mode === "explorer" && view === "Recherche manuelle" && (
         <div>
           <p>
@@ -495,12 +489,24 @@ export function MarketPanel({
             ))}
         </div>
       )}
-      <div className="market-findings">
-        {mode === "home" && m.status?.enabled && !m.loading && (
-          <p className="market-meta">
-            {items.filter((f) => f.classification === "commercial").length} opportunités · {items.filter((f) => f.classification === "strategic" || f.classification === "cultural").length} news et signaux culturels
-          </p>
-        )}
+      {mode === "home" ? <div className="home-market-lists">
+        {([
+          {title:"Radar",rows:displayed.filter(f=>f.classification==="commercial"),label:"OPPORTUNITÉ"},
+          {title:"News",rows:displayed.filter(f=>f.classification==="strategic"||f.classification==="cultural"),label:"ACTUALITÉ"},
+        ]).map(group=><section className="home-market-group" key={group.title} aria-label={group.title}>
+          <div className="home-market-group-heading"><h3>{group.title}</h3><span>{group.rows.length}</span></div>
+          {group.rows.length?group.rows.map(f=><article className="home-market-row" key={f.id}>
+            <button type="button" className="home-market-open" onClick={()=>void inspect(f)}>
+              <span className="home-market-kind">{group.label} · {label(f.reviewState)}</span>
+              <strong>{f.companyName}</strong>
+              <span className="home-market-headline">{f.headline}</span>
+              <small>{f.publisher} · publié le {date(f.publishedAt)}</small>
+            </button>
+            <a href={f.canonicalUrl} target="_blank" rel="noreferrer" aria-label={"Source originale : "+f.companyName}>↗</a>
+          </article>):<p className="home-market-empty">Aucun élément qualifié pour le moment.</p>}
+        </section>)}
+        <a className="home-market-all" href="#/explorer">Voir tout le Radar <span aria-hidden="true">↗</span></a>
+      </div> : <div className="market-findings">
         {displayed.map((f) => (
           <article className="market-finding" key={f.id}>
             <div className="market-card-head">
@@ -566,31 +572,29 @@ export function MarketPanel({
             <button onClick={() => void inspect(f)}>Examiner</button>
           </article>
         ))}
-      </div>
+      </div>}
       {items.length > displayed.length && (
         <p className="market-meta">
           Les cinq premières opportunités sont priorisées. Les filtres
           permettent de cibler un autre secteur ou événement.
         </p>
       )}
-      {!m.loading &&
+      {mode !== "home" && !m.loading &&
         m.status?.enabled &&
         !displayed.length &&
         view !== "Recherche manuelle" && (
           <p>
-            {mode === "home"
-              ? "Aucune opportunité ou news qualifiée dans le Radar pour le moment."
-              : "Aucune opportunité suffisamment qualifiée dans cette sélection."}
+            "Aucune opportunité suffisamment qualifiée dans cette sélection."
             Consultez les signaux culturels ou actualisez les sources.{" "}
             {m.status.lastRun
               ? "Les résultats précédents restent conservés."
               : "Lancez une collecte publique."}
           </p>
         )}
-      {mode === "home" && !m.loading && !m.status?.enabled && (
+        {mode === "home" && !m.loading && !m.status?.enabled && (
         <section className="market-unavailable" aria-label="Radar marché">
-          <p>{m.error || "Connectez le compte propriétaire pour charger Radar et news depuis le cloud."}</p>
-          <a href="/api/auth/google/login">Se connecter à A.D</a>
+          <p>{m.error || "Connectez-vous pour retrouver le Radar et les actualités."}</p>
+          <a href="/api/auth/login">Se connecter à A.D</a>
         </section>
       )}
       {selected && (
