@@ -498,7 +498,7 @@ export function MarketPanel({
       {mode === "home" ? <div className="home-market-lists">
         {([
           {title:"Radar",rows:displayed.filter(f=>f.classification==="commercial"),label:"OPPORTUNITÉ"},
-          {title:"News",rows:displayed.filter(f=>f.classification==="strategic"||f.classification==="cultural"),label:"ACTUALITÉ"},
+          {title:"Actualités",rows:displayed.filter(f=>f.classification==="strategic"||f.classification==="cultural"),label:"ACTUALITÉ"},
         ]).map(group=><section className="home-market-group" key={group.title} aria-label={group.title}>
           <div className="home-market-group-heading"><h3>{group.title}</h3><span>{group.rows.length}</span></div>
           {group.rows.length?group.rows.map(f=><article className="home-market-row" key={f.id}>
