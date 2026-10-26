@@ -24,7 +24,7 @@ export function HomeView({data,now,navigate,setProjectId,openReference,setModal,
  return (
   <div className="home-layout ad-v2-home">
    <section className={"home-focus ad-v2-focus"+(priority?" has-priority":"")}>
-    <div className="ad-v2-heading-line"><span>A.D / DAILY CONTROL</span><span>YOUR WORKSPACE, IN CONTEXT</span></div>
+    <div className="ad-v2-heading-line"><span>A.D / AUJOURD’HUI</span><span>ESPACE DE TRAVAIL</span></div>
     <div className="ad-v2-priority">
       <p className="ad-v2-overline">{priority?"DECISION / APPROVED":"DECISION / NO ACTION ACCEPTED"}</p>
       <h1>{priority?priority.title:<>Aucune priorité<br/><em>en cours.</em></>}</h1>
@@ -51,9 +51,9 @@ export function HomeView({data,now,navigate,setProjectId,openReference,setModal,
     </div>
    </section>
    <aside className="home-rail ad-v2-rail" aria-label="Intelligence et travail récent">
-    <div className="ad-v2-heading-line"><span>INTELLIGENCE FEED</span><span>SOURCED / PRIVATE</span></div>
+    <div className="ad-v2-heading-line"><span>RADAR &amp; ACTIVITÉ</span><span>SOURCES PRIVÉES</span></div>
     <MarketPanel mode="home" onOpenDossier={onOpenDossier}/>
-    <StudioLeadsPanel remote={remote}/>
+    {remote.connected && <StudioLeadsPanel remote={remote}/>}
     <section>
       <div className="section-label">
        <h2>Dossiers actifs</h2>
