@@ -8,13 +8,14 @@ for(const size of [{width:390,height:844},{width:390,height:640},{width:768,heig
   await expect(page.getByRole("heading",{level:1,name:"Aujourd’hui"})).toBeVisible();
   await expect(page.locator(".home-minimal-section[aria-label='Directions artistiques']")).toBeVisible();
   await expect(page.locator(".market-home")).toBeVisible();
+  await expect(page.locator(".home-workspace-grid > .market-home")).toHaveCount(1);
   const bounds=await page.evaluate(()=>{
    const box=(q:string)=>{const e=document.querySelector(q);if(!e)throw Error("Missing "+q);const r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,left:r.left,right:r.right};};
    return {nav:box(".topbar nav"),main:box("#main-content"),home:box(".home-minimal"),da:box(".home-minimal-section"),market:box(".market-home"),width:innerWidth,scrollWidth:document.documentElement.scrollWidth};
   });
   expect(bounds.scrollWidth).toBeLessThanOrEqual(bounds.width+1);
   expect(bounds.da.top).toBeGreaterThan(bounds.home.top);
-  expect(bounds.market.top).toBeGreaterThan(bounds.da.top);
+  expect(bounds.market.top).toBeGreaterThan(bounds.home.top);
   if(size.width>760)expect(bounds.main.left).toBeGreaterThanOrEqual(bounds.nav.right-1);
   await page.screenshot({path:info.outputPath(`ad-today-minimal-${size.width}x${size.height}.png`),fullPage:true});
  });

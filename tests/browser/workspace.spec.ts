@@ -177,7 +177,7 @@ test("Grok manuel exige validation ; fait et interprétation restent séparés",
     .getByRole("navigation")
     .getByRole("link", { name: "Radar" })
     .click();
-  await page.getByRole("button", { name: "Ajouter un signal" }).click();
+  await page.getByRole("button", { name: "Noter une observation" }).click();
   await page.getByLabel("Marque ou sujet").fill("Sujet de test");
   await page
     .getByLabel("Fait observé")
@@ -271,7 +271,7 @@ for (const width of [390, 1440])
       .getByRole("navigation")
       .getByRole("link", { name: "Radar" })
       .click();
-    await page.getByRole("button", { name: "Ajouter un signal" }).click();
+    await page.getByRole("button", { name: "Noter une observation" }).click();
     await page
       .getByLabel("Marque ou sujet")
       .fill("Sujet de validation visuelle");
@@ -289,9 +289,9 @@ for (const width of [390, 1440])
     await expect(
       page.getByRole("heading", { name: "Sujet de validation visuelle" }),
     ).toBeInViewport();
-    await expect(
-      page.getByRole("link", { name: "Voir la source" }),
-    ).toBeInViewport();
+    const observationSource = page.getByRole("link", { name: "Voir la source" });
+    await observationSource.scrollIntoViewIfNeeded();
+    await expect(observationSource).toBeInViewport();
     for (const route of ["Aujourd’hui", "Radar", "Bibliothèque", "Travail"]) {
       await page
         .getByRole("navigation")

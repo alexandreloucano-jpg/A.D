@@ -74,7 +74,7 @@ test("Explorer discloses evidence and interpretation; a potential action is a hu
 }) => {
   await page.goto("/");
   await nav(page, "Radar");
-  await page.getByRole("button", { name: "Ajouter un signal" }).click();
+  await page.getByRole("button", { name: "Noter une observation" }).click();
   await page.getByLabel("Marque ou sujet").fill("Observation de validation");
   await page
     .getByLabel("Fait observé")
@@ -116,7 +116,7 @@ test("compact mobile keeps all destinations, source access and capture usable", 
   await page.setViewportSize({ width: 390, height: 640 });
   await page.goto("/");
   await nav(page, "Radar");
-  await page.getByRole("button", { name: "Ajouter un signal" }).click();
+  await page.getByRole("button", { name: "Noter une observation" }).click();
   await page.getByLabel("Marque ou sujet").fill("Format compact");
   await page
     .getByLabel("Fait observé")

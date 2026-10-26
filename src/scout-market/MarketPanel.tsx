@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { useScoutMarket, type MarketStatus } from "./useScoutMarket";
+import { useRef, useState } from "react";
+import { useScoutMarket } from "./useScoutMarket";
 import { marketRequest } from "./client";
 import { MarketTimeline } from "./MarketTimeline";
 import { evidenceReceiptSchema, type EvidenceReceipt } from "../opportunity/model";
@@ -61,19 +61,16 @@ const labels: Record<string, string> = {
 const label = (v: string) => labels[v] || v;
 const date = (v: string | null) =>
   v ? new Date(v).toLocaleDateString("fr-FR") : "Non établie";
-export type HomeMarketState={items:Finding[];status:MarketStatus|null;loading:boolean;error:string};
 export function MarketPanel({
   mode = "explorer",
   query = "",
   projects = [],
   onOpenDossier,
-  onHomeState,
 }: {
   mode?: "explorer" | "home" | "pipeline";
   query?: string;
   projects?: { id: string; title: string }[];
   onOpenDossier?: (finding: Finding, evidence: EvidenceReceipt[]) => Promise<void>;
-  onHomeState?:(state:HomeMarketState)=>void;
 }) {
   const returnFocus = useRef<HTMLElement | null>(null);
   const m = useScoutMarket(query, mode),
@@ -99,9 +96,6 @@ export function MarketPanel({
     [linkedProject, setLinkedProject] = useState(""),
     [verifiedEvidence, setVerifiedEvidence] = useState<EvidenceReceipt[]>([]),
     [openingDossier, setOpeningDossier] = useState(false);
-  useEffect(()=>{
-    if(mode==="home")onHomeState?.({items:m.items,status:m.status,loading:m.loading,error:m.error});
-  },[mode,m.items,m.status,m.loading,m.error,onHomeState]);
   function closeDetail() {
     setSelected(null);
     requestAnimationFrame(() => returnFocus.current?.focus());
@@ -214,6 +208,43 @@ export function MarketPanel({
     : mode === "explorer" && view === "Nouveaux clients"
       ? items.slice(0, 5)
       : items;
+  const commercialRows = displayed.filter((finding) => finding.classification === "commercial");
+  const newsRows = displayed.filter(
+    (finding) => finding.classification === "strategic" || finding.classification === "cultural",
+  );
+  const homeGroups = [
+    {
+      title: "Radar",
+      rows: commercialRows.slice(0, 3),
+      total: commercialRows.length,
+      label: "PISTE COMMERCIALE",
+    },
+    {
+      title: "Actualités",
+      rows: newsRows.slice(0, 3),
+      total: newsRows.length,
+      label: "CONTEXTE",
+    },
+  ];
+  if (mode === "home" && (m.loading || !m.status?.enabled))
+    return (
+      <section
+        className="market-panel market-home"
+        aria-label="Le marché aujourd’hui"
+      >
+        <header className="market-heading">
+          <h2>Radar & actualités</h2>
+        </header>
+        <div className="market-home-state" aria-live="polite">
+          <p>
+            {m.loading
+              ? "Chargement du Radar…"
+              : m.error || "Radar privé non activé. Les données locales restent conservées."}
+          </p>
+          {!m.loading && <a href="/api/auth/login">Se connecter à A.D</a>}
+        </div>
+      </section>
+    );
   if (!m.loading && !m.status?.enabled && mode !== "home")
     return (
       <section className="market-unavailable" aria-label="Radar marché">
@@ -495,24 +526,69 @@ export function MarketPanel({
             ))}
         </div>
       )}
-      {mode === "home" ? <div className="home-market-lists">
-        {([
-          {title:"Radar",rows:displayed.filter(f=>f.classification==="commercial"),label:"OPPORTUNITÉ"},
-          {title:"Actualités",rows:displayed.filter(f=>f.classification==="strategic"||f.classification==="cultural"),label:"ACTUALITÉ"},
-        ]).map(group=><section className="home-market-group" key={group.title} aria-label={group.title}>
-          <div className="home-market-group-heading"><h3>{group.title}</h3><span>{group.rows.length}</span></div>
-          {group.rows.length?group.rows.map(f=><article className="home-market-row" key={f.id}>
-            <button type="button" className="home-market-open" onClick={()=>void inspect(f)}>
-              <span className="home-market-kind">{group.label} · {label(f.reviewState)}</span>
-              <strong>{f.companyName}</strong>
-              <span className="home-market-headline">{f.headline}</span>
-              <small>{f.publisher} · publié le {date(f.publishedAt)}</small>
-            </button>
-            <a href={f.canonicalUrl} target="_blank" rel="noreferrer" aria-label={"Source originale : "+f.companyName}>↗</a>
-          </article>):<p className="home-market-empty">Aucun élément qualifié pour le moment.</p>}
-        </section>)}
-        <a className="home-market-all" href="#/explorer">Voir tout le Radar <span aria-hidden="true">↗</span></a>
-      </div> : <div className="market-findings">
+      {mode === "home" ? (
+        <div className="home-market-lists">
+          {homeGroups.map((group) => (
+            <section
+              className="home-market-group"
+              key={group.title}
+              aria-label={group.title}
+            >
+              <div className="home-market-group-heading">
+                <h3>{group.title}</h3>
+                <span>
+                  {group.rows.length < group.total
+                    ? `${group.rows.length} / ${group.total}`
+                    : group.total}
+                </span>
+              </div>
+              {group.rows.length ? (
+                group.rows.map((finding) => (
+                  <article className="home-market-row" key={finding.id}>
+                    <button
+                      type="button"
+                      className="home-market-open"
+                      onClick={() => void inspect(finding)}
+                    >
+                      <span className="home-market-kind">
+                        {group.label} ·{" "}
+                        {finding.lookalike?.gate === "lookalike_watchlist"
+                          ? "À SURVEILLER"
+                          : label(finding.reviewState).toUpperCase()}
+                      </span>
+                      <strong>{finding.companyName}</strong>
+                      <span className="home-market-headline">
+                        {finding.headline}
+                      </span>
+                      <small>
+                        {finding.publisher} · publié le {date(finding.publishedAt)}
+                      </small>
+                    </button>
+                    <a
+                      href={finding.canonicalUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={"Source originale : " + finding.companyName}
+                    >
+                      ↗
+                    </a>
+                  </article>
+                ))
+              ) : (
+                <p className="home-market-empty">
+                  {group.title === "Radar"
+                    ? "Aucune piste commerciale à examiner."
+                    : "Aucune actualité qualifiée pour le moment."}
+                </p>
+              )}
+            </section>
+          ))}
+          <a className="home-market-all" href="#/explorer">
+            Ouvrir le Radar complet <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+      ) : (
+        <div className="market-findings">
         {displayed.map((f) => (
           <article className="market-finding" key={f.id}>
             <div className="market-card-head">
@@ -578,7 +654,8 @@ export function MarketPanel({
             <button onClick={() => void inspect(f)}>Examiner</button>
           </article>
         ))}
-      </div>}
+        </div>
+      )}
       {items.length > displayed.length && (
         <p className="market-meta">
           Les cinq premières opportunités sont priorisées. Les filtres
@@ -597,12 +674,6 @@ export function MarketPanel({
               : "Lancez une collecte publique."}
           </p>
         )}
-        {mode === "home" && !m.loading && !m.status?.enabled && (
-        <section className="market-unavailable" aria-label="Radar marché">
-          <p>{m.error || "Connectez-vous pour retrouver le Radar et les actualités."}</p>
-          <a href="/api/auth/login">Se connecter à A.D</a>
-        </section>
-      )}
       {selected && (
         <div
           className="market-overlay"

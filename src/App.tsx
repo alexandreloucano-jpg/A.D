@@ -635,7 +635,7 @@ export function App() {
                     <div>
                       <p className="eyebrow">
                         {route === "saver"
-                          ? "RÉFÉRENCES ET GOÛT CONFIRMÉ"
+                          ? "RÉFÉRENCES ET NOTES"
                           : route === "explorer"
                             ? "OPPORTUNITÉS SOURCÉES"
                             : "DOSSIERS, CRÉATION ET DÉCISIONS"}
@@ -653,7 +653,7 @@ export function App() {
                             ? "Examinez les preuves, puis ouvrez une opportunité dans Travail."
                             : project
                               ? "Preuves, directions créatives et décisions de ce dossier."
-                              : "Les opportunités que vous avez choisi de développer."}
+                              : "Vos dossiers et directions en cours."}
                       </p>
                     </div>
                     <button
@@ -674,7 +674,7 @@ export function App() {
                       {route === "saver"
                         ? "Ajouter une référence"
                         : route === "explorer"
-                          ? "Ajouter un signal"
+                          ? "Noter une observation"
                           : "Nouveau dossier"}
                     </button>
                   </header>
@@ -716,8 +716,8 @@ export function App() {
                           : "références"
                         : route === "explorer"
                           ? signals.length === 1
-                            ? "signal manuel"
-                            : "signaux manuels"
+                            ? "observation personnelle"
+                            : "observations personnelles"
                           : projects.length === 1
                             ? "dossier"
                             : "dossiers"}

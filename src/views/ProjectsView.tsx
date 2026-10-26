@@ -44,10 +44,6 @@ export function ProjectsView({
     data.tasks.filter((t) => t.projectId === id && t.lane === "LATER").length;
   return (
     <>
-      {!project && (
-        <MarketPanel mode="pipeline" query={query} projects={data.projects} onOpenDossier={onOpenDossier}/>
-      )}
-      {!project && remote.connected && <StudioLeadsPanel remote={remote} />}
       {project ? (
         <>
           {(data.opportunityLinks||[]).filter(link=>link.projectId===project.id).map(link=>(
@@ -180,64 +176,83 @@ export function ProjectsView({
             </p>
           )}
         </>
-      ) : projects.length ? (
-        <div className="project-grid">
-          {projects.map((p, i) => (
-            <button
-              className="project-card"
-              key={p.id}
-              onClick={() => {
-                setProjectId(p.id);
-                setArchive(false);
-              }}
-            >
-              <div>
-                <span className="row-index">
-                  DOSSIER / {(i + 1).toString().padStart(2, "0")}
-                </span>
-                <Folder size={21} strokeWidth={1.3} />
-              </div>
-              <h2>{p.title}</h2>
-              <div className="project-progress">
-                <span>
-                  {acceptedCount(p.id) === 0 ? (
-                    "Aucune action acceptée"
-                  ) : (
-                    <>
-                      <strong>{acceptedCount(p.id)}</strong>
-                      {acceptedCount(p.id) === 1
-                        ? "action acceptée"
-                        : "actions acceptées"}
-                    </>
-                  )}
-                </span>
-                <span>
-                  <strong>{laterCount(p.id)}</strong>
-                  {laterCount(p.id) === 1
-                    ? "idée à examiner"
-                    : "idées à examiner"}
-                </span>
-              </div>
-              <div className="project-card-footer">
-                <time>{dateLabel(p.updatedAt)}</time>
-                <span>
-                  Ouvrir le dossier <ArrowUpRight size={16} />
-                </span>
-              </div>
-            </button>
-          ))}
-        </div>
       ) : (
-        <Empty
-          icon={<Folder size={30} strokeWidth={1} />}
-          title={
-            query
-              ? "Aucune correspondance."
-              : "Aucun dossier enregistré."
-          }
-        >
-          Créez un dossier pour y conserver vos actions et références.
-        </Empty>
+        <>
+          {projects.length ? (
+            <div className="project-grid">
+              {projects.map((p, i) => (
+                <button
+                  className="project-card"
+                  key={p.id}
+                  onClick={() => {
+                    setProjectId(p.id);
+                    setArchive(false);
+                  }}
+                >
+                  <div>
+                    <span className="row-index">
+                      DOSSIER / {(i + 1).toString().padStart(2, "0")}
+                    </span>
+                    <Folder size={21} strokeWidth={1.3} />
+                  </div>
+                  <h2>{p.title}</h2>
+                  <div className="project-progress">
+                    <span>
+                      {acceptedCount(p.id) === 0 ? (
+                        "Aucune action acceptée"
+                      ) : (
+                        <>
+                          <strong>{acceptedCount(p.id)}</strong>
+                          {acceptedCount(p.id) === 1
+                            ? "action acceptée"
+                            : "actions acceptées"}
+                        </>
+                      )}
+                    </span>
+                    <span>
+                      <strong>{laterCount(p.id)}</strong>
+                      {laterCount(p.id) === 1
+                        ? "idée à examiner"
+                        : "idées à examiner"}
+                    </span>
+                  </div>
+                  <div className="project-card-footer">
+                    <time>{dateLabel(p.updatedAt)}</time>
+                    <span>
+                      Ouvrir le dossier <ArrowUpRight size={16} />
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <Empty
+              icon={<Folder size={30} strokeWidth={1} />}
+              title={query ? "Aucune correspondance." : "Aucun dossier enregistré."}
+            >
+              {query ? (
+                "Modifiez votre recherche ou effacez-la pour revoir vos dossiers."
+              ) : (
+                <>
+                  Commencez par examiner une piste sourcée dans le{" "}
+                  <a href="#/explorer">Radar</a>. Le dossier conservera ses preuves et ses inconnues.
+                </>
+              )}
+            </Empty>
+          )}
+
+          <details className="work-secondary-panel">
+            <summary>Opportunités enregistrées dans le pipeline</summary>
+            <MarketPanel mode="pipeline" query={query} projects={data.projects} onOpenDossier={onOpenDossier}/>
+          </details>
+
+          {remote.connected && (
+            <details className="work-secondary-panel studio-operations-panel">
+              <summary>Demandes A.D Studio · activité distincte</summary>
+              <StudioLeadsPanel remote={remote} />
+            </details>
+          )}
+        </>
       )}
     </>
   );

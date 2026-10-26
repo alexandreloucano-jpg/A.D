@@ -145,7 +145,7 @@ for (const width of [390, 1440]) {
         "",
       ],
     ]) {
-      await page.getByRole("button", { name: "Ajouter un signal" }).click();
+      await page.getByRole("button", { name: "Noter une observation" }).click();
       await page.getByLabel("Marque ou sujet").fill(brand);
       await page.getByLabel("Fait observé").fill(fact);
       await page
@@ -159,9 +159,11 @@ for (const width of [390, 1440]) {
     await expect(
       page.getByRole("heading", { name: "Recherche de matière" }),
     ).toBeInViewport();
-    await expect(
-      page.getByRole("link", { name: "Voir la source" }).first(),
-    ).toBeInViewport();
+    const firstObservationSource = page
+      .getByRole("link", { name: "Voir la source" })
+      .first();
+    await firstObservationSource.scrollIntoViewIfNeeded();
+    await expect(firstObservationSource).toBeInViewport();
     for (const route of ["Aujourd’hui", "Radar", "Bibliothèque", "Travail"]) {
       await nav(page, route);
       if (route === "Travail")

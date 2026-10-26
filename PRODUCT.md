@@ -20,7 +20,7 @@ A.D is the private operating system for an independent creative director: it tur
 
 `Library (confirmed taste and source material) → Radar (evidence-backed opportunity) → Work (dossier and creative treatment) → Value / offer / contract draft → human approval → delivery and recorded outcome → better future decisions`
 
-`Today` is the short daily brief that points to the next useful step in that loop. It is not a separate task manager or a second dashboard.
+`Today` is the short daily brief that points to the next useful step in that loop. It shows current creative directions beside a short Radar and news selection; the complete, filterable feed stays in Radar. It is not a second copy of the research workspace.
 
 ## Agent responsibilities
 
@@ -42,9 +42,9 @@ Every generated artifact records its source IDs, unknowns, generation time, mode
 
 ## Information architecture
 
-- **Aujourd’hui:** one next step, accepted priorities, recent work, and clear system freshness. Empty state sends a new founder to Radar; it must not ask them to create an empty project first.
+- **Aujourd’hui:** one next step, all current creative directions, a short selection of current Radar signals and news, and clear system freshness. It does not repeat the complete Radar feed. Empty state sends a new founder to Radar; it must not ask them to create an empty project first.
 - **Radar:** sourced opportunities, event dates, source health, commercial relevance, fit to confirmed Taste, unknowns, and the action to examine or open in Work.
-- **Travail:** the dossier created from an opportunity, immutable evidence, creative drafts, editable offer and contract drafts, human decisions, delivery, and actual outcomes. Radar-to-Work handoff preserves opportunity identity and evidence.
+- **Travail:** dossiers and creative work first; the saved Radar pipeline and A.D Studio operations are secondary, separate disclosures. The dossier created from an opportunity keeps its evidence, creative drafts, editable offer and contract drafts, human decisions, delivery, and actual outcomes. Radar-to-Work handoff preserves opportunity identity and evidence.
 - **Bibliothèque:** Saver, images and references the founder actually saved, source provenance, and explicit taste feedback. A saved or liked item is not automatically a confirmed preference.
 
 Global capture and search can be reached from any space. The Studio inquiry inbox belongs to Studio operations and is not part of the core opportunity-to-delivery journey.

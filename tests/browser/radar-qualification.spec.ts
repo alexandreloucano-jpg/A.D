@@ -131,7 +131,9 @@ for (const width of [390, 1440])
         .getByRole("navigation")
         .getByRole("link", { name: "Aujourd’hui", exact: true })
         .click();
-      await expect(page.locator(".market-home .home-market-row")).toHaveCount(9);
+      await expect(page.locator(".market-home .home-market-row")).toHaveCount(5);
+      await expect(page.locator(".home-market-group[aria-label='Radar'] .home-market-row")).toHaveCount(3);
+      await expect(page.locator(".home-market-group[aria-label='Actualités'] .home-market-row")).toHaveCount(2);
       await expect(
         page
           .locator(".market-home")

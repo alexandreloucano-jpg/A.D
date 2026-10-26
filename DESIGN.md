@@ -11,6 +11,8 @@ Use Bodoni Moda sparingly for a strong editorial title and Inter for compact con
 - Four destinations only: Aujourd’hui, Radar, Travail, Bibliothèque.
 - Every screen states where the user is, what the information means, and the next useful action.
 - One primary action per screen. Secondary actions remain visually quiet.
+- Aujourd’hui places creative directions beside a compact Radar and news preview; the full feed and research controls live only in Radar.
+- Travail opens on dossiers and directions. Saved Radar opportunities and Studio operations remain secondary, clearly named sections.
 - Prefer a clear page grid, rows, timelines, and open canvas over containers inside containers. Never place nested cards around every section.
 - Separate facts, sources, interpretation, unknowns, AI draft, and human decision through labels and layout, not colored decoration.
 - Public A.D Studio and the future multi-user product get separate entry points and distinct onboarding.
@@ -21,6 +23,7 @@ Use Bodoni Moda sparingly for a strong editorial title and Inter for compact con
 - Design and verify at 390×844 and a compact 390×640 before desktop polish.
 - Use a stable four-item bottom navigation with safe-area padding, 44px minimum touch targets, and no overlap with the current action.
 - Keep page titles readable, content in one column, evidence links tappable, and actions reachable without horizontal scrolling.
+- Wrap Radar view selectors on mobile so every available view is discoverable without a sideways swipe.
 - Use 16px minimum text in inputs, visible keyboard focus, reduced motion, and explicit loading/empty/error/offline states.
 - Capture, search, and return from a source without losing the current opportunity or dossier.
 
