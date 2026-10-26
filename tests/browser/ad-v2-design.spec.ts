@@ -5,9 +5,13 @@ for (const viewport of [{width:1440,height:900},{width:390,height:844},{width:39
     await page.setViewportSize(viewport);
     await page.goto("/");
     await expect(page.getByRole("heading",{level:1,name:"Aujourd’hui"})).toBeVisible();
+    await expect(page.getByRole("region",{name:"Votre prochain pas"})).toBeVisible();
     await expect(page.getByRole("region",{name:"Directions artistiques"})).toBeVisible();
     await expect(page.locator(".market-home")).toContainText("Radar & actualités");
     await expect(page.locator(".home-minimal")).toContainText("Directions artistiques");
+    await expect(page.getByRole("navigation",{name:"Parcours A.D"})).toContainText("Bibliothèque");
+    await expect(page.getByRole("navigation",{name:"Parcours A.D"})).toContainText("Radar");
+    await expect(page.getByRole("navigation",{name:"Parcours A.D"})).toContainText("Travail");
     await expect(page.locator(".workspace")).toHaveCSS("background-color","rgb(255, 255, 255)");
     await expect(page.locator(".topbar nav").getByRole("link")).toHaveText(["Aujourd’hui", "Radar", "Travail", "Bibliothèque"]);
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1)).toBe(true);

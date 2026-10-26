@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import { useScoutMarket } from "./useScoutMarket";
+import { useEffect, useRef, useState } from "react";
+import { useScoutMarket, type MarketStatus } from "./useScoutMarket";
 import { marketRequest } from "./client";
 import { MarketTimeline } from "./MarketTimeline";
 import { evidenceReceiptSchema, type EvidenceReceipt } from "../opportunity/model";
@@ -61,16 +61,19 @@ const labels: Record<string, string> = {
 const label = (v: string) => labels[v] || v;
 const date = (v: string | null) =>
   v ? new Date(v).toLocaleDateString("fr-FR") : "Non établie";
+export type HomeMarketState={items:Finding[];status:MarketStatus|null;loading:boolean;error:string};
 export function MarketPanel({
   mode = "explorer",
   query = "",
   projects = [],
   onOpenDossier,
+  onHomeState,
 }: {
   mode?: "explorer" | "home" | "pipeline";
   query?: string;
   projects?: { id: string; title: string }[];
   onOpenDossier?: (finding: Finding, evidence: EvidenceReceipt[]) => Promise<void>;
+  onHomeState?:(state:HomeMarketState)=>void;
 }) {
   const returnFocus = useRef<HTMLElement | null>(null);
   const m = useScoutMarket(query, mode),
@@ -96,6 +99,9 @@ export function MarketPanel({
     [linkedProject, setLinkedProject] = useState(""),
     [verifiedEvidence, setVerifiedEvidence] = useState<EvidenceReceipt[]>([]),
     [openingDossier, setOpeningDossier] = useState(false);
+  useEffect(()=>{
+    if(mode==="home")onHomeState?.({items:m.items,status:m.status,loading:m.loading,error:m.error});
+  },[mode,m.items,m.status,m.loading,m.error,onHomeState]);
   function closeDetail() {
     setSelected(null);
     requestAnimationFrame(() => returnFocus.current?.focus());
@@ -213,7 +219,7 @@ export function MarketPanel({
       <section className="market-unavailable" aria-label="Radar marché">
         <p>
           {m.error || "Radar privé non activé."}{" "}
-          <a href="/api/auth/google/login">Se connecter à A.D</a>
+          <a href="/api/auth/login">Se connecter à A.D</a>
         </p>
       </section>
     );
@@ -584,7 +590,7 @@ export function MarketPanel({
         !displayed.length &&
         view !== "Recherche manuelle" && (
           <p>
-            "Aucune opportunité suffisamment qualifiée dans cette sélection."
+            Aucune opportunité suffisamment qualifiée dans cette sélection.
             Consultez les signaux culturels ou actualisez les sources.{" "}
             {m.status.lastRun
               ? "Les résultats précédents restent conservés."
