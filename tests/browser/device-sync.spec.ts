@@ -101,6 +101,7 @@ test("one click shares local-only text and stable UUID with a separate phone con
     );
   }, id);
   await page.reload();
+  await page.locator(".saver-service-drawer > summary").click();
   await page
     .getByRole("button", { name: "Retrouver mes références sur iPhone" })
     .click();
@@ -112,6 +113,7 @@ test("one click shares local-only text and stable UUID with a separate phone con
   expect(refs[0].id).toBe(id);
   const mobile = await phone.newPage();
   await mobile.goto(baseURL! + "/#/saver");
+  await mobile.locator(".saver-service-drawer > summary").click();
   await expect(
     mobile.getByRole("heading", { name: "Signet local de test" }),
   ).toBeVisible();

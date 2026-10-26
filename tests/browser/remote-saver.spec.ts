@@ -45,6 +45,7 @@ for (const width of [390, 1440])
       return route.fulfill({ status: 404, json: { error: "not_found" } });
     });
     await page.goto("/#/saver");
+    await page.locator(".saver-service-drawer > summary").click();
     await expect(
       page.getByText("Saver privé connecté", { exact: false }),
     ).toBeVisible();

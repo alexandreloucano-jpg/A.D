@@ -1,0 +1,250 @@
+/* A.D V5 — an original, image-led workspace shaped by Ophelia's canvas principles. */
+:root {
+  --paper: #f6f4ee;
+  --ink: #191814;
+  --muted: #716e66;
+  --line: #dedbd3;
+  --ad-surface: #fffefa;
+  --ad-hover: #efede7;
+  --ad-deep: #191814;
+  --accent: #6553e8;
+  --serif: "Bodoni Moda", Georgia, serif;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+html, body, #root { background: var(--paper); color: var(--ink); }
+.app-frame { background: var(--paper); color: var(--ink); }
+.app-frame .workspace { background: var(--paper); }
+
+/* Quiet workbench rail: destinations stay visible without competing with the work. */
+.app-frame .topbar {
+  background: #f6f4ee;
+  color: var(--ink);
+  border-right: 1px solid var(--line);
+}
+.app-frame .brand { color: var(--ink); border-bottom-color: var(--line); }
+.app-frame .brand-caption { color: var(--muted); }
+.app-frame .topbar nav::before { color: #98948a; }
+.app-frame .topbar nav a { color: #5d5a53; }
+.app-frame .topbar nav a:hover { color: var(--ink); background: #ebe8e0; border-color: #ebe8e0; }
+.app-frame .topbar nav a[aria-current] {
+  color: #fffefa;
+  background: var(--ink);
+  border-color: var(--ink);
+  box-shadow: none;
+}
+.app-frame .top-actions { border-top-color: var(--line); }
+.app-frame .top-actions .ad-command-trigger {
+  color: #3a3832; background: #fffefa; border-color: #d9d5cc;
+}
+.app-frame .top-actions .ad-command-trigger kbd { color: #817d73; }
+.app-frame .capture-button { background: var(--ink); color: #fffefa; }
+.app-frame .capture-button:hover { background: #37342e; }
+.app-frame .top-actions > .icon-button { color: #45423b; border-color: #d9d5cc; }
+.app-frame main { background: var(--paper); }
+.app-frame .section-meta { color: #817d73; border-bottom-color: var(--line); }
+.app-frame .section-meta .workspace-label { color: var(--ink); }
+.app-frame .section-meta .local-state { color: #716e66; }
+.app-frame .section-meta .local-state > span { background: #439c78; }
+.app-frame .statusbar { background: #eeece5; border-top-color: var(--line); color: #77736b; }
+
+/* Bodoni gives the product its own editorial voice; Inter remains functional UI. */
+.app-frame h1, .app-frame h2, .app-frame h3, .app-frame h4 { color: var(--ink); }
+.app-frame h1 em, .app-frame h2 em { color: var(--accent); }
+.app-frame .page-heading h1,
+.app-frame .ad-v2-priority h1,
+.app-frame .ad-v2-focus.has-priority h1,
+.app-frame .market-heading h2,
+.app-frame .market-card-head h3,
+.app-frame .market-detail > h2 {
+  font-family: var(--serif);
+  font-weight: 400;
+  letter-spacing: -.045em;
+}
+.app-frame button:focus-visible, .app-frame a:focus-visible,
+.app-frame input:focus-visible, .app-frame textarea:focus-visible,
+.app-frame select:focus-visible, .app-frame summary:focus-visible {
+  outline-color: var(--accent);
+}
+.app-frame .primary, .app-frame .small-primary {
+  background: var(--ink); border-color: var(--ink); color: #fffefa;
+}
+.app-frame .primary:hover, .app-frame .small-primary:hover { background: #38352f; border-color: #38352f; }
+.app-frame input, .app-frame textarea, .app-frame select {
+  background: #fffefa; border-color: #d1cdc3; color: var(--ink);
+}
+
+/* Today reads as a calm studio brief rather than a dark dashboard tile. */
+.app-frame .home-layout.ad-v2-home {
+  gap: clamp(28px, 4vw, 60px);
+  grid-template-columns: minmax(0, 1.25fr) minmax(310px, .75fr);
+}
+.app-frame .ad-v2-heading-line { color: #858176; }
+.app-frame .ad-v2-priority {
+  min-height: 370px;
+  background: #eeeafc;
+  color: var(--ink);
+  border: 1px solid #e5e0f7;
+  border-radius: 22px;
+  padding: clamp(30px, 4.5vw, 64px);
+}
+.app-frame .ad-v2-priority::before { color: #6f62bf; }
+.app-frame .ad-v2-priority::after {
+  width: 310px; height: 310px; right: -80px; bottom: -180px;
+  border: 1px solid #b9b0ee; opacity: .52;
+  box-shadow: 0 0 0 36px #eeeafc, 0 0 0 37px #cfc8f4;
+}
+.app-frame .ad-v2-overline { color: #6f62bf; }
+.app-frame .ad-v2-priority h1,
+.app-frame .ad-v2-focus.has-priority h1 { color: var(--ink); }
+.app-frame .ad-v2-priority h1 em { color: #6553e8; }
+.app-frame .ad-v2-description { color: #57534b; }
+.app-frame .ad-v2-date { color: #6d62ae; }
+.app-frame .ad-v2-priority .ad-v2-cta { background: var(--ink); border-color: var(--ink); color: #fffefa; }
+.app-frame .ad-v2-priority .ad-v2-cta:hover { background: #38352f; border-color: #38352f; }
+.app-frame .ad-v2-restore p { color: #5e5a53; }
+.app-frame .ad-v2-restore button { color: var(--ink); }
+.app-frame .ad-v2-counters { background: #fffefa; border-color: var(--line); border-radius: 16px; overflow: hidden; }
+.app-frame .ad-v2-counters strong { color: var(--ink); }
+.app-frame .ad-v2-counters span { color: #79756c; }
+.app-frame .ad-v2-rail > .ad-v2-heading-line { border-bottom-color: var(--line); }
+.app-frame .ad-v2-rail .project-row, .app-frame .ad-v2-rail .reference-row { color: var(--ink); }
+.app-frame .ad-v2-rail .project-row:hover, .app-frame .ad-v2-rail .reference-row:hover { background: #eeece5; }
+.app-frame .ad-v2-rail .row-index { color: var(--accent); }
+.app-frame .ad-v2-rail .project-row small, .app-frame .ad-v2-rail .reference-row small { color: var(--muted); }
+.app-frame .ad-v2-rail .ad-v2-plain-link { border-bottom-color: #c4bdef; color: var(--ink); }
+
+/* Page shell and library controls use a single surface vocabulary. */
+.app-frame .page-heading { border-bottom-color: var(--line); }
+.app-frame .page-heading h1 { color: var(--ink); }
+.app-frame .page-heading .eyebrow, .app-frame .eyebrow { color: #77736b; }
+.app-frame .title-dot { color: var(--accent); }
+.app-frame .collection-toolbar { border-bottom-color: var(--line); }
+.app-frame .collection-toolbar .search { background: #fffefa; border-color: #d8d4cb; border-radius: 999px; }
+.app-frame .collection-toolbar .search input { background: transparent; border-color: transparent; }
+.app-frame .saver-service-drawer {
+  margin: 8px 0 16px;
+  border-bottom: 1px solid var(--line);
+}
+.app-frame .saver-service-drawer > summary {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  min-height: 48px; padding: 8px 2px; color: #4d4a43; cursor: pointer;
+  font-size: 12px; list-style: none;
+}
+.app-frame .saver-service-drawer > summary::-webkit-details-marker { display: none; }
+.app-frame .saver-service-drawer > summary::after { content: "+"; color: var(--accent); font-size: 20px; }
+.app-frame .saver-service-drawer[open] > summary::after { content: "−"; }
+.app-frame .saver-service-drawer > summary small { margin-left: auto; color: #89857c; font-size: 11px; }
+.app-frame .saver-service-drawer > :not(summary) { margin-block: 10px; }
+.app-frame .saver-groups { align-items: center; padding-block: 10px; }
+.app-frame .saver-groups select { border-radius: 999px; padding-inline: 16px; }
+.app-frame .saver-groups button,
+.app-frame .saver-ingestion-actions button,
+.app-frame .saver-intake-actions button {
+  border-radius: 999px; background: #fffefa; border-color: #d8d4cb; color: #39362f;
+}
+.app-frame .saver-groups button:hover,
+.app-frame .saver-ingestion-actions button:hover,
+.app-frame .saver-intake-actions button:hover { background: #ebe8e0; }
+.app-frame .library-filters { gap: 8px; border: 0; }
+.app-frame .library-filters button {
+  border: 1px solid #dedad1; border-radius: 999px; background: #fffefa; color: #59564e;
+}
+.app-frame .library-filters button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fffefa; }
+.app-frame .library-filters button > span { color: inherit; opacity: .68; }
+.app-frame .ad-library-layout { border-color: var(--line); }
+.app-frame .ad-library-layout > span { color: #77736b; }
+.app-frame .ad-library-layout > div { border-color: var(--line); border-radius: 999px; overflow: hidden; }
+.app-frame .ad-library-layout button { background: #fffefa; color: #45423b; }
+.app-frame .ad-library-layout button[aria-pressed="true"] { background: var(--ink); color: #fffefa; }
+.app-frame .reference-grid[data-layout="masonry"] { column-gap: 20px; }
+.app-frame .reference-grid[data-layout="masonry"] .reference-card { margin-bottom: 20px; }
+.app-frame .reference-card, .app-frame .project-card, .app-frame .ad-create-direction {
+  background: #fffefa; border: 1px solid #e1ddd5; border-radius: 17px; overflow: hidden;
+}
+.app-frame .reference-card { box-shadow: 0 3px 14px #27241c08; transition: transform .18s ease, box-shadow .18s ease; }
+.app-frame .reference-card:hover { transform: translateY(-3px); box-shadow: 0 12px 28px #27241c12; }
+.app-frame .reference-card h2 { color: var(--ink); font-family: var(--serif); font-size: 22px; font-weight: 400; }
+.app-frame .reference-card h2 button { color: inherit; }
+.app-frame .reference-card .excerpt { color: #716d65; font-size: 13px; }
+.app-frame .reference-media { background: linear-gradient(135deg, #e9e5f7, #f3ece2 55%, #e8eee8); }
+.app-frame .reference-card[data-has-media="false"] .reference-body { min-height: 170px; }
+.app-frame .card-meta, .app-frame .card-bottom { color: #888378; }
+.app-frame .reference-card .source-link { color: #5c4cc7; }
+.app-frame .project-card { border-radius: 18px; padding: 24px; }
+.app-frame .project-card h2 { color: var(--ink); font-family: var(--serif); font-weight: 400; }
+.app-frame .project-card:hover { background: #f1eef9; border-color: #d7d1f3; }
+
+/* Radar status and evidence form a readable, real-data surface. */
+.app-frame .market-panel { color: var(--ink); }
+.app-frame .market-heading h2 { color: var(--ink); font-size: clamp(30px, 3vw, 42px); }
+.app-frame .market-heading .eyebrow { color: #77736b; }
+.app-frame .market-panel button, .app-frame .market-panel select, .app-frame .market-panel textarea {
+  background: #fffefa; border-color: #d8d4cb; color: var(--ink); border-radius: 999px;
+}
+.app-frame .market-panel button[aria-pressed="true"],
+.app-frame .market-tabs button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fffefa; }
+.app-frame .market-live-status {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 18px;
+  margin: 12px 0 17px; padding: 12px 15px; border: 1px solid var(--line);
+  border-radius: 14px; background: #fffefa;
+}
+.app-frame .market-live-status span { display: inline-flex; align-items: center; gap: 9px; font-size: 12px; font-weight: 600; }
+.app-frame .market-live-status i { width: 8px; height: 8px; border-radius: 50%; background: #b07d38; }
+.app-frame .market-live-status .is-ready i { background: #438f6b; }
+.app-frame .market-live-status .is-running i { background: var(--accent); animation: ad-radar-pulse 1.2s ease-in-out infinite; }
+.app-frame .market-live-status small { color: var(--muted); font-size: 11px; }
+@keyframes ad-radar-pulse { 50% { box-shadow: 0 0 0 5px #6553e82a; } }
+.app-frame .market-scan-details { margin: 12px 0 22px; padding: 0 14px; border: 1px solid var(--line); border-radius: 14px; background: #f0eee8; }
+.app-frame .market-scan-details summary { color: #535047; }
+.app-frame .market-findings { gap: 13px; }
+.app-frame .market-finding { padding: 20px; border: 1px solid #e1ddd5; border-radius: 16px; background: #fffefa; }
+.app-frame .market-finding h3 { color: var(--ink); }
+.app-frame .market-card-head h3 { font-size: 24px; }
+.app-frame .market-lookalike, .app-frame .market-dossier-summary,
+.app-frame .ad-timeline-context { background: #efedf8; border-color: #e0dcf2; border-radius: 13px; }
+.app-frame .market-detail { background: #faf9f5; border-left-color: var(--accent); color: var(--ink); }
+.app-frame .market-detail blockquote { background: #efedf8; border-left-color: var(--accent); }
+.app-frame .market-overlay { background: #19181455; backdrop-filter: blur(5px); }
+.app-frame .ad-market-timeline .ad-timeline-node { background: #fffefa; border-color: var(--accent); }
+.app-frame .ad-timeline-point[aria-pressed="true"] .ad-timeline-node { background: var(--accent); }
+.app-frame .ad-create { border-top-color: var(--accent); }
+.app-frame .ad-create-direction { border-radius: 17px; }
+.app-frame .ad-create-ref.is-selected { border-color: var(--accent); }
+.app-frame .ad-create button.ad-create-ai,
+.app-frame .ad-create button.ad-create-save,
+.app-frame .ad-create button.ad-create-approve { background: var(--ink); border-color: var(--ink); color: #fffefa; }
+.app-frame .ad-create button.ad-create-neutral { background: #fffefa; border-color: var(--line); color: var(--ink); }
+.app-frame .ad-command-input { background: #fffefa; border-color: var(--line); }
+.app-frame .ad-command-option[data-active="true"], .app-frame .ad-command-option:hover { background: #efedf8; }
+.app-frame dialog { background: #fffefa; border-color: var(--line); border-radius: 18px; }
+.app-frame .empty-icon { background: #efedf8; color: var(--accent); border-radius: 14px; }
+
+@media (max-width: 1120px) and (min-width: 761px) {
+  .app-frame .home-layout.ad-v2-home { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 760px) {
+  .app-frame .topbar { background: #f6f4ee; border-bottom: 1px solid var(--line); }
+  .app-frame .topbar nav { background: #fffefa; border-top-color: var(--line); }
+  .app-frame .topbar nav a { color: #5d5a53; }
+  .app-frame .topbar nav a[aria-current] { color: #fffefa; background: var(--ink); box-shadow: none; }
+  .app-frame .top-actions .ad-command-trigger,
+  .app-frame .top-actions > .icon-button { background: #fffefa; color: var(--ink); border-color: var(--line); }
+  .app-frame .top-actions .capture-button { background: var(--ink); color: #fffefa; }
+  .app-frame .ad-v2-priority { min-height: 300px; border-radius: 18px; }
+  .app-frame .ad-v2-counters { border-radius: 13px; }
+  .app-frame .saver-service-drawer > summary { align-items: flex-start; flex-direction: column; gap: 3px; padding-right: 28px; position: relative; }
+  .app-frame .saver-service-drawer > summary::after { position: absolute; right: 2px; top: 8px; }
+  .app-frame .saver-service-drawer > summary small { margin: 0; }
+  .app-frame .library-filters { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 5px; }
+  .app-frame .library-filters button { white-space: nowrap; }
+  .app-frame .reference-card { border-radius: 15px; }
+  .app-frame .reference-card:hover { transform: none; }
+  .app-frame .market-finding { padding: 15px; }
+  .app-frame .market-card-head h3 { font-size: 22px; }
+  .app-frame .market-live-status { border-radius: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-frame *, .app-frame *::before, .app-frame *::after { animation: none !important; transition: none !important; }
+}

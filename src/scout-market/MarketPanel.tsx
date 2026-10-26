@@ -237,13 +237,34 @@ export function MarketPanel({
         {mode === "explorer" && m.status?.enabled && (
           <button disabled={m.busy} onClick={() => void m.runScan()}>
             {m.busy
-              ? "Collecte en cours…"
+              ? "Actualisation en cours…"
               : m.status.lastRun?.paused
                 ? "Reprendre le scan"
-                : "Lancer un scan manuel"}
+                : m.status.lastRun
+                  ? "Actualiser le Radar"
+                  : "Lancer le premier scan"}
           </button>
         )}
       </header>
+      {mode === "explorer" && m.status?.enabled && (
+        <div className="market-live-status" aria-live="polite">
+          <span className={m.busy ? "is-running" : m.status.stale ? "is-stale" : "is-ready"}>
+            <i aria-hidden="true" />
+            {m.busy
+              ? "Analyse des sources en cours"
+              : m.status.stale
+                ? "Radar à actualiser"
+                : "Radar à jour"}
+          </span>
+          <small>
+            {m.busy && m.status.lastRun
+              ? `${m.status.lastRun.itemsSeen} pages examinées`
+              : m.status.lastRun?.finishedAt
+                ? `Dernier scan · ${date(m.status.lastRun.finishedAt)}`
+                : "Aucun scan enregistré"}
+          </small>
+        </div>
+      )}
       {m.error && (
         <p role="alert">
           {m.error} <button onClick={() => void m.refresh()}>Actualiser</button>
@@ -257,7 +278,7 @@ export function MarketPanel({
         </p>
       )}
       {m.status?.enabled && mode !== "home" && (
-        <details className="market-scan-details">
+        <details className="market-scan-details" open={m.status.stale}>
           <summary>
             {m.items.filter((f) => f.classification === "commercial").length}{" "}
             opportunités ·{" "}

@@ -1,12 +1,12 @@
 import {test,expect} from "@playwright/test";
 
 for(const size of [{width:390,height:844},{width:390,height:640},{width:768,height:1024},{width:1440,height:900}]){
- test(`A.D V4 original visual instrument at ${size.width}×${size.height}`,async({page},info)=>{
+ test(`A.D V5 canvas visual instrument at ${size.width}×${size.height}`,async({page},info)=>{
   await page.setViewportSize(size);await page.goto("/");
   const shell=page.locator(".workspace");
-  await expect(shell).toHaveCSS("background-color","rgb(239, 242, 241)");
-  await expect(page.locator(".topbar")).toHaveCSS("background-color","rgb(18, 38, 44)");
-  await expect(page.locator(".ad-v2-priority")).toHaveCSS("background-color","rgb(24, 55, 61)");
+  await expect(shell).toHaveCSS("background-color","rgb(246, 244, 238)");
+  await expect(page.locator(".topbar")).toHaveCSS("background-color","rgb(246, 244, 238)");
+  await expect(page.locator(".ad-v2-priority")).toHaveCSS("background-color","rgb(238, 234, 252)");
   await expect(page.getByRole("heading",{name:/Aucune priorité/})).toBeVisible();
   await expect(page.getByRole("navigation",{name:"Navigation principale"})).toBeVisible();
   const infoBox=await page.evaluate(()=>{

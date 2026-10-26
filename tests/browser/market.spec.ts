@@ -141,7 +141,7 @@ test("one explicit scan continues bounded slices and shows only server-confirmed
     await route.fulfill({ json: b });
   });
   await page.goto("/#/explorer");
-  await page.getByRole("button", { name: "Lancer un scan manuel" }).click();
+  await page.getByRole("button", { name: "Lancer le premier scan" }).click();
   await expect(page.getByRole("heading", { name: f.headline })).toBeVisible();
   expect(calls).toBe(2);
 });
