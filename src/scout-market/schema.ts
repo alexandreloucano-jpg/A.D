@@ -145,6 +145,12 @@ export interface ScanRun {
 export const listQuery = z.object({
   q: z.string().max(200).default(""),
   status: reviewSchema.optional(),
+  classification: z.enum(["commercial", "strategic", "cultural", "research"]).optional(),
+  qualification: z.enum(["actionable", "verify", "past", "excluded"]).optional(),
+  activeOnly: z.preprocess(
+    (value) => value === true || value === "true",
+    z.boolean().default(false),
+  ),
   sector: z.string().max(80).optional(),
   city: z.string().max(80).optional(),
   eventType: z.string().max(80).optional(),

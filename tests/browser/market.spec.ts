@@ -88,7 +88,7 @@ for (const width of [390, 1440])
       fullPage: true,
     });
     await page.reload();
-    await page.getByRole("button", { name: "Enregistrées", exact: true }).click();
+    await page.getByLabel("État de revue").selectOption("saved");
     await expect(
       page.getByRole("heading", {
         name: f.companyName,

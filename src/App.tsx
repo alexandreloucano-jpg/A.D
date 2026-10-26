@@ -707,7 +707,7 @@ export function App() {
                             route === "saver"
                               ? "Rechercher une référence…"
                               : route === "explorer"
-                                ? "Rechercher une opportunité…"
+                                ? "Marque, titre ou besoin…"
                                 : "Rechercher un dossier…"
                           }
                         />

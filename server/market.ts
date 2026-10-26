@@ -144,9 +144,18 @@ export async function marketRoute(r: Request, s: Store, c: Config) {
   }
   if (path === "/opportunities" && r.method === "GET") {
     const q = listQuery.parse(Object.fromEntries(new URL(r.url).searchParams));
-    let items = (await repository.findings()).filter(
+    const allFindings = await repository.findings();
+    const facets = {
+      sectors: [...new Set(allFindings.map((f) => f.sector).filter(Boolean))].sort(),
+      cities: [...new Set(allFindings.map((f) => f.city).filter((v): v is string => !!v))].sort(),
+      eventTypes: [...new Set(allFindings.map((f) => f.eventType).filter(Boolean))].sort(),
+    };
+    let items = allFindings.filter(
       (f) =>
         (!q.status || f.reviewState === q.status) &&
+        (!q.classification || f.classification === q.classification) &&
+        (!q.qualification || f.qualification === q.qualification) &&
+        (!q.activeOnly || !["rejected", "snoozed"].includes(f.reviewState)) &&
         (!q.sector || f.sector === q.sector) &&
         (!q.city || f.city === q.city) &&
         (!q.eventType || f.eventType === q.eventType) &&
@@ -173,6 +182,7 @@ export async function marketRoute(r: Request, s: Store, c: Config) {
       items: page,
       nextCursor: items.length > q.limit ? page.at(-1)!.id : null,
       totalApprox,
+      facets,
     });
   }
   if (path === "/brief/today" && r.method === "GET") {

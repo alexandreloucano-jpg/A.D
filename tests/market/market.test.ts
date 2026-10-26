@@ -386,3 +386,41 @@ it("deduplicates an explicitly dated event across publishers, keeps both citatio
     ).length,
   ).toBe(2);
 });
+it("applies category, status, and active-only filters before cursor pagination", async () => {
+  const repository = new MarketRepository(s, c.owner);
+  const base = fixture(),
+    active = {
+      ...base,
+      id: crypto.randomUUID(),
+      companyId: crypto.randomUUID(),
+      signalId: crypto.randomUUID(),
+      evidenceId: crypto.randomUUID(),
+      companyName: "Facet active fixture",
+      canonicalUrl: "https://www.journalduluxe.fr/fr/mode/facet-active-" + crypto.randomUUID(),
+      reviewState: "new" as const,
+    },
+    rejected = {
+      ...active,
+      id: crypto.randomUUID(),
+      companyId: crypto.randomUUID(),
+      signalId: crypto.randomUUID(),
+      evidenceId: crypto.randomUUID(),
+      companyName: "Facet rejected fixture",
+      canonicalUrl: "https://www.journalduluxe.fr/fr/mode/facet-rejected-" + crypto.randomUUID(),
+      reviewState: "rejected" as const,
+    };
+  await repository.ingest(active);
+  await repository.ingest(rejected);
+  const classification = (await repository.get(active.id))!.classification!;
+  const list = async (query: string) =>
+    (await handle(req("/opportunities?" + query), s, c)).json();
+  const activeResults = await list(`classification=${classification}&activeOnly=true&limit=50`);
+  const activeIds = activeResults.items.map((item: { id: string }) => item.id);
+  expect(activeIds).toContain(active.id);
+  expect(activeIds).not.toContain(rejected.id);
+  expect(activeResults.facets.sectors).toContain(active.sector);
+  const rejectedResults = await list(`classification=${classification}&status=rejected&limit=50`);
+  expect(rejectedResults.items.map((item: { id: string }) => item.id)).toContain(rejected.id);
+  const otherClassification = classification === "commercial" ? "strategic" : "commercial";
+  expect((await list(`classification=${otherClassification}&limit=50`)).items.map((item: { id: string }) => item.id)).not.toContain(active.id);
+});

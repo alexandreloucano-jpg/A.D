@@ -17,6 +17,7 @@ for (const width of [390, 1440])
       );
       commercial.forEach((f) => {
         f.corroboratingPrimarySource = "https://issuer.example/press/fixture";
+        f.sector = "hospitality-fixture";
       });
       const culture = parseArticle(
         `<h1>Chanel présente sa collection à Paris</h1><time datetime="${now.toISOString()}"></time><article>Une magnifique collection, déjà présentée lors du défilé.</article>`,
@@ -28,13 +29,24 @@ for (const width of [390, 1440])
         SOURCE_REGISTRY.find((s) => s.id === "glossy-luxury")!.url,
         now,
       )!;
+      culture.sector = "culture-fixture";
+      strategic.sector = "strategy-fixture";
       await page.route("**/api/market/**", async (route) => {
         const p = new URL(route.request().url()).pathname;
         let body: unknown = {};
         if (p.endsWith("/status"))
           body = { enabled: true, sourceCount: 2, lastRun: null, stale: false };
         else if (p.endsWith("/opportunities"))
-          body = { items: [culture, strategic, ...commercial] };
+          body = {
+            items: [culture, strategic, ...commercial],
+            totalApprox: 9,
+            nextCursor: null,
+            facets: {
+              sectors: [...new Set([culture.sector, strategic.sector, ...commercial.map((f) => f.sector)])],
+              cities: [...new Set([culture.city, strategic.city, ...commercial.map((f) => f.city)].filter((v): v is string => !!v))],
+              eventTypes: [...new Set([culture.eventType, strategic.eventType, ...commercial.map((f) => f.eventType)])],
+            },
+          };
         else if (p.endsWith("/brief/today"))
           body = {
             observations: [culture, strategic, ...commercial],
@@ -72,9 +84,13 @@ for (const width of [390, 1440])
       });
       await page.goto("/#/explorer");
       await expect(page.locator(".market-finding")).toHaveCount(5);
+      await expect(page.getByText("5 résultats affichés", { exact: true })).toBeVisible();
+      await page.screenshot({ path: `artifacts/radar-catalog-${width}.png` });
       await expect(
         page.getByRole("heading", { name: culture.headline }),
       ).toHaveCount(0);
+      await page.getByRole("button", { name: "Afficher les 2 autres opportunités chargées" }).click();
+      await expect(page.locator(".market-finding")).toHaveCount(7);
       await page
         .getByRole("button", { name: "Analyses stratégiques", exact: true })
         .click();
@@ -89,6 +105,11 @@ for (const width of [390, 1440])
       await expect(
         page.getByRole("heading", { name: culture.companyName }),
       ).toBeVisible();
+      const sector = page.getByLabel("Secteur");
+      await sector.selectOption(culture.sector);
+      await expect(sector.getByRole("option", { name: strategic.sector, exact: true })).toBeAttached();
+      await page.getByRole("button", { name: "Effacer les filtres" }).click();
+      await expect(page.locator(".market-finding")).toHaveCount(1);
       await page
         .getByText("Sources et état réel des connexions", { exact: true })
         .click();

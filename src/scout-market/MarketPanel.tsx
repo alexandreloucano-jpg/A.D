@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import { useScoutMarket } from "./useScoutMarket";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useScoutMarket, type MarketFilters } from "./useScoutMarket";
 import { marketRequest } from "./client";
 import { MarketTimeline } from "./MarketTimeline";
 import { evidenceReceiptSchema, type EvidenceReceipt } from "../opportunity/model";
@@ -73,17 +73,44 @@ export function MarketPanel({
   onOpenDossier?: (finding: Finding, evidence: EvidenceReceipt[]) => Promise<void>;
 }) {
   const returnFocus = useRef<HTMLElement | null>(null);
-  const m = useScoutMarket(query, mode),
-    [view, setView] = useState("Nouveaux clients"),
-    [referenceFilter, setReferenceFilter] = useState(""),
-    [sector, setSector] = useState(""),
-    [city, setCity] = useState(""),
-    [event, setEvent] = useState(""),
-    [confidence, setConfidence] = useState(""),
-    [stage, setStage] = useState(""),
-    [coverage, setCoverage] = useState(""),
-    [days, setDays] = useState("45"),
-    [selected, setSelected] = useState<Finding | null>(null),
+  const [view, setView] = useState("Nouveaux clients");
+  const [reviewFilter, setReviewFilter] = useState("active");
+  const [showAll, setShowAll] = useState(false);
+  const [referenceFilter, setReferenceFilter] = useState("");
+  const [sector, setSector] = useState("");
+  const [city, setCity] = useState("");
+  const [event, setEvent] = useState("");
+  const [confidence, setConfidence] = useState("");
+  const [stage, setStage] = useState("");
+  const [coverage, setCoverage] = useState("");
+  const [days, setDays] = useState("45");
+  const serverFilters = useMemo<MarketFilters>(() => ({
+    classification: mode !== "explorer"
+      ? undefined
+      : view === "Nouveaux clients"
+        ? "commercial"
+        : view === "Analyses stratégiques"
+          ? "strategic"
+          : view === "Signaux culturels"
+            ? "cultural"
+            : view === "Recherche manuelle"
+              ? "research"
+              : undefined,
+    status: mode === "explorer" && ["new", "reviewing", "saved", "snoozed"].includes(reviewFilter)
+      ? reviewFilter
+      : undefined,
+    qualification: mode === "explorer" && reviewFilter === "verify" ? "verify" : undefined,
+    activeOnly: reviewFilter === "active",
+    sector,
+    city,
+    eventType: event,
+    confidence,
+    stage,
+    minCoverage: coverage,
+    days,
+  }), [mode, view, reviewFilter, sector, city, event, confidence, stage, coverage, days]);
+  const m = useScoutMarket(query, mode, serverFilters);
+  const [selected, setSelected] = useState<Finding | null>(null),
     [actions, setActions] = useState<MarketAction[]>([]),
     [history, setHistory] = useState<
       { event: string; reason: string | null; occurredAt: string }[]
@@ -96,6 +123,7 @@ export function MarketPanel({
     [linkedProject, setLinkedProject] = useState(""),
     [verifiedEvidence, setVerifiedEvidence] = useState<EvidenceReceipt[]>([]),
     [openingDossier, setOpeningDossier] = useState(false);
+  useEffect(() => setShowAll(false), [query, view, reviewFilter, sector, city, event, confidence, stage, coverage, days, referenceFilter]);
   function closeDetail() {
     setSelected(null);
     requestAnimationFrame(() => returnFocus.current?.focus());
@@ -161,7 +189,7 @@ export function MarketPanel({
             ? !["reference_only", "past", "cultural"].includes(f.lookalike?.gate || "") &&
               !f.sourceError && f.relationshipStatus !== "blocked"
             : f.classification === "strategic" || f.classification === "cultural")) &&
-        (view === "Rejetées" || f.relationshipStatus !== "blocked") &&
+        (reviewFilter === "rejected" || reviewFilter === "all" || f.relationshipStatus !== "blocked") &&
         (!sector || f.sector === sector) &&
         (!referenceFilter || f.lookalike?.archetype === referenceFilter) &&
         (!city || f.city === city) &&
@@ -174,38 +202,37 @@ export function MarketPanel({
           !f.publishedAt ||
           Date.now() - Date.parse(f.publishedAt) < Number(days) * 86400000) &&
         (mode !== "home" || !["rejected", "snoozed"].includes(f.reviewState)) &&
+        (reviewFilter === "active" || reviewFilter === "all" ||
+          (reviewFilter === "watchlist"
+            ? f.lookalike?.gate === "lookalike_watchlist"
+            : reviewFilter === "verify"
+              ? f.qualification === "verify"
+              : reviewFilter === "rejected"
+                ? f.reviewState === "rejected" || f.relationshipStatus === "blocked"
+                : f.reviewState === reviewFilter)) &&
+        (mode === "home" || reviewFilter !== "active" || !["rejected", "snoozed"].includes(f.reviewState)) &&
         (mode === "home"
           ? true
           : mode === "pipeline"
-          ? true
-          : view === "Rejetées"
-            ? f.reviewState === "rejected" || f.relationshipStatus === "blocked"
-            : view === "Enregistrées"
-              ? f.reviewState === "saved"
-              : view === "À vérifier"
+            ? true
+            : view === "Tous les signaux"
+              ? true
+              : view === "Nouveaux clients"
                 ? f.classification === "commercial" &&
-                  f.qualification === "verify"
-                : view === "Nouveaux clients"
-                  ? f.classification === "commercial" &&
-                    !["reference_only", "cultural", "past"].includes(f.lookalike?.gate || "") &&
-                    !["rejected", "snoozed"].includes(f.reviewState)
-                  : view === "À surveiller"
-                    ? f.lookalike?.gate === "lookalike_watchlist" &&
-                      !["rejected", "snoozed"].includes(f.reviewState)
-                    : view === "Analyses stratégiques"
-                    ? f.classification === "strategic" &&
-                      !["rejected", "snoozed"].includes(f.reviewState)
-                    : view === "Recherche manuelle"
-                      ? f.classification === "research"
-                      : view === "Signaux culturels"
-                        ? f.classification === "cultural" &&
-                          !["rejected", "snoozed"].includes(f.reviewState)
-                        : !["rejected", "snoozed"].includes(f.reviewState)),
+                  !["reference_only", "cultural", "past"].includes(f.lookalike?.gate || "")
+                : view === "Analyses stratégiques"
+                  ? f.classification === "strategic"
+                  : view === "Recherche manuelle"
+                    ? f.classification === "research"
+                    : view === "Signaux culturels"
+                      ? f.classification === "cultural"
+                      : true),
     )
     .sort(compareFindings);
+  const refined = !!query.trim() || !!sector || !!city || !!event || !!confidence || !!stage || !!coverage || days !== "45" || !!referenceFilter || reviewFilter !== "active";
   const displayed = mode === "home"
     ? items
-    : mode === "explorer" && view === "Nouveaux clients"
+    : mode === "explorer" && view === "Nouveaux clients" && !refined && !showAll
       ? items.slice(0, 5)
       : items;
   const commercialRows = displayed.filter((finding) => finding.classification === "commercial");
@@ -273,7 +300,7 @@ export function MarketPanel({
               ? "Radar & actualités"
               : mode === "pipeline"
                 ? "Opportunités enregistrées"
-                : "Vos prochains clients."}
+                : "Explorer le marché."}
           </h2>
         </div>
         {mode === "explorer" && m.status?.enabled && (
@@ -288,6 +315,154 @@ export function MarketPanel({
           </button>
         )}
       </header>
+      {m.error && (
+        <p role="alert">
+          {m.error} <button onClick={() => void m.refresh()}>Actualiser</button>
+        </p>
+      )}
+      {m.loading && <p role="status">Lecture du radar privé…</p>}
+      {m.status && !m.status.enabled && mode !== "home" && (
+        <p>
+          Le radar n’est pas activé. Vos observations locales restent
+          disponibles.
+        </p>
+      )}
+      {mode === "explorer" && (
+        <>
+          <nav aria-label="Types de signaux" className="market-tabs">
+            {[
+              "Tous les signaux",
+              "Nouveaux clients",
+              "Analyses stratégiques",
+              "Signaux culturels",
+              "Recherche manuelle",
+            ].map((v) => (
+              <button
+                aria-pressed={view === v}
+                onClick={() => setView(v)}
+                key={v}
+              >
+                {v}
+              </button>
+            ))}
+          </nav>
+          <p className="market-catalog-hint">
+            Cherchez une marque, un titre ou un besoin, puis réduisez la sélection par secteur, zone et signal.
+          </p>
+          <div className="market-catalog-facets" aria-label="Filtres du Radar">
+            <label>
+              État de revue
+              <select value={reviewFilter} onChange={(e) => setReviewFilter(e.target.value)}>
+                <option value="active">En cours</option>
+                <option value="all">Tous les états</option>
+                <option value="watchlist">À surveiller</option>
+                <option value="verify">À vérifier</option>
+                <option value="new">À examiner</option>
+                <option value="reviewing">En revue</option>
+                <option value="saved">En pipeline</option>
+                <option value="snoozed">Reportées</option>
+                <option value="rejected">Refusées / exclues</option>
+              </select>
+            </label>
+            {[
+              {
+                label: "Secteur",
+                value: sector,
+                set: setSector,
+                options: m.facets.sectors,
+              },
+              {
+                label: "Zone",
+                value: city,
+                set: setCity,
+                options: m.facets.cities,
+              },
+              {
+                label: "Type de signal",
+                value: event,
+                set: setEvent,
+                options: m.facets.eventTypes,
+              },
+            ].map((f) => (
+              <label key={f.label}>
+                {f.label}
+                <select value={f.value} onChange={(e) => f.set(e.target.value)}>
+                  <option value="">Tous</option>
+                  {f.options.map((o) => <option key={o} value={o}>{label(o)}</option>)}
+                </select>
+              </label>
+            ))}
+          </div>
+          <div className="market-result-summary" aria-live="polite">
+            <span>
+              {displayed.length} résultat{displayed.length === 1 ? "" : "s"} affiché{displayed.length === 1 ? "" : "s"}
+              {m.nextCursor ? " · d’autres résultats sont disponibles" : ""}
+            </span>
+            {(reviewFilter !== "active" || sector || city || event || confidence || stage || coverage || days !== "45" || referenceFilter) && (
+              <button type="button" className="market-reset-filters" onClick={() => {
+                setReviewFilter("active");
+                setSector(""); setCity(""); setEvent("");
+                setConfidence(""); setStage(""); setCoverage(""); setDays("45");
+                setReferenceFilter("");
+              }}>Effacer les filtres</button>
+            )}
+          </div>
+          <details className="market-advanced-filters">
+            <summary>Affiner la sélection</summary>
+            <div className="market-filters">
+              {[
+                {
+                  label: "Confiance",
+                  value: confidence,
+                  set: setConfidence,
+                  options: ["low", "medium", "high"],
+                },
+                {
+                  label: "Étape",
+                  value: stage,
+                  set: setStage,
+                  options: [...stages],
+                },
+                {
+                  label: "Couverture minimale",
+                  value: coverage,
+                  set: setCoverage,
+                  options: ["0.6", "0.8", "1"],
+                },
+              ].map((f) => (
+                <label key={f.label}>
+                  {f.label}
+                  <select
+                    value={f.value}
+                    onChange={(e) => f.set(e.target.value)}
+                  >
+                    <option value="">Tout</option>
+                    {f.options.map((o) => (
+                      <option key={o} value={o}>
+                        {label(o)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ))}
+              <label>
+                Période
+                <select value={days} onChange={(e) => setDays(e.target.value)}>
+                  <option value="7">7 jours</option>
+                  <option value="30">30 jours</option>
+                  <option value="45">45 jours</option>
+                </select>
+              </label>
+              <div className="market-reference-picker" role="group" aria-label="Référence de comparaison">
+                <span>Comparer à</span>
+                <button aria-pressed={!referenceFilter} onClick={() => setReferenceFilter("")}>Toutes</button>
+                <button aria-pressed={referenceFilter === "cache-paris"} onClick={() => setReferenceFilter("cache-paris")}>Caché</button>
+                <button aria-pressed={referenceFilter === "maison-francois-1er"} onClick={() => setReferenceFilter("maison-francois-1er")}>François 1er</button>
+              </div>
+            </div>
+          </details>
+        </>
+      )}
       {mode === "explorer" && m.status?.enabled && (
         <div className="market-live-status" aria-live="polite">
           <span className={m.busy ? "is-running" : m.status.stale ? "is-stale" : "is-ready"}>
@@ -307,20 +482,8 @@ export function MarketPanel({
           </small>
         </div>
       )}
-      {m.error && (
-        <p role="alert">
-          {m.error} <button onClick={() => void m.refresh()}>Actualiser</button>
-        </p>
-      )}
-      {m.loading && <p role="status">Lecture du radar privé…</p>}
-      {m.status && !m.status.enabled && mode !== "home" && (
-        <p>
-          Le radar n’est pas activé. Vos observations locales restent
-          disponibles.
-        </p>
-      )}
       {m.status?.enabled && mode !== "home" && (
-        <details className="market-scan-details" open={m.status.stale}>
+        <details className="market-scan-details" open={m.status.lastRun?.status === "failed"}>
           <summary>
             {m.items.filter((f) => f.classification === "commercial").length}{" "}
             opportunités ·{" "}
@@ -413,101 +576,6 @@ export function MarketPanel({
             préférence Taste.
           </p>
         </details>
-      )}
-      {mode === "explorer" && (
-        <>
-          <nav aria-label="Sections du radar" className="market-tabs">
-            {[
-              "Nouveaux clients",
-              "À surveiller",
-              "Analyses stratégiques",
-              "Signaux culturels",
-              "Recherche manuelle",
-              "À vérifier",
-              "Enregistrées",
-              "Rejetées",
-            ].map((v) => (
-              <button
-                aria-pressed={view === v}
-                onClick={() => setView(v)}
-                key={v}
-              >
-                {v}
-              </button>
-            ))}
-          </nav>
-          <div className="market-reference-picker" role="group" aria-label="Référence de comparaison">
-            <button aria-pressed={!referenceFilter} onClick={() => setReferenceFilter("")}>Toutes les références</button>
-            <button aria-pressed={referenceFilter === "cache-paris"} onClick={() => setReferenceFilter("cache-paris")}>Similaires à Caché</button>
-            <button aria-pressed={referenceFilter === "maison-francois-1er"} onClick={() => setReferenceFilter("maison-francois-1er")}>Similaires à François 1er</button>
-          </div>
-          <details>
-            <summary>Filtrer davantage</summary>
-            <div className="market-filters">
-              {[
-                {
-                  label: "Secteur",
-                  value: sector,
-                  set: setSector,
-                  options: [...new Set(m.items.map((f) => f.sector))],
-                },
-                {
-                  label: "Zone",
-                  value: city,
-                  set: setCity,
-                  options: ["Paris"],
-                },
-                {
-                  label: "Type de signal",
-                  value: event,
-                  set: setEvent,
-                  options: [...new Set(m.items.map((f) => f.eventType))],
-                },
-                {
-                  label: "Confiance",
-                  value: confidence,
-                  set: setConfidence,
-                  options: ["low", "medium", "high"],
-                },
-                {
-                  label: "Étape",
-                  value: stage,
-                  set: setStage,
-                  options: [...stages],
-                },
-                {
-                  label: "Couverture minimale",
-                  value: coverage,
-                  set: setCoverage,
-                  options: ["0.6", "0.8", "1"],
-                },
-              ].map((f) => (
-                <label key={f.label}>
-                  {f.label}
-                  <select
-                    value={f.value}
-                    onChange={(e) => f.set(e.target.value)}
-                  >
-                    <option value="">Tout</option>
-                    {f.options.map((o) => (
-                      <option key={o} value={o}>
-                        {label(o)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              ))}
-              <label>
-                Période
-                <select value={days} onChange={(e) => setDays(e.target.value)}>
-                  <option value="7">7 jours</option>
-                  <option value="30">30 jours</option>
-                  <option value="45">45 jours</option>
-                </select>
-              </label>
-            </div>
-          </details>
-        </>
       )}
       {mode === "explorer" && view === "Recherche manuelle" && (
         <div>
@@ -656,22 +724,24 @@ export function MarketPanel({
         ))}
         </div>
       )}
-      {items.length > displayed.length && (
-        <p className="market-meta">
-          Les cinq premières opportunités sont priorisées. Les filtres
-          permettent de cibler un autre secteur ou événement.
-        </p>
+      {mode === "explorer" && view === "Nouveaux clients" && !refined && !showAll && items.length > displayed.length && (
+        <button className="market-show-more" type="button" onClick={() => setShowAll(true)}>
+          Afficher les {items.length - displayed.length} autres opportunités chargées
+        </button>
+      )}
+      {mode === "explorer" && m.nextCursor && (
+        <button className="market-show-more" type="button" disabled={m.loadingMore} onClick={() => { setShowAll(true); void m.loadMore(); }}>
+          {m.loadingMore ? "Chargement…" : "Charger la suite des résultats"}
+        </button>
       )}
       {mode !== "home" && !m.loading &&
         m.status?.enabled &&
         !displayed.length &&
         view !== "Recherche manuelle" && (
           <p>
-            Aucune opportunité suffisamment qualifiée dans cette sélection.
-            Consultez les signaux culturels ou actualisez les sources.{" "}
-            {m.status.lastRun
-              ? "Les résultats précédents restent conservés."
-              : "Lancez une collecte publique."}
+            {m.nextCursor
+              ? "Aucun résultat dans cette page. Chargez la suite ou élargissez les filtres."
+              : "Aucun résultat ne correspond à cette sélection. Élargissez un filtre ou effacez-les."}
           </p>
         )}
       {selected && (

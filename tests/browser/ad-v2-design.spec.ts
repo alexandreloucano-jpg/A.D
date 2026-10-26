@@ -5,7 +5,7 @@ for (const viewport of [{width:1440,height:900},{width:390,height:844},{width:39
     await page.setViewportSize(viewport);
     await page.goto("/");
     await expect(page.getByRole("heading",{level:1,name:"Aujourd’hui"})).toBeVisible();
-    await expect(page.getByRole("region",{name:"Votre prochain pas"})).toBeVisible();
+    await expect(page.getByRole("heading",{name:"Qu’est-ce que vous voulez faire avancer ?"})).toBeVisible();
     await expect(page.getByRole("region",{name:"Directions artistiques"})).toBeVisible();
     await expect(page.locator(".market-home")).toContainText("Radar & actualités");
     await expect(page.getByRole("region",{name:"Directions artistiques"}).getByRole("heading",{name:"Vos directions"})).toBeVisible();
@@ -25,7 +25,7 @@ for (const viewport of [{width:1440,height:900},{width:390,height:844},{width:39
 
 test("Today links directly into the Radar and work dossier",async({page})=>{
   await page.goto("/");
-  await page.getByRole("button",{name:"Ouvrir le Radar"}).click();
+  await page.getByRole("button",{name:/Je cherche une opportunité/}).click();
   await expect(page).toHaveURL(/#\/explorer/);
   await page.getByRole("navigation",{name:"Navigation principale"}).getByRole("link",{name:"Travail"}).click();
   await expect(page.getByRole("heading",{level:1})).toBeVisible();
