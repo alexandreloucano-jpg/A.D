@@ -129,7 +129,7 @@ for (const width of [390, 1440])
       );
       await page
         .getByRole("navigation")
-        .getByRole("link", { name: "Accueil", exact: true })
+        .getByRole("link", { name: "Aujourd’hui", exact: true })
         .click();
       await expect(page.locator(".market-home .market-finding")).toHaveCount(5);
       await expect(

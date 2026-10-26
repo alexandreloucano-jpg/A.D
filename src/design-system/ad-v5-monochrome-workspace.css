@@ -1,14 +1,15 @@
-/* A.D V5 — Revolut-inspired product clarity, adapted to the A.D research workspace. */
+/* A.D V5 — a monochrome work system for source-to-dossier creative work. */
 :root {
   --paper: #FFFFFF;
-  --ink: #0B0D12;
-  --muted: #6B7280;
-  --line: #D8E0ED;
+  --ink: #0D0D0D;
+  --muted: #727272;
+  --line: #DFDFDF;
   --ad-surface: #FFFFFF;
-  --ad-hover: #F6F7FB;
-  --ad-deep: #0B0D12;
-  --accent: #2563FF;
+  --ad-hover: #F7F7F7;
+  --ad-deep: #0D0D0D;
+  --accent: #0D0D0D;
   --font-display: "Inter", system-ui, sans-serif;
+  --font-editorial: "Bodoni Moda", Georgia, serif;
   background: var(--paper);
   color: var(--ink);
 }
@@ -25,9 +26,9 @@ html, body, #root { background: var(--paper); color: var(--ink); }
 }
 .app-frame .brand { color: var(--ink); border-bottom-color: var(--line); }
 .app-frame .brand-caption { color: var(--muted); }
-.app-frame .topbar nav::before { color: #6B7280; }
-.app-frame .topbar nav a { color: #1F2937; }
-.app-frame .topbar nav a:hover { color: var(--ink); background: #F6F7FB; border-color: #F6F7FB; }
+.app-frame .topbar nav::before { color: #727272; }
+.app-frame .topbar nav a { color: #282828; }
+.app-frame .topbar nav a:hover { color: var(--ink); background: #F7F7F7; border-color: #F7F7F7; }
 .app-frame .topbar nav a[aria-current] {
   color: #FFFFFF;
   background: var(--ink);
@@ -36,18 +37,18 @@ html, body, #root { background: var(--paper); color: var(--ink); }
 }
 .app-frame .top-actions { border-top-color: var(--line); }
 .app-frame .top-actions .ad-command-trigger {
-  color: #1F2937; background: #FFFFFF; border-color: #D8E0ED;
+  color: #282828; background: #FFFFFF; border-color: #DFDFDF;
 }
-.app-frame .top-actions .ad-command-trigger kbd { color: #6B7280; }
+.app-frame .top-actions .ad-command-trigger kbd { color: #727272; }
 .app-frame .capture-button { background: var(--ink); color: #FFFFFF; }
-.app-frame .capture-button:hover { background: #1A1F2C; }
-.app-frame .top-actions > .icon-button { color: #1F2937; border-color: #D8E0ED; }
+.app-frame .capture-button:hover { background: #1F1F1F; }
+.app-frame .top-actions > .icon-button { color: #282828; border-color: #DFDFDF; }
 .app-frame main { background: var(--paper); }
-.app-frame .section-meta { color: #6B7280; border-bottom-color: var(--line); }
+.app-frame .section-meta { color: #727272; border-bottom-color: var(--line); }
 .app-frame .section-meta .workspace-label { color: var(--ink); }
-.app-frame .section-meta .local-state { color: #6B7280; }
-.app-frame .section-meta .local-state > span { background: #119E5A; }
-.app-frame .statusbar { background: #F6F7FB; border-top-color: var(--line); color: #77736b; }
+.app-frame .section-meta .local-state { color: #727272; }
+.app-frame .section-meta .local-state > span { background: #0D0D0D; }
+.app-frame .statusbar { background: #F7F7F7; border-top-color: var(--line); color: #737373; }
 
 /* Precise sans-serif hierarchy across navigation, workspace, and data surfaces. */
 .app-frame h1, .app-frame h2, .app-frame h3, .app-frame h4 { color: var(--ink); }
@@ -62,6 +63,13 @@ html, body, #root { background: var(--paper); color: var(--ink); }
   font-weight: 600;
   letter-spacing: -.035em;
 }
+.app-frame .page-heading h1,
+.app-frame .ad-v2-priority h1,
+.app-frame .ad-v2-focus.has-priority h1 {
+  font-family: var(--font-editorial);
+  font-weight: 400;
+  letter-spacing: -.04em;
+}
 .app-frame button:focus-visible, .app-frame a:focus-visible,
 .app-frame input:focus-visible, .app-frame textarea:focus-visible,
 .app-frame select:focus-visible, .app-frame summary:focus-visible {
@@ -70,9 +78,9 @@ html, body, #root { background: var(--paper); color: var(--ink); }
 .app-frame .primary, .app-frame .small-primary {
   background: var(--ink); border-color: var(--ink); color: #FFFFFF;
 }
-.app-frame .primary:hover, .app-frame .small-primary:hover { background: #1A1F2C; border-color: #1A1F2C; }
+.app-frame .primary:hover, .app-frame .small-primary:hover { background: #1F1F1F; border-color: #1F1F1F; }
 .app-frame input, .app-frame textarea, .app-frame select {
-  background: #FFFFFF; border-color: #D8E0ED; color: var(--ink);
+  background: #FFFFFF; border-color: #DFDFDF; color: var(--ink);
 }
 
 /* Today reads as a calm studio brief rather than a dark dashboard tile. */
@@ -80,23 +88,24 @@ html, body, #root { background: var(--paper); color: var(--ink); }
   gap: clamp(28px, 4vw, 60px);
   grid-template-columns: minmax(0, 1.25fr) minmax(310px, .75fr);
 }
-.app-frame .ad-v2-heading-line { color: #6B7280; }
+.app-frame .ad-v2-heading-line { color: #727272; }
+.app-frame .ad-v2-heading-line { flex-wrap: wrap; row-gap: 5px; }
 .app-frame .ad-v2-priority {
   min-height: 370px;
-  background: #F6F7FB;
+  background: #F7F7F7;
   color: var(--ink);
-  border: 1px solid #D8E0ED;
+  border: 1px solid #DFDFDF;
   border-radius: 24px;
   box-shadow: 0 16px 34px rgba(11, 13, 18, .07);
   padding: clamp(30px, 4.5vw, 64px);
 }
-.app-frame .ad-v2-priority::before { color: #2563FF; }
+.app-frame .ad-v2-priority::before { color: #616161; }
 .app-frame .ad-v2-priority::after {
   width: 310px; height: 310px; right: -80px; bottom: -180px;
-  border: 1px solid #9FB9FF; opacity: .52;
-  box-shadow: 0 0 0 36px #F6F7FB, 0 0 0 37px #9FB9FF;
+  border: 1px solid #B9B9B9; opacity: .52;
+  box-shadow: 0 0 0 36px #F7F7F7, 0 0 0 37px #B9B9B9;
 }
-.app-frame .ad-v2-overline { color: #2563FF; }
+.app-frame .ad-v2-overline { color: #0D0D0D; }
 .app-frame .ad-v2-priority h1,
 .app-frame .ad-v2-focus.has-priority h1 { color: var(--ink); }
 .app-frame .ad-v2-priority h1,
@@ -104,30 +113,31 @@ html, body, #root { background: var(--paper); color: var(--ink); }
   font-size: clamp(44px, 4.8vw, 68px);
   line-height: 1.06;
 }
-.app-frame .ad-v2-priority h1 em { color: #2563FF; }
-.app-frame .ad-v2-description { color: #374151; }
-.app-frame .ad-v2-date { color: #2563FF; }
+.app-frame .ad-v2-priority h1 em { color: #0D0D0D; }
+.app-frame .ad-v2-description { color: #404040; }
+.app-frame .ad-v2-date { color: #0D0D0D; }
 .app-frame .ad-v2-priority .ad-v2-cta { background: var(--ink); border-color: var(--ink); color: #FFFFFF; }
-.app-frame .ad-v2-priority .ad-v2-cta:hover { background: #1A1F2C; border-color: #1A1F2C; }
-.app-frame .ad-v2-restore p { color: #374151; }
+.app-frame .ad-v2-priority .ad-v2-cta:hover { background: #1F1F1F; border-color: #1F1F1F; }
+.app-frame .ad-v2-restore summary { color: #404040; cursor: pointer; font-size: 11px; text-decoration: underline; text-underline-offset: 3px; }
+.app-frame .ad-v2-restore p { color: #404040; }
 .app-frame .ad-v2-restore button { color: var(--ink); }
 .app-frame .ad-v2-counters { background: #FFFFFF; border-color: var(--line); border-radius: 16px; overflow: hidden; }
 .app-frame .ad-v2-counters strong { color: var(--ink); }
-.app-frame .ad-v2-counters span { color: #6B7280; }
+.app-frame .ad-v2-counters span { color: #727272; }
 .app-frame .ad-v2-rail > .ad-v2-heading-line { border-bottom-color: var(--line); }
 .app-frame .ad-v2-rail .project-row, .app-frame .ad-v2-rail .reference-row { color: var(--ink); }
-.app-frame .ad-v2-rail .project-row:hover, .app-frame .ad-v2-rail .reference-row:hover { background: #F6F7FB; }
+.app-frame .ad-v2-rail .project-row:hover, .app-frame .ad-v2-rail .reference-row:hover { background: #F7F7F7; }
 .app-frame .ad-v2-rail .row-index { color: var(--accent); }
 .app-frame .ad-v2-rail .project-row small, .app-frame .ad-v2-rail .reference-row small { color: var(--muted); }
-.app-frame .ad-v2-rail .ad-v2-plain-link { border-bottom-color: #9FB9FF; color: var(--ink); }
+.app-frame .ad-v2-rail .ad-v2-plain-link { border-bottom-color: #B9B9B9; color: var(--ink); }
 
 /* Page shell and library controls use a single surface vocabulary. */
 .app-frame .page-heading { border-bottom-color: var(--line); }
 .app-frame .page-heading h1 { color: var(--ink); }
-.app-frame .page-heading .eyebrow, .app-frame .eyebrow { color: #77736b; }
+.app-frame .page-heading .eyebrow, .app-frame .eyebrow { color: #737373; }
 .app-frame .title-dot { color: var(--accent); }
 .app-frame .collection-toolbar { border-bottom-color: var(--line); }
-.app-frame .collection-toolbar .search { background: #FFFFFF; border-color: #D8E0ED; border-radius: 999px; }
+.app-frame .collection-toolbar .search { background: #FFFFFF; border-color: #DFDFDF; border-radius: 999px; }
 .app-frame .collection-toolbar .search input { background: transparent; border-color: transparent; }
 .app-frame .saver-service-drawer {
   margin: 8px 0 16px;
@@ -135,59 +145,59 @@ html, body, #root { background: var(--paper); color: var(--ink); }
 }
 .app-frame .saver-service-drawer > summary {
   display: flex; align-items: center; justify-content: space-between; gap: 14px;
-  min-height: 48px; padding: 8px 2px; color: #4d4a43; cursor: pointer;
+  min-height: 48px; padding: 8px 2px; color: #4A4A4A; cursor: pointer;
   font-size: 12px; list-style: none;
 }
 .app-frame .saver-service-drawer > summary::-webkit-details-marker { display: none; }
 .app-frame .saver-service-drawer > summary::after { content: "+"; color: var(--accent); font-size: 20px; }
 .app-frame .saver-service-drawer[open] > summary::after { content: "−"; }
-.app-frame .saver-service-drawer > summary small { margin-left: auto; color: #89857c; font-size: 11px; }
+.app-frame .saver-service-drawer > summary small { margin-left: auto; color: #858585; font-size: 11px; }
 .app-frame .saver-service-drawer > :not(summary) { margin-block: 10px; }
 .app-frame .saver-groups { align-items: center; padding-block: 10px; }
 .app-frame .saver-groups select { border-radius: 999px; padding-inline: 16px; }
 .app-frame .saver-groups button,
 .app-frame .saver-ingestion-actions button,
 .app-frame .saver-intake-actions button {
-  border-radius: 999px; background: #FFFFFF; border-color: #D8E0ED; color: #39362f;
+  border-radius: 999px; background: #FFFFFF; border-color: #DFDFDF; color: #363636;
 }
 .app-frame .saver-groups button:hover,
 .app-frame .saver-ingestion-actions button:hover,
-.app-frame .saver-intake-actions button:hover { background: #F6F7FB; }
+.app-frame .saver-intake-actions button:hover { background: #F7F7F7; }
 .app-frame .library-filters { gap: 8px; border: 0; }
 .app-frame .library-filters button {
-  border: 1px solid #D8E0ED; border-radius: 999px; background: #FFFFFF; color: #1F2937;
+  border: 1px solid #DFDFDF; border-radius: 999px; background: #FFFFFF; color: #282828;
 }
 .app-frame .library-filters button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #FFFFFF; }
 .app-frame .library-filters button > span { color: inherit; opacity: .68; }
 .app-frame .ad-library-layout { border-color: var(--line); }
-.app-frame .ad-library-layout > span { color: #77736b; }
+.app-frame .ad-library-layout > span { color: #737373; }
 .app-frame .ad-library-layout > div { border-color: var(--line); border-radius: 999px; overflow: hidden; }
-.app-frame .ad-library-layout button { background: #FFFFFF; color: #1F2937; }
+.app-frame .ad-library-layout button { background: #FFFFFF; color: #282828; }
 .app-frame .ad-library-layout button[aria-pressed="true"] { background: var(--ink); color: #FFFFFF; }
 .app-frame .reference-grid[data-layout="masonry"] { column-gap: 20px; }
 .app-frame .reference-grid[data-layout="masonry"] .reference-card { margin-bottom: 20px; }
 .app-frame .reference-card, .app-frame .project-card, .app-frame .ad-create-direction {
-  background: #FFFFFF; border: 1px solid #D8E0ED; border-radius: 17px; overflow: hidden;
+  background: #FFFFFF; border: 1px solid #DFDFDF; border-radius: 17px; overflow: hidden;
 }
-.app-frame .reference-card { box-shadow: 0 3px 14px #0B0D1208; transition: transform .18s ease, box-shadow .18s ease; }
-.app-frame .reference-card:hover { transform: translateY(-3px); box-shadow: 0 12px 28px #0B0D1212; }
+.app-frame .reference-card { box-shadow: 0 3px 14px #0D0D0D08; transition: transform .18s ease, box-shadow .18s ease; }
+.app-frame .reference-card:hover { transform: translateY(-3px); box-shadow: 0 12px 28px #0D0D0D12; }
 .app-frame .reference-card h2 { color: var(--ink); font-family: var(--font-display); font-size: 22px; font-weight: 600; }
 .app-frame .reference-card h2 button { color: inherit; }
-.app-frame .reference-card .excerpt { color: #6B7280; font-size: 13px; }
-.app-frame .reference-media { background: linear-gradient(135deg, #E7EEFF, #F6F7FB 55%, #F6F7FB); }
+.app-frame .reference-card .excerpt { color: #727272; font-size: 13px; }
+.app-frame .reference-media { background: #F4F4F4; }
 .app-frame .reference-card[data-has-media="false"] .reference-body { min-height: 170px; }
-.app-frame .card-meta, .app-frame .card-bottom { color: #6B7280; }
-.app-frame .reference-card .source-link { color: #2563FF; }
+.app-frame .card-meta, .app-frame .card-bottom { color: #727272; }
+.app-frame .reference-card .source-link { color: #0D0D0D; }
 .app-frame .project-card { border-radius: 18px; padding: 24px; }
 .app-frame .project-card h2 { color: var(--ink); font-family: var(--font-display); font-weight: 600; }
-.app-frame .project-card:hover { background: #F6F7FB; border-color: #9FB9FF; }
+.app-frame .project-card:hover { background: #F7F7F7; border-color: #B9B9B9; }
 
 /* Radar status and evidence form a readable, real-data surface. */
 .app-frame .market-panel { color: var(--ink); }
 .app-frame .market-heading h2 { color: var(--ink); font-size: clamp(30px, 3vw, 42px); }
-.app-frame .market-heading .eyebrow { color: #77736b; }
+.app-frame .market-heading .eyebrow { color: #737373; }
 .app-frame .market-panel button, .app-frame .market-panel select, .app-frame .market-panel textarea {
-  background: #FFFFFF; border-color: #D8E0ED; color: var(--ink); border-radius: 999px;
+  background: #FFFFFF; border-color: #DFDFDF; color: var(--ink); border-radius: 999px;
 }
 .app-frame .market-panel button[aria-pressed="true"],
 .app-frame .market-tabs button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #FFFFFF; }
@@ -197,22 +207,22 @@ html, body, #root { background: var(--paper); color: var(--ink); }
   border-radius: 14px; background: #FFFFFF;
 }
 .app-frame .market-live-status span { display: inline-flex; align-items: center; gap: 9px; font-size: 12px; font-weight: 600; }
-.app-frame .market-live-status i { width: 8px; height: 8px; border-radius: 50%; background: #B7791F; }
-.app-frame .market-live-status .is-ready i { background: #119E5A; }
+.app-frame .market-live-status i { width: 8px; height: 8px; border-radius: 50%; background: #808080; }
+.app-frame .market-live-status .is-ready i { background: #7B7B7B; }
 .app-frame .market-live-status .is-running i { background: var(--accent); animation: ad-radar-pulse 1.2s ease-in-out infinite; }
 .app-frame .market-live-status small { color: var(--muted); font-size: 11px; }
-@keyframes ad-radar-pulse { 50% { box-shadow: 0 0 0 5px #2563FF2a; } }
-.app-frame .market-scan-details { margin: 12px 0 22px; padding: 0 14px; border: 1px solid var(--line); border-radius: 14px; background: #F6F7FB; }
-.app-frame .market-scan-details summary { color: #535047; }
+@keyframes ad-radar-pulse { 50% { box-shadow: 0 0 0 5px #6161612A; } }
+.app-frame .market-scan-details { margin: 12px 0 22px; padding: 0 14px; border: 1px solid var(--line); border-radius: 14px; background: #F7F7F7; }
+.app-frame .market-scan-details summary { color: #505050; }
 .app-frame .market-findings { gap: 13px; }
-.app-frame .market-finding { padding: 20px; border: 1px solid #D8E0ED; border-radius: 16px; background: #FFFFFF; }
+.app-frame .market-finding { padding: 20px; border: 1px solid #DFDFDF; border-radius: 16px; background: #FFFFFF; }
 .app-frame .market-finding h3 { color: var(--ink); }
 .app-frame .market-card-head h3 { font-size: 24px; }
 .app-frame .market-lookalike, .app-frame .market-dossier-summary,
-.app-frame .ad-timeline-context { background: #E7EEFF; border-color: #D8E0ED; border-radius: 13px; }
-.app-frame .market-detail { background: #F6F7FB; border-left-color: var(--accent); color: var(--ink); }
-.app-frame .market-detail blockquote { background: #E7EEFF; border-left-color: var(--accent); }
-.app-frame .market-overlay { background: #0B0D1255; backdrop-filter: blur(5px); }
+.app-frame .ad-timeline-context { background: #EEEEEE; border-color: #DFDFDF; border-radius: 13px; }
+.app-frame .market-detail { background: #F7F7F7; border-left-color: var(--accent); color: var(--ink); }
+.app-frame .market-detail blockquote { background: #EEEEEE; border-left-color: var(--accent); }
+.app-frame .market-overlay { background: #0D0D0D55; backdrop-filter: blur(5px); }
 .app-frame .ad-market-timeline .ad-timeline-node { background: #FFFFFF; border-color: var(--accent); }
 .app-frame .ad-timeline-point[aria-pressed="true"] .ad-timeline-node { background: var(--accent); }
 .app-frame .ad-create { border-top-color: var(--accent); }
@@ -223,9 +233,9 @@ html, body, #root { background: var(--paper); color: var(--ink); }
 .app-frame .ad-create button.ad-create-approve { background: var(--ink); border-color: var(--ink); color: #FFFFFF; }
 .app-frame .ad-create button.ad-create-neutral { background: #FFFFFF; border-color: var(--line); color: var(--ink); }
 .app-frame .ad-command-input { background: #FFFFFF; border-color: var(--line); }
-.app-frame .ad-command-option[data-active="true"], .app-frame .ad-command-option:hover { background: #E7EEFF; }
+.app-frame .ad-command-option[data-active="true"], .app-frame .ad-command-option:hover { background: #EEEEEE; }
 .app-frame dialog { background: #FFFFFF; border-color: var(--line); border-radius: 18px; }
-.app-frame .empty-icon { background: #E7EEFF; color: var(--accent); border-radius: 14px; }
+.app-frame .empty-icon { background: #EEEEEE; color: var(--accent); border-radius: 14px; }
 
 @media (max-width: 1120px) and (min-width: 761px) {
   .app-frame .home-layout.ad-v2-home { grid-template-columns: minmax(0, 1fr); }
@@ -233,7 +243,7 @@ html, body, #root { background: var(--paper); color: var(--ink); }
 @media (max-width: 760px) {
   .app-frame .topbar { background: #FFFFFF; border-bottom: 1px solid var(--line); }
   .app-frame .topbar nav { background: #FFFFFF; border-top-color: var(--line); }
-  .app-frame .topbar nav a { color: #1F2937; }
+  .app-frame .topbar nav a { color: #282828; }
   .app-frame .topbar nav a[aria-current] { color: #FFFFFF; background: var(--ink); box-shadow: none; }
   .app-frame .top-actions .ad-command-trigger,
   .app-frame .top-actions > .icon-button { background: #FFFFFF; color: var(--ink); border-color: var(--line); }

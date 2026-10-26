@@ -3,7 +3,7 @@ for (const width of [390,1440]) {
   test(`Creative Canvas — source → two directions → version → approval at ${width}px`, async({page},info)=>{
     await page.setViewportSize({width,height:width===390?844:900});
     await page.goto("/");
-    await page.getByRole("navigation").getByRole("link",{name:"Projets"}).click();
+    await page.getByRole("navigation").getByRole("link",{name:"Travail"}).click();
     await page.getByRole("button",{name:"Nouveau projet"}).click();
     await page.getByLabel("Nom du projet").fill("Maison test de création");
     await page.getByRole("button",{name:"Créer le projet"}).click();
@@ -15,7 +15,7 @@ for (const width of [390,1440]) {
     await page.getByText("Provenance et projet").click();
     await page.getByLabel("Associer à un projet").selectOption({label:"Maison test de création"});
     await page.getByRole("button",{name:"Sauvegarder",exact:true}).click();
-    await page.getByRole("navigation").getByRole("link",{name:"Projets"}).click();
+    await page.getByRole("navigation").getByRole("link",{name:"Travail"}).click();
     const card=page.getByRole("button",{name:/Maison test de création/});
     if(await card.isVisible())await card.click();
     const canvas=page.getByRole("region",{name:"Creative Canvas A.D"});

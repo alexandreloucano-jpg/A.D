@@ -6,7 +6,7 @@ async function hideNotice(page: Page) {
 async function project(page: Page, name: string) {
   await page
     .getByRole("navigation")
-    .getByRole("link", { name: "Projets" })
+    .getByRole("link", { name: "Travail" })
     .click();
   await page.getByRole("button", { name: "Nouveau projet" }).click();
   await page.getByLabel("Nom du projet").fill(name);
@@ -43,7 +43,7 @@ test("capture réelle locale, relecture UUID, rechargement et association projet
   await expect(page.locator(".receipt code")).toHaveText(id);
   await page
     .getByRole("navigation")
-    .getByRole("link", { name: "Projets" })
+    .getByRole("link", { name: "Travail" })
     .click();
   await page.getByRole("button", { name: /Projet de test isolé/ }).click();
   await expect(
@@ -62,7 +62,7 @@ test("LATER → NOW humain, KILL exclu puis restauration LATER", async ({
   await expect(page.getByText("LATER · À EXAMINER")).toBeVisible();
   await page
     .getByRole("navigation")
-    .getByRole("link", { name: "Accueil" })
+    .getByRole("link", { name: "Aujourd’hui" })
     .click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     "Aucune prioritéen cours.",
@@ -72,7 +72,7 @@ test("LATER → NOW humain, KILL exclu puis restauration LATER", async ({
   await hideNotice(page);
   await page
     .getByRole("navigation")
-    .getByRole("link", { name: "Accueil" })
+    .getByRole("link", { name: "Aujourd’hui" })
     .click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     "Idée de test à examiner",
@@ -82,7 +82,7 @@ test("LATER → NOW humain, KILL exclu puis restauration LATER", async ({
   await hideNotice(page);
   await page
     .getByRole("navigation")
-    .getByRole("link", { name: "Accueil" })
+    .getByRole("link", { name: "Aujourd’hui" })
     .click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     "Aucune prioritéen cours.",
@@ -126,12 +126,12 @@ test("navigation, clavier, connexion désactivée et historique", async ({
   await page.goto("/");
   await page
     .getByRole("navigation")
-    .getByRole("link", { name: "Explorer" })
+    .getByRole("link", { name: "Radar" })
     .click();
   await expect(page).toHaveURL(/#\/explorer/);
   await page
     .getByRole("navigation")
-    .getByRole("link", { name: "Saver" })
+    .getByRole("link", { name: "Bibliothèque" })
     .click();
   await page.goBack();
   await expect(
@@ -181,7 +181,7 @@ test("Grok manuel exige validation ; fait et interprétation restent séparés",
   await expect(page.getByText("GROK · VALIDÉ PAR VOUS")).toBeVisible();
   await page
     .getByRole("navigation")
-    .getByRole("link", { name: "Explorer" })
+    .getByRole("link", { name: "Radar" })
     .click();
   await page.getByRole("button", { name: "Ajouter un signal" }).click();
   await page.getByLabel("Marque ou sujet").fill("Sujet de test");
@@ -206,7 +206,7 @@ for (const width of [375, 390, 430, 768, 1440])
     await page.setViewportSize({ width, height: width === 1440 ? 900 : 844 });
     await page.goto("/");
     await page.evaluate(() => document.fonts.ready);
-    for (const route of ["Accueil", "Explorer", "Saver", "Projets"]) {
+    for (const route of ["Aujourd’hui", "Radar", "Bibliothèque", "Travail"]) {
       await page
         .getByRole("navigation")
         .getByRole("link", { name: route, exact: true })
@@ -275,7 +275,7 @@ for (const width of [390, 1440])
     await hideNotice(page);
     await page
       .getByRole("navigation")
-      .getByRole("link", { name: "Explorer" })
+      .getByRole("link", { name: "Radar" })
       .click();
     await page.getByRole("button", { name: "Ajouter un signal" }).click();
     await page
@@ -298,7 +298,7 @@ for (const width of [390, 1440])
     await expect(
       page.getByRole("link", { name: "Voir la source" }),
     ).toBeInViewport();
-    for (const route of ["Accueil", "Explorer", "Saver", "Projets"]) {
+    for (const route of ["Aujourd’hui", "Radar", "Bibliothèque", "Travail"]) {
       await page
         .getByRole("navigation")
         .getByRole("link", { name: route, exact: true })

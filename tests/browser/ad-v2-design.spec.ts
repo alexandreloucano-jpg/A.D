@@ -9,7 +9,8 @@ for (const viewport of [{width:1440,height:900},{width:390,height:844},{width:39
     await expect(page.locator(".workspace")).toHaveCSS("background-color","rgb(255, 255, 255)");
     await expect(page.locator(".workspace")).toHaveCSS("background-image","none");
     await expect(page.locator(".topbar")).toHaveCSS("background-color","rgb(255, 255, 255)");
-    for(const label of ["Accueil","Explorer","Saver","Projets"]) {
+    await expect(page.locator(".topbar nav").getByRole("link")).toHaveText(["Aujourd’hui", "Radar", "Travail", "Bibliothèque"]);
+    for(const label of ["Aujourd’hui","Radar","Bibliothèque","Travail"]) {
       await expect(page.getByRole("navigation",{name:"Navigation principale"}).getByRole("link",{name:label,exact:true})).toBeVisible();
     }
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1)).toBe(true);
@@ -21,12 +22,21 @@ for (const viewport of [{width:1440,height:900},{width:390,height:844},{width:39
 }
 test("A.D V4 preserves current actions and source navigation",async({page})=>{
   await page.goto("/");
-  await page.getByRole("navigation",{name:"Navigation principale"}).getByRole("link",{name:"Explorer"}).click();
+  await page.getByRole("navigation",{name:"Navigation principale"}).getByRole("link",{name:"Radar"}).click();
   await expect(page.getByRole("heading",{level:1})).toBeVisible();
-  await page.getByRole("navigation",{name:"Navigation principale"}).getByRole("link",{name:"Saver"}).click();
+  await page.getByRole("navigation",{name:"Navigation principale"}).getByRole("link",{name:"Bibliothèque"}).click();
   await expect(page.getByRole("heading",{level:1})).toBeVisible();
-  await page.getByRole("navigation",{name:"Navigation principale"}).getByRole("link",{name:"Projets"}).click();
+  await page.getByRole("navigation",{name:"Navigation principale"}).getByRole("link",{name:"Travail"}).click();
   await expect(page.getByRole("heading",{level:1})).toBeVisible();
+});
+
+test("the empty workspace starts with the Radar journey instead of an empty dossier",async({page})=>{
+  await page.goto("/");
+  await expect(page.getByRole("button",{name:"Voir les opportunités"})).toBeVisible();
+  await expect(page.getByRole("heading",{name:"Demandes A.D Studio"})).toHaveCount(0);
+  await page.getByRole("button",{name:"Voir les opportunités"}).click();
+  await expect(page).toHaveURL(/#\/explorer/);
+  await expect(page.getByRole("heading",{level:1})).toContainText("Radar");
 });
 
 
@@ -69,7 +79,7 @@ for (const height of [844, 640]) {
     await page.getByRole("button",{name:"Créer le projet",exact:true}).click();
     const dismiss = page.getByRole("button",{name:"Masquer le message"});
     if(await dismiss.isVisible()) await dismiss.click();
-    await page.getByRole("navigation",{name:"Navigation principale"}).getByRole("link",{name:"Accueil"}).click();
+    await page.getByRole("navigation",{name:"Navigation principale"}).getByRole("link",{name:"Aujourd’hui"}).click();
     await expect(page.locator(".ad-v2-rail")).toContainText("Projet de test mobile V2");
     await expectTodayMobileSectionsDoNotOverlap(page);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
@@ -94,7 +104,8 @@ test("A.D beta restores one genuine prior dossier using a backup, never fabricat
   const bytes=await readFile(await backup.path());
   await page.evaluate(()=>localStorage.removeItem("ad.workspace.v1"));
   await page.reload();
-  await page.getByRole("navigation",{name:"Navigation principale"}).getByRole("link",{name:"Accueil"}).click();
+  await page.getByRole("navigation",{name:"Navigation principale"}).getByRole("link",{name:"Aujourd’hui"}).click();
+  await page.getByText("Dossiers d’une ancienne version?").click();
   await expect(page.getByRole("button",{name:"Récupérer mes anciens dossiers"})).toBeVisible();
   await page.getByRole("button",{name:"Récupérer mes anciens dossiers"}).click();
   await expect(page.getByRole("dialog")).toBeVisible();
@@ -106,6 +117,6 @@ test("A.D beta restores one genuine prior dossier using a backup, never fabricat
   await page.getByRole("button",{name:"Confirmer le remplacement"}).click();
   await page.getByRole("button",{name:"Fermer"}).click();
   await page.reload();
-  await page.getByRole("navigation",{name:"Navigation principale"}).getByRole("link",{name:"Projets"}).click();
+  await page.getByRole("navigation",{name:"Navigation principale"}).getByRole("link",{name:"Travail"}).click();
   await expect(page.getByText("Dossier historique de test").first()).toBeVisible();
 });

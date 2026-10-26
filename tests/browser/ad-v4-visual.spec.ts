@@ -6,7 +6,7 @@ for(const size of [{width:390,height:844},{width:390,height:640},{width:768,heig
   const shell=page.locator(".workspace");
   await expect(shell).toHaveCSS("background-color","rgb(255, 255, 255)");
   await expect(page.locator(".topbar")).toHaveCSS("background-color","rgb(255, 255, 255)");
-  await expect(page.locator(".ad-v2-priority")).toHaveCSS("background-color","rgb(246, 247, 251)");
+  await expect(page.locator(".ad-v2-priority")).toHaveCSS("background-color","rgb(247, 247, 247)");
   await expect(page.getByRole("heading",{name:/Aucune priorité/})).toBeVisible();
   await expect(page.getByRole("navigation",{name:"Navigation principale"})).toBeVisible();
   const infoBox=await page.evaluate(()=>{
@@ -17,10 +17,10 @@ for(const size of [{width:390,height:844},{width:390,height:640},{width:768,heig
   expect(infoBox.stats.y).toBeGreaterThan(infoBox.hero.bottom);
   const noteGeometry=await page.evaluate(()=>{
     const hero=document.querySelector(".ad-v2-priority")!.getBoundingClientRect();
-    const button=document.querySelector(".ad-v2-restore button")!.getBoundingClientRect();
-    return {heroBottom:hero.bottom,buttonBottom:button.bottom};
+    const recovery=document.querySelector(".ad-v2-restore summary")!.getBoundingClientRect();
+    return {heroBottom:hero.bottom,recoveryBottom:recovery.bottom};
   });
-  expect(noteGeometry.buttonBottom,"Recovery button must be fully contained in decision panel").toBeLessThanOrEqual(noteGeometry.heroBottom-8);
+  expect(noteGeometry.recoveryBottom,"Recovery disclosure must be fully contained in decision panel").toBeLessThanOrEqual(noteGeometry.heroBottom-8);
   if(size.width<=760) {
     const flow=await page.evaluate(()=>{
       const rect=(selector:string)=>document.querySelector(selector)!.getBoundingClientRect();
@@ -60,7 +60,7 @@ test("new shell retains functional search, files and navigation",async({page})=>
  await page.getByRole("button",{name:"Rechercher partout"}).click();
  await expect(page.getByRole("combobox",{name:"Rechercher partout"})).toBeFocused();
  await page.keyboard.press("Escape");
- for(const [route,label] of [["explorer","Explorer"],["saver","Saver"],["projets","Projets"]]){
+ for(const [route,label] of [["explorer","Radar"],["saver","Bibliothèque"],["projets","Travail"]]){
   await page.getByRole("navigation",{name:"Navigation principale"}).getByRole("link",{name:label}).click();
   await expect(page).toHaveURL(new RegExp("#/"+route));
   await expect(page.getByRole("heading",{level:1})).toBeVisible();
@@ -70,9 +70,9 @@ test("new shell retains functional search, files and navigation",async({page})=>
 });
 test("Studio identity updates without enabling lead intake",async({page},info)=>{
  await page.setViewportSize({width:390,height:844});await page.goto("/studio");
- await expect(page.locator(".ad-landing")).toHaveCSS("background-color","rgb(239, 242, 241)");
- await expect(page.locator(".ad-nav")).toHaveCSS("background-color","rgb(239, 242, 241)");
- await expect(page.locator(".ad-hero")).toHaveCSS("background-color","rgb(20, 48, 55)");
+ await expect(page.locator(".ad-landing")).toHaveCSS("background-color","rgb(241, 241, 241)");
+ await expect(page.locator(".ad-nav")).toHaveCSS("background-color","rgb(241, 241, 241)");
+ await expect(page.locator(".ad-hero")).toHaveCSS("background-color","rgb(43, 43, 43)");
  await expect(page.getByRole("heading",{level:1})).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.screenshot({path:info.outputPath("v4-studio-mobile.png"),fullPage:true});

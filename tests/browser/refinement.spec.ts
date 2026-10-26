@@ -71,7 +71,7 @@ test("Explorer discloses evidence and interpretation; a potential action is a hu
   page,
 }) => {
   await page.goto("/");
-  await nav(page, "Explorer");
+  await nav(page, "Radar");
   await page.getByRole("button", { name: "Ajouter un signal" }).click();
   await page.getByLabel("Marque ou sujet").fill("Observation de validation");
   await page
@@ -105,7 +105,7 @@ test("Explorer discloses evidence and interpretation; a potential action is a hu
     () => JSON.parse(localStorage.getItem("ad.workspace.v1")!).tasks,
   );
   expect(tasks).toHaveLength(0);
-  await nav(page, "Accueil");
+  await nav(page, "Aujourd’hui");
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
     "Aucune priorité",
   );
@@ -115,7 +115,7 @@ test("compact mobile keeps all destinations, source access and capture usable", 
 }, info) => {
   await page.setViewportSize({ width: 390, height: 640 });
   await page.goto("/");
-  await nav(page, "Explorer");
+  await nav(page, "Radar");
   await page.getByRole("button", { name: "Ajouter un signal" }).click();
   await page.getByLabel("Marque ou sujet").fill("Format compact");
   await page
@@ -127,7 +127,7 @@ test("compact mobile keeps all destinations, source access and capture usable", 
   await page.getByLabel("Date du fait").fill("2026-10-01");
   await page.getByRole("button", { name: "Conserver ce signal" }).click();
   await dismiss(page);
-  for (const name of ["Accueil", "Explorer", "Saver", "Projets"]) {
+  for (const name of ["Aujourd’hui", "Radar", "Bibliothèque", "Travail"]) {
     await nav(page, name);
     await expect(
       page.getByRole("navigation").getByRole("link", { name, exact: true }),
@@ -145,7 +145,7 @@ test("compact mobile keeps all destinations, source access and capture usable", 
       fullPage: true,
     });
   }
-  await nav(page, "Explorer");
+  await nav(page, "Radar");
   await page
     .getByRole("link", { name: /Voir la source/ })
     .scrollIntoViewIfNeeded();

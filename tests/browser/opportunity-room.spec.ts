@@ -45,7 +45,7 @@ for(const width of [390,1440]){
     expect(first.opportunityLinks[0].evidence[0].url).toBe(f.canonicalUrl);
     expect(first.opportunityLinks[0].projectId).toBe(linkedProject);
     expect(links).toBe(1);
-    await page.getByRole("navigation",{name:"Navigation principale"}).getByRole("link",{name:"Explorer"}).click();
+    await page.getByRole("navigation",{name:"Navigation principale"}).getByRole("link",{name:"Radar"}).click();
     await page.getByRole("button",{name:"Examiner",exact:true}).click();
     await page.getByRole("button",{name:"Ouvrir le dossier associé"}).click();
     const after=JSON.parse(await page.evaluate(()=>localStorage.getItem("ad.workspace.v1")||"{}"));

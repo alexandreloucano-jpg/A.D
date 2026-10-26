@@ -2,6 +2,7 @@ import { MarketPanel } from "../scout-market/MarketPanel";
 import type { Finding } from "../scout-market/schema";
 import type { EvidenceReceipt } from "../opportunity/model";
 import { CreativeCanvas } from "../creative/CreativeCanvas";
+import { StudioLeadsPanel } from "../marketing/StudioLeadsPanel";
 import type { RemoteSaver } from "../remote-saver";
 import { ArrowUpRight, Bookmark, Folder } from "lucide-react";
 import { TaskForm } from "../components/forms";
@@ -46,6 +47,7 @@ export function ProjectsView({
       {!project && (
         <MarketPanel mode="pipeline" query={query} projects={data.projects} onOpenDossier={onOpenDossier}/>
       )}
+      {!project && remote.connected && <StudioLeadsPanel remote={remote} />}
       {project ? (
         <>
           {(data.opportunityLinks||[]).filter(link=>link.projectId===project.id).map(link=>(

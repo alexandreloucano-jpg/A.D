@@ -56,10 +56,10 @@ import { ProjectsView } from "./views/ProjectsView";
 import { SaverView } from "./views/SaverView";
 
 const routes = [
-  ["accueil", "Accueil", House],
-  ["explorer", "Explorer", Compass],
-  ["saver", "Saver", Bookmark],
-  ["projets", "Projets", Folder],
+  ["accueil", "Aujourd’hui", House],
+  ["explorer", "Radar", Compass],
+  ["projets", "Travail", Folder],
+  ["saver", "Bibliothèque", Bookmark],
 ] as const;
 function errorLabel(error: unknown): string {
   if (error instanceof Error && error.name === "ZodError")
@@ -513,15 +513,15 @@ export function App() {
           <div className="section-meta">
             <span>
               <span className="workspace-label">
-                FIELDNOTES <span className="meta-divider">/</span>{" "}
+                A.D <span className="meta-divider">/</span>{" "}
               </span>
               {selected[1].toUpperCase()}
             </span>
             <span className="local-state">
               <span />{" "}
               {remote.connected
-                ? "Saver privé connecté"
-                : "Local · Sites non connecté"}
+                ? "Saver connecté · dossiers sur cet appareil"
+                : "Mode local · non synchronisé"}
             </span>
           </div>
           {fatal ? (
@@ -553,7 +553,6 @@ export function App() {
                   setProjectId={setProjectId}
                   openReference={openReference}
                   setModal={setModal}
-                  remote={remote}
                   onRestore={() => setModal("settings")}
                   onOpenDossier={openRadarDossier}
                 />
@@ -569,10 +568,10 @@ export function App() {
                     <div>
                       <p className="eyebrow">
                         {route === "saver"
-                          ? "SOURCES ET MÉMOIRE CRÉATIVE"
+                          ? "RÉFÉRENCES ET GOÛT CONFIRMÉ"
                           : route === "explorer"
-                            ? "OBSERVER AVANT D’INTERPRÉTER"
-                            : "DOSSIERS ET DÉCISIONS"}
+                            ? "OPPORTUNITÉS SOURCÉES"
+                            : "DOSSIERS, CRÉATION ET DÉCISIONS"}
                       </p>
                       <h1>
                         {project && route === "projets"
@@ -582,12 +581,12 @@ export function App() {
                       </h1>
                       <p>
                         {route === "saver"
-                          ? "Les références que vous avez choisi de garder."
+                          ? "Vos sources réelles et les références qui nourrissent votre travail."
                           : route === "explorer"
-                            ? "Des faits sourcés, des pistes à examiner."
+                            ? "Examinez les preuves, puis ouvrez une opportunité dans Travail."
                             : project
-                              ? "Idées à examiner, actions acceptées et références."
-                              : "Projets, tâches et références enregistrés."}
+                              ? "Preuves, directions créatives et décisions de ce dossier."
+                              : "Les opportunités que vous avez choisi de développer."}
                       </p>
                     </div>
                     <button
@@ -606,10 +605,10 @@ export function App() {
                     >
                       <Plus size={17} />
                       {route === "saver"
-                        ? "Capturer"
+                        ? "Ajouter une référence"
                         : route === "explorer"
                           ? "Ajouter un signal"
-                          : "Nouveau projet"}
+                          : "Nouveau dossier"}
                     </button>
                   </header>
                   <div className="collection-toolbar">
@@ -628,10 +627,12 @@ export function App() {
                           aria-label="Rechercher"
                           value={query}
                           onChange={(e) => setQuery(e.target.value)}
-                          placeholder={
+                        placeholder={
                             route === "saver"
-                              ? "Retrouver une référence…"
-                              : "Rechercher…"
+                              ? "Rechercher une référence…"
+                              : route === "explorer"
+                                ? "Rechercher une opportunité…"
+                                : "Rechercher un dossier…"
                           }
                         />
                       </label>
