@@ -96,7 +96,7 @@ export function HomeView({data,now,navigate,setProjectId,onOpenDossier,onCapture
      </button>
      <p><span>A</span> {revision.directions[0].title||"Sans titre"}<span className="home-da-separator"> / </span><span>B</span> {revision.directions[1].title||"Sans titre"}</p>
     </article>
-   :<div className="home-minimal-empty">
+   ):<div className="home-minimal-empty">
     <p>{projects.length
       ? "Aucune direction enregistrée dans vos dossiers pour le moment. Vos projets et références restent accessibles dans Travail et Bibliothèque."
       : "Vos directions apparaîtront ici lorsqu’un dossier contiendra une première version de travail."}</p>
