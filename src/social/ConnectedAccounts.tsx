@@ -6,7 +6,13 @@ import {
   type ConnectionState,
   type ConnectionStatus,
 } from "./model";
-type Social = ConnectionStatus & { importAllowed?: boolean };
+type Social = ConnectionStatus & {
+  importAllowed?: boolean;
+  importedCount?: number;
+  manualImportLimit?: number;
+  catchingUp?: boolean;
+};
+const X_IMPORT_PAGES_PER_ACTION = 4;
 const MCP_URL =
   "https://ad-saver-scout-gateway-alexandreloucano-3399.vercel.app/mcp";
 function stateOf(status: Social | null): ConnectionState {
@@ -130,25 +136,55 @@ export function ConnectedAccounts({
   async function importX() {
     setBusy("x");
     setMessage("");
+    let importedThisRun = 0;
+    let latest: {
+      verified: boolean;
+      ids: string[];
+      received: number;
+      catchingUp: boolean;
+      importedCount: number;
+    } | null = null;
     try {
-      const result = await remote.reader<{
-        verified: boolean;
-        ids: string[];
-        received: number;
-        catchingUp: boolean;
-      }>("/api/x/sync", "POST", { limit: 5 });
-      if (!result.verified || result.ids.length > 5)
-        throw Error(
-          "La relecture n’a pas été confirmée. Vos références sont conservées.",
+      for (let page = 0; page < X_IMPORT_PAGES_PER_ACTION; page++) {
+        const result = await remote.reader<{
+          verified: boolean;
+          ids: string[];
+          received: number;
+          catchingUp: boolean;
+          importedCount: number;
+        }>("/api/x/sync", "POST", {});
+        if (
+          !result.verified ||
+          result.ids.length > 100 ||
+          result.received > 100
+        )
+          throw Error(
+            "La relecture n’a pas été confirmée. Les pages déjà enregistrées restent conservées.",
+          );
+        latest = result;
+        importedThisRun += result.received;
+        setMessage(
+          `${result.importedCount} signet(s) X relu(s) dans le cloud${result.catchingUp ? " · import en cours" : " · bibliothèque complète"}.`,
         );
+        if (!result.catchingUp) break;
+      }
+      await remote.refresh();
+      await load();
+      if (latest)
+        setMessage(
+          latest.catchingUp
+            ? `${latest.importedCount} signet(s) X sont vérifiés dans le cloud. Le lot de ${importedThisRun} signet(s) est terminé ; l’import peut reprendre ensuite.`
+            : `Bibliothèque X complète : ${latest.importedCount} signet(s) relu(s) et vérifié(s) dans le cloud.`,
+        );
+    } catch (e) {
       await remote.refresh();
       await load();
       setMessage(
-        `${result.ids.length} signet(s) vérifié(s) dans Saver.${result.catchingUp ? " Vous pouvez lancer la page suivante." : ""}`,
+        failure(e) +
+          (importedThisRun
+            ? ` ${importedThisRun} signet(s) du lot sont déjà vérifiés dans le cloud.`
+            : ""),
       );
-    } catch (e) {
-      setMessage(failure(e));
-      await load();
     } finally {
       setBusy("");
     }
@@ -257,8 +293,8 @@ export function ConnectedAccounts({
         <section aria-label="Connexion X">
           {heading("X", x)}
           <p>
-            Import volontaire de cinq signets maximum à la fois. Aucune
-            synchronisation automatique.
+            Import complet, par pages vérifiées de 100 signets. Aucun import
+            automatique ; les références restent privées dans votre Saver.
           </p>
           {problem(x)}
           {remote.connected && x && stateOf(x) === "not_configured" && (
@@ -276,10 +312,8 @@ export function ConnectedAccounts({
                     connexion. Aucun droit de publication.
                   </p>
                   <p>
-                    {x.lastSyncAt
-                      ? "Dernier import vérifié : " +
-                        new Date(x.lastSyncAt).toLocaleString("fr-FR")
-                      : "Aucun signet importé."}
+                    {x.importedCount || 0} signet(s) X vérifié(s) dans le cloud.
+                    {x.catchingUp ? " Import de la bibliothèque en cours." : ""}
                   </p>
                   {!x.importAllowed && (
                     <p>
@@ -291,7 +325,11 @@ export function ConnectedAccounts({
                     disabled={!!busy || !x.importAllowed}
                     onClick={() => void importX()}
                   >
-                    Importer jusqu’à 5 signets
+                    {x.catchingUp
+                      ? "Continuer l’import complet"
+                      : x.importedCount
+                        ? "Actualiser toute la bibliothèque"
+                        : "Importer toute la bibliothèque"}
                   </button>
                 </>
               ) : (

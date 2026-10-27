@@ -57,9 +57,11 @@ async function response<T>(r: Response): Promise<T> {
     x_reconnect_required:
       "L’autorisation X doit être renouvelée. Reconnectez X ; les références restent conservées.",
     x_api_budget_approval_required:
-      "L’import X est suspendu : les crédits API du service ne sont pas autorisés. Aucun paiement n’a été engagé.",
+      "L’import X complet est suspendu : l’accès API du service n’est pas activé. Aucun paiement n’a été engagé.",
     x_manual_import_only:
-      "L’import automatique est désactivé. Utilisez le bouton d’import volontaire de cinq signets.",
+      "L’import automatique est désactivé. Lancez l’import complet depuis Comptes connectés.",
+    rate_limited:
+      "Limite temporaire atteinte. Les pages déjà importées restent vérifiées dans le cloud ; reprenez plus tard.",
     x_api_budget_required:
       "X exige un accès API ou des crédits disponibles. Aucun abonnement ni paiement n’a été modifié.",
     x_permission_denied:

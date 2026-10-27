@@ -48,6 +48,9 @@ export type XStatus = {
   lastSyncAt: string | null;
   retryAt: number;
   catchingUp: boolean;
+  importedCount: number;
+  manualImportLimit: number;
+  importAllowed: boolean;
   callback: string;
   blocker?: string;
 };
@@ -71,6 +74,10 @@ export type ConnectionStatus = {
   lastImportAt?: string | null;
   diagnosticId?: string | null;
   error?: string | null;
+  catchingUp?: boolean;
+  importedCount?: number;
+  manualImportLimit?: number;
+  importAllowed?: boolean;
 };
 export const CONNECTION_LABELS: Record<ConnectionState, string> = {
   not_configured: "non configuré",

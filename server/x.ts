@@ -145,6 +145,14 @@ async function lease(store: Store, id: string) {
   };
 }
 const account = (s: Store, id: string) => s.get<Account>("x-account", id);
+const X_BOOKMARK_PAGE_SIZE = 100;
+async function importedBookmarkCount(store: Store, ownerId: string) {
+  const [row] = await store.query(
+    "SELECT count(*) AS count FROM ad_records WHERE namespace='x-origin' AND key LIKE $1",
+    [ownerId + ":%"],
+  );
+  return Number(row?.count || 0);
+}
 function uuidFor(ownerId: string, id: string) {
   const b = Buffer.from(
     digest("ad-x-bookmark:" + ownerId + ":" + id).slice(0, 32),
@@ -261,11 +269,12 @@ export async function syncBookmarks(store: Store, c: Config) {
     const previousCatchup = a.catchup;
     // Always inspect the newest bookmarks first. Post creation time is NOT bookmark time.
     const mode = a.phase === "catchup" && previousCatchup ? "catchup" : "head";
-    // Exactly one page per owner action, at most five records. No background loop.
+    // Exactly one page per request. The client may resume a few pages per
+    // explicit owner action; persisted cursor state makes interruption safe.
     for (const modeOfPage of [mode]) {
       const cursor = modeOfPage === "head" ? null : previousCatchup;
       const q = new URLSearchParams({
-        max_results: "5",
+        max_results: String(X_BOOKMARK_PAGE_SIZE),
         "post.fields": "created_at,author_id,note_post",
       });
       if (cursor) q.set("pagination_token", cursor);
@@ -278,7 +287,7 @@ export async function syncBookmarks(store: Store, c: Config) {
       if (page.errors?.length)
         throw new ServiceError(502, "x_partial_page_not_advanced");
       const posts = page.data || [];
-      if (posts.length > 5)
+      if (posts.length > X_BOOKMARK_PAGE_SIZE)
         throw new ServiceError(502, "x_import_limit_exceeded");
       let allKnown = posts.length > 0;
       for (const post of posts)
@@ -292,7 +301,9 @@ export async function syncBookmarks(store: Store, c: Config) {
     }
     a.lastSyncAt = new Date().toISOString();
     a.retryAt = 0;
-    a.phase = mode === "head" && a.catchup ? "catchup" : "head";
+    // Keep following the current pagination token until X reports no next page.
+    // Resetting to "head" after a catch-up page restarted the same page forever.
+    a.phase = a.catchup ? "catchup" : "head";
     a.revision++;
     await store.put("x-account", c.owner, a);
     await store.audit(c.owner, "x-official-api", "bookmark_sync", "verified");
@@ -305,6 +316,7 @@ export async function syncBookmarks(store: Store, c: Config) {
       received: ids.length,
       requests,
       catchingUp: !!a.catchup,
+      importedCount: await importedBookmarkCount(store, c.owner),
       syncedAt: a.lastSyncAt,
     };
   } catch (e) {
@@ -322,6 +334,7 @@ async function xRouteInternal(r: Request, s: Store, c: Config) {
   const session = await owner(r, s, c, r.method !== "GET");
   if (path === "/api/x/status" && r.method === "GET") {
     const a = await account(s, c.owner);
+    const importedCount = await importedBookmarkCount(s, c.owner);
     const lastError = await s.get<{ code: string; requestId?: string }>(
       "x-error",
       c.owner,
@@ -356,7 +369,8 @@ async function xRouteInternal(r: Request, s: Store, c: Config) {
       hasAccount: !!a,
       connected: !!a && !expired,
       automaticSync: false,
-      manualImportLimit: 5,
+      manualImportLimit: X_BOOKMARK_PAGE_SIZE,
+      importedCount,
       importAllowed: process.env.X_BOOKMARK_IMPORT_ALLOWED === "1",
       username: a?.username || "",
       enabled: false,

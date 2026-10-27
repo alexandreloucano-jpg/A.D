@@ -210,7 +210,7 @@ for (const width of [390, 1440])
       if (p === "/api/x/sync") {
         imports++;
         expect(request.method()).toBe("POST");
-        expect(request.postDataJSON()).toEqual({ limit: 5 });
+        expect(request.postDataJSON()).toEqual({});
         expect(request.headers()["x-ad-csrf"]).toBe("csrf");
         return route.fulfill({
           status: 429,
@@ -241,7 +241,7 @@ for (const width of [390, 1440])
     expect(imports).toBe(0);
     expect(background).toBe(0);
     await page
-      .getByRole("button", { name: "Importer jusqu’à 5 signets" })
+      .getByRole("button", { name: "Importer toute la bibliothèque" })
       .click();
     await expect(page.getByRole("status")).toContainText("Quota X atteint");
     await expect(page.getByRole("status")).toContainText(diagnostic);

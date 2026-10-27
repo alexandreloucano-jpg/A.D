@@ -386,16 +386,16 @@ it("preserves old annotated X versions and searches updated provider text withou
   expect((await s.read(c.owner, id))?.content).toBe("Old source sentence.");
 });
 
-it("imports no more than five records only after an explicit authorized owner action", async () => {
+it("imports up to one hundred records only after an explicit authorized owner action", async () => {
   await connected();
   const calls: string[] = [];
   vi.stubGlobal(
     "fetch",
     vi.fn(async (url: string) => {
       calls.push(url);
-      expect(new URL(url).searchParams.get("max_results")).toBe("5");
+      expect(new URL(url).searchParams.get("max_results")).toBe("100");
       return Response.json({
-        data: Array.from({ length: 5 }, (_, i) => ({
+        data: Array.from({ length: 100 }, (_, i) => ({
           id: String(100 + i),
           text: "Fixture " + i,
         })),
@@ -411,13 +411,40 @@ it("imports no more than five records only after an explicit authorized owner ac
   expect(result.status).toBe(200);
   const receipt = await result.json();
   expect(receipt.verified).toBe(true);
-  expect(receipt.ids).toHaveLength(5);
+  expect(receipt.ids).toHaveLength(100);
+  expect(receipt.importedCount).toBe(100);
   expect(calls).toHaveLength(1);
   for (const id of receipt.ids)
     expect(await s.read(c.owner, id)).not.toBeNull();
   const repeated = await handle(request("/api/x/sync", "POST"), s, c);
   expect((await repeated.json()).ids).toEqual(receipt.ids);
-  expect(await s.list(c.owner)).toHaveLength(5);
+  expect(await s.list(c.owner)).toHaveLength(100);
+});
+it("follows every persisted X pagination cursor without restarting at the newest page", async () => {
+  await connected();
+  const calls: string[] = [],
+    pages = [
+      { data: [{ id: "801", text: "Newest" }], meta: { next_token: "older-2" } },
+      { data: [{ id: "802", text: "Older" }], meta: { next_token: "older-3" } },
+      { data: [{ id: "803", text: "Oldest" }] },
+    ];
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url: string) => {
+      calls.push(new URL(url).searchParams.get("pagination_token") || "head");
+      expect(new URL(url).searchParams.get("max_results")).toBe("100");
+      return Response.json(pages.shift());
+    }),
+  );
+  const first = await syncBookmarks(s, c);
+  expect(first.catchingUp).toBe(true);
+  const second = await syncBookmarks(s, c);
+  expect(second.catchingUp).toBe(true);
+  const third = await syncBookmarks(s, c);
+  expect(third.catchingUp).toBe(false);
+  expect(third.importedCount).toBe(3);
+  expect(calls).toEqual(["head", "older-2", "older-3"]);
+  expect(await s.list(c.owner)).toHaveLength(3);
 });
 it("refuses an oversized provider response before saving and cannot enable automatic import", async () => {
   await connected();
@@ -425,7 +452,7 @@ it("refuses an oversized provider response before saving and cannot enable autom
     "fetch",
     vi.fn(async () =>
       Response.json({
-        data: Array.from({ length: 6 }, (_, i) => ({
+        data: Array.from({ length: 101 }, (_, i) => ({
           id: String(i + 1),
           text: "Fixture",
         })),
@@ -433,7 +460,7 @@ it("refuses an oversized provider response before saving and cannot enable autom
     ),
   );
   await expect(syncBookmarks(s, c)).rejects.toMatchObject({
-    code: "x_import_limit_exceeded",
+    name: "ZodError",
   });
   expect(await s.list(c.owner)).toHaveLength(0);
   const response = await handle(

@@ -35,14 +35,34 @@ export function XConnection({ remote }: { remote: RemoteSaver }) {
   }
   async function sync() {
     await run(async () => {
-      const saved = await remote.reader<{ verified: boolean; ids: string[] }>(
-        "/api/x/sync",
-        "POST",
-        {},
-      );
-      if (!saved.verified) throw Error("Relecture des signets non confirmée.");
+      let saved: {
+        verified: boolean;
+        ids: string[];
+        importedCount: number;
+        catchingUp: boolean;
+      } | null = null;
+      for (let page = 0; page < 4; page++) {
+        const next = await remote.reader<{
+          verified: boolean;
+          ids: string[];
+          importedCount: number;
+          catchingUp: boolean;
+        }>("/api/x/sync", "POST", {});
+        if (!next.verified || next.ids.length > 100)
+          throw Error("Relecture des signets non confirmée.");
+        saved = next;
+        setMessage(
+          `${next.importedCount} signet(s) X vérifié(s) dans le cloud.`,
+        );
+        if (!next.catchingUp) break;
+      }
+      if (!saved) throw Error("Aucune page de signets n’a été reçue.");
       await remote.refresh();
-      setMessage(saved.ids.length + " signet(s) relu(s) avec UUID persistant.");
+      setMessage(
+        saved.catchingUp
+          ? `${saved.importedCount} signet(s) X vérifié(s). L’import reste à continuer.`
+          : `Bibliothèque complète : ${saved.importedCount} signet(s) X vérifié(s) dans le cloud.`,
+      );
     });
   }
   useEffect(() => {
@@ -118,13 +138,18 @@ export function XConnection({ remote }: { remote: RemoteSaver }) {
                 {status.catchingUp ? "Historique en cours de rattrapage." : ""}
               </p>
               <button
-                disabled={busy || status.retryAt > Date.now()}
+                disabled={busy || !status.importAllowed || status.retryAt > Date.now()}
                 onClick={() => void sync()}
               >
-                Importer jusqu’à 5 signets
+                {status.catchingUp
+                  ? "Continuer l’import complet"
+                  : status.importedCount
+                    ? "Actualiser toute la bibliothèque"
+                    : "Importer toute la bibliothèque"}
               </button>
               <p>
-                Import volontaire uniquement, cinq signets maximum par action.
+                {status.importedCount} signet(s) conservé(s) dans le cloud. Pages
+                de 100 ; import manuel, sans synchronisation automatique.
               </p>
               <button
                 disabled={busy}
