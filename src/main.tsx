@@ -7,11 +7,12 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
 import { StudioLanding } from "./marketing/StudioLanding";
+import { LaunchLab } from "./marketing/LaunchLab";
 import "./styles.css";
 import "./design-system/ad-atelier-06.css";
 import "./design-system/ad-atelier-06-studio.css";
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    {window.location.pathname === "/studio" || window.location.pathname === "/studio/" ? <StudioLanding /> : <App />}
+    {window.location.pathname === "/launch-lab" || window.location.pathname === "/launch-lab/" ? <LaunchLab /> : window.location.pathname === "/studio" || window.location.pathname === "/studio/" ? <StudioLanding /> : <App />}
   </React.StrictMode>,
 );
