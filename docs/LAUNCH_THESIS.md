@@ -31,4 +31,4 @@ Reference code for X recommendation retrieval: https://github.com/xai-org/x-algo
 
 ## Validation
 
-In isolated development checkout: 29 targeted unit tests passed (launch, domain, creative); TypeScript and Vite production build passed. Full preexisting unit suite had two environment failures due missing Chromium binary, unrelated to this feature. Browser screenshots at 390px and 1440px are **not yet verified**. No change to live A.D. beta alias was made.
+In isolated development checkout: 29 targeted unit tests passed (launch, domain, creative); TypeScript and Vite production build passed. One test fixture required updating because domain.ts now imports launch.ts; that Node ESM compatibility test has been fixed and re-run successfully. A separate Chromium E2E-oriented test cannot run in this sandbox because /usr/bin/chromium is unavailable. Browser screenshots at 390px and 1440px are **not yet verified**. No change to live A.D. beta alias was made.
