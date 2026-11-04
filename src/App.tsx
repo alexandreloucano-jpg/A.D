@@ -478,6 +478,7 @@ export function App() {
             ))}
           </nav>
           <div className="top-actions">
+            <a href="/launch-lab" aria-label="Ouvrir Launch Lab" style={{fontSize:12,fontWeight:650,textDecoration:"none",color:"inherit",marginRight:12}}>Launch Lab ↗</a>
             <button className="ad-command-trigger" type="button"
               aria-label="Rechercher partout" aria-keyshortcuts="Meta+K Control+K"
               onClick={()=>setPaletteOpen(true)}>
