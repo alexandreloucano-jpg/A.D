@@ -2,6 +2,7 @@ import { MarketPanel } from "../scout-market/MarketPanel";
 import type { Finding } from "../scout-market/schema";
 import type { EvidenceReceipt } from "../opportunity/model";
 import { CreativeCanvas } from "../creative/CreativeCanvas";
+import { LaunchPlanner } from "../creative/LaunchPlanner";
 import type { RemoteSaver } from "../remote-saver";
 import { ArrowUpRight, Bookmark, Folder } from "lucide-react";
 import { TaskForm } from "../components/forms";
@@ -63,6 +64,7 @@ export function ProjectsView({
             </section>
           ))}
           <CreativeCanvas key={project.id} project={project} data={data} references={data.references} remote={remote} commit={commit} openReference={openReference} capture={onCapture} />
+          <LaunchPlanner key={"launch-"+project.id} project={project} data={data} commit={commit} />
           <div className="project-controls">
             <h2>{archive ? "Actions écartées" : "Actions du projet"}</h2>
             <button
