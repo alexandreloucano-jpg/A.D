@@ -54,9 +54,11 @@ export function CreativeCanvas({project,data,references,remote,commit,openRefere
   const [working,setWorking]=useState(false);
   const [message,setMessage]=useState("");
   const [error,setError]=useState("");
+  const [sourceQuery,setSourceQuery]=useState("");
   const sourceSet=new Set(selectedIds);
-  const visibleRefs=references.filter(r=>!r.isInternalQA).sort((a,b)=>
-    Number(b.projectId===project.id)-Number(a.projectId===project.id)
+  const visibleRefs=references.filter(r=>!r.isInternalQA && (sourceSet.has(r.id) || (r.title+" "+r.content).toLocaleLowerCase().includes(sourceQuery.toLocaleLowerCase()))).sort((a,b)=>
+    Number(sourceSet.has(b.id))-Number(sourceSet.has(a.id))
+    || Number(b.projectId===project.id)-Number(a.projectId===project.id)
     || b.capturedAt.localeCompare(a.capturedAt)).slice(0,100);
   const chosenRefs=selectedIds.map(id=>references.find(r=>r.id===id)).filter((r):r is Reference=>!!r);
   const lastFields=latest?JSON.stringify({brief:latest.brief,referenceIds:latest.referenceIds,directions:latest.directions,unknowns:latest.unknowns,origin:latest.origin}):"";
@@ -156,17 +158,14 @@ export function CreativeCanvas({project,data,references,remote,commit,openRefere
       </div>
     </header>
     <div className="ad-create-workflow" aria-label="Étapes du traitement"><span>01 / BRIEF</span><span>02 / SOURCES</span><span>03 / DIRECTIONS</span><span>04 / APPROBATION</span></div>
-    <div className="ad-create-brief">
-      <label htmlFor="ad-create-brief">L'intention créative</label>
-      <textarea id="ad-create-brief" rows={3} maxLength={3000} value={brief}
-        placeholder="Quelle maison, quel problème, quel public, quel objet doit devenir désirable, et pourquoi maintenant ?"
-        onChange={e=>{setBrief(e.target.value);setError("");}}/>
-      <small>{brief.trim().length} / 3 000 caractères · Visible uniquement dans ce dossier local tant que vous ne demandez pas l'assistance IA.</small>
-    </div>
-    <div className="ad-create-source-top">
+    <div className="ad-create-source-top" id="work-sources" tabIndex={-1}>
       <div><h3>Références sélectionnées</h3><p>Sources réellement enregistrées dans Saver. Choisir jusqu'à huit références.</p></div>
       <button className="text-button" onClick={capture}>Capturer une référence <ArrowUpRight size={15}/></button>
     </div>
+    <label className="work-source-search">Retrouver une référence Saver
+      <input type="search" value={sourceQuery} onChange={e=>setSourceQuery(e.target.value)} placeholder="Titre ou note…" />
+    </label>
+    <p className="work-source-count">{selectedIds.length} / 8 sélectionnées · Enregistrez une version pour conserver ce choix.</p>
     {visibleRefs.length ? <div className="ad-create-source-grid">
       {visibleRefs.map(ref=>{
         const image=directImageUrl(ref.url);
@@ -179,10 +178,17 @@ export function CreativeCanvas({project,data,references,remote,commit,openRefere
           </div>
           <strong title={ref.title}>{ref.title}</strong>
           <small>{ref.url?"Lien sauvegardé":"Note personnelle"} · {new Date(ref.capturedAt).toLocaleDateString("fr-FR")}</small>
-          <button type="button" className="ad-create-open" onClick={e=>{e.preventDefault();openReference(ref.id);}}>Lire la source ↗</button>
+          <button type="button" className="ad-create-open" aria-label="Lire la source ↗" onClick={e=>{e.preventDefault();openReference(ref.id);}}>Lire la source <ArrowUpRight size={14} aria-hidden="true"/></button>
         </label>;
       })}
-    </div>:<p className="ad-create-empty">Aucune référence enregistrée. Vous pouvez rédiger le brief, puis capturer les premières sources dans Saver.</p>}
+    </div>:<p className="ad-create-empty">{sourceQuery ? "Aucune référence ne correspond. Modifiez votre recherche ou capturez une source." : "Aucune référence enregistrée. Vous pouvez rédiger le brief, puis capturer les premières sources dans Saver."}</p>}
+    <div className="ad-create-brief" id="work-brief" tabIndex={-1}>
+      <label htmlFor="ad-create-brief">L'intention créative</label>
+      <textarea id="ad-create-brief" rows={3} maxLength={3000} value={brief}
+        placeholder="Quelle maison, quel problème, quel public, quel objet doit devenir désirable, et pourquoi maintenant ?"
+        onChange={e=>{setBrief(e.target.value);setError("");}}/>
+      <small>{brief.trim().length} / 3 000 caractères · Visible uniquement dans ce dossier local tant que vous ne demandez pas l'assistance IA.</small>
+    </div>
     <div className="ad-create-actions">
       <button type="button" className="ad-create-neutral" onClick={seed}>Préparer le canevas (sans IA)</button>
       <button type="button" className="ad-create-ai" disabled={!remote.connected||!aiStatus?.available||working||!consent} onClick={()=>void generate()}>

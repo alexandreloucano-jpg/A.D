@@ -1,0 +1,90 @@
+/* A self-contained dossier surface: blue working ink, white ground and a
+   continuous numbered path. Existing domain components retain their behavior. */
+.app-frame .work-room {
+  --room-ink: #16364d;
+  --room-blue: #174fbb;
+  --room-line: #cbd7df;
+  --ad-accent: #174fbb;
+  --ad-dark: #16364d;
+  --ad-panel: #fff;
+  --ad-edge: #cbd7df;
+  --ad-ink: #16364d;
+  --ad-sub: #4b6576;
+  --serif: Inter, system-ui, sans-serif;
+  color: var(--room-ink);
+  background: #fff;
+  padding: clamp(16px, 3vw, 40px);
+  font: 400 15px/1.65 Inter, system-ui, sans-serif;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.app-frame .work-room :is(h2,h3,h4) { color: var(--room-ink); font-family: Inter,system-ui,sans-serif; letter-spacing: -.035em; }
+.app-frame .work-room :is(button,a,input,textarea,summary):focus-visible,
+.app-frame .work-room [tabindex="-1"]:focus-visible { outline: 3px solid var(--room-blue); outline-offset: 4px; }
+.app-frame .work-room :is(button,a,summary) { touch-action: manipulation; }
+.app-frame .work-room a { color: var(--room-blue); text-decoration: underline; text-underline-offset: 4px; }
+.app-frame .work-room-intro { padding: 4px 0 28px; }
+.app-frame .work-room-intro > p,.app-frame .work-room-section-label { font: 600 11px/1.5 Inter,sans-serif; letter-spacing: .1em; color: var(--room-blue); }
+.app-frame .work-room-intro h1 { color: var(--room-ink); font: 500 clamp(26px,3vw,42px)/1.15 Inter,system-ui,sans-serif; letter-spacing: -.04em; margin: 12px 0; }
+.app-frame .work-room-intro > span { color: #4b6576; font-size: 14px; }
+.app-frame .work-room-steps { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); border-block: 1px solid var(--room-line); margin-bottom: 36px; }
+.app-frame .work-room-steps button { background: #fff; color: var(--room-ink); border: 0; border-top: 3px solid transparent; min-height: 94px; padding: 12px; text-align: left; display: grid; grid-template-columns: 24px 1fr; align-content: center; gap: 2px 8px; }
+.app-frame .work-room-steps button[aria-current] { border-top-color: var(--room-blue); background: #edf4ff; }
+.app-frame .work-room-steps button:hover { background: #edf4ff; }
+.app-frame .work-room-steps button span { grid-row: span 2; color: var(--room-blue); font: 500 11px/1.8 Inter,sans-serif; }
+.app-frame .work-room-steps strong { font-size: 14px; font-weight: 600; }
+.app-frame .work-room-steps small { font-size: 11px; color: #4b6576; }
+.app-frame .work-room-evidence { margin-bottom: 40px; scroll-margin-top: 20px; }
+.app-frame .work-room-evidence h3 { font-size: clamp(24px,3vw,34px); font-weight: 500; line-height: 1.2; margin: 14px 0; }
+.app-frame .work-room-link-state { color: #476354; font-size: 10px; letter-spacing: .08em; margin-top: 24px; }
+.app-frame .work-room-fact { font-size: 19px; line-height: 1.6; max-width: 750px; }
+.app-frame .work-room-fact strong { display: block; font-size: 12px; font-weight: 500; color: #4b6576; margin-bottom: 6px; }
+.app-frame .work-room-date { color: #4b6576; font-size: 12px; }
+.app-frame .work-room-proof-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; border-top: 1px solid var(--room-line); margin-top: 24px; padding: 18px 0; }
+.app-frame .work-room-proof-columns h4 { font-size: 14px; font-weight: 600; margin: 0; }
+.app-frame .work-room-proof-columns summary { min-height: 44px; cursor: pointer; font-size: 14px; font-weight: 600; }
+.app-frame .work-room-proof-columns details > div { padding: 12px 0; border-top: 1px solid var(--room-line); }
+.app-frame .work-room-proof-columns ul { padding-left: 20px; margin: 8px 0; }
+.app-frame .work-room button.work-room-next { display: flex; justify-content: space-between; align-items: center; gap: 32px; min-height: 48px; border: 0; padding: 12px 20px; background: var(--room-blue); color: #fff; font: 500 14px/1.5 Inter,sans-serif; }
+.app-frame .work-room .ad-create { border-top: 1px solid var(--room-line); color: var(--room-ink); padding-top: 24px; margin-bottom: 30px; }
+.app-frame .work-room .ad-create-head h2 { font: 500 clamp(24px,3vw,34px)/1.2 Inter,sans-serif; letter-spacing: -.035em; }
+.app-frame .work-room .ad-create-source-top h3 { font: 500 22px/1.3 Inter,sans-serif; }
+.app-frame .work-room .ad-create :is(input,textarea) { color: var(--room-ink); background: #fff; border-color: #9aaebc; border-radius: 4px; font-size: 16px; }
+.app-frame .work-room :is(#work-sources,#work-brief,#work-actions) { scroll-margin-top: 20px; }
+.app-frame .work-room .work-source-search { display: block; font-size: 13px; margin-bottom: 12px; }
+.app-frame .work-room .work-source-search input { display: block; width: 100%; padding: 12px; margin-top: 6px; min-height: 48px; }
+.app-frame .work-room .work-source-count { font-size: 12px; color: #4b6576; }
+.app-frame .work-room .ad-create-source-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; max-height: 380px; }
+.app-frame .work-room .ad-create-ref { background: #fff; border: 1px solid var(--room-line); border-radius: 4px; padding: 12px; }
+.app-frame .work-room .ad-create-ref.is-selected { padding: 11px; border: 2px solid var(--room-blue); background: #f3f7ff; }
+.app-frame .work-room .ad-create-ref-visual { aspect-ratio: auto; height: 44px; background: none; }
+.app-frame .work-room .ad-create-ref-visual:has(img) { height: 140px; }
+.app-frame .work-room .ad-create-ref-fallback { justify-content: start; font-size: 10px; color: #4b6576; }
+.app-frame .work-room .ad-create-ref-visual input { top: 0; right: 0; width: 24px; height: 24px; accent-color: var(--room-blue); }
+.app-frame .work-room .ad-create-open { min-height: 44px; color: var(--room-blue); }
+.app-frame .work-room .ad-create-direction { background: #f5f8fb; border: 0; border-top: 3px solid var(--room-blue); }
+.app-frame .work-room .ad-create-workflow { display: none; }
+.app-frame .work-room .ad-create :is(.ad-create-save,.ad-create-approve) { background: var(--room-blue); border-color: var(--room-blue); color: #fff; border-radius: 4px; }
+.app-frame .work-room-actions { border-top: 1px solid var(--room-line); padding: 24px 0; }
+@media(max-width:700px) {
+  .app-frame .work-room { padding: 18px 14px; }
+  .app-frame .work-room-intro { padding: 0 0 18px; }
+  .app-frame .work-room-intro > p { margin: 0; font-size: 10px; }
+  .app-frame .work-room-intro h1 { font-size: 24px; margin: 10px 0; }
+  .app-frame .work-room-intro > span { display: none; }
+  .app-frame .work-room-steps { grid-template-columns: repeat(4,minmax(0,1fr)); margin-bottom: 24px; }
+  .app-frame .work-room-steps button { min-height: 68px; padding: 7px 4px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
+  .app-frame .work-room-steps strong { font-size: 11px; letter-spacing: -.02em; }
+  .app-frame .work-room-steps small { display: none; }
+  .app-frame .work-room-proof-columns { grid-template-columns: minmax(0,1fr); gap: 8px; }
+  .app-frame .work-room button.work-room-next { width: 100%; }
+  .app-frame .work-room .ad-create-source-grid { grid-template-columns: minmax(0,1fr); }
+}
+@media(prefers-reduced-motion:reduce) {
+  .app-frame .work-room * { transition: none !important; scroll-behavior: auto !important; }
+}
+.app-frame .workspace[data-work-room] main { background: #fff; }
+.app-frame .workspace[data-work-room] .section-meta { display: none; }
+.app-frame .workspace[data-work-room] .collection-toolbar { border-color: #cbd7df; padding-block: 10px; margin: 0; }
+.app-frame .workspace[data-work-room] .content-page { padding-top: 0; }
+.app-frame .workspace[data-work-room] .collection-scroll { padding-top: 0; }
