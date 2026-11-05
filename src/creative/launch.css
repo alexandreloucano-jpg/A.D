@@ -1,0 +1,27 @@
+.app-frame .ad-launch{border-top:1px solid #2d3038;border-bottom:1px solid #d7d6d2;margin:28px 0 38px;padding:22px 0 28px;color:#202126;font-family:Inter,Arial,sans-serif}
+.app-frame .ad-launch-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:17px}
+.app-frame .ad-launch-kicker{letter-spacing:.17em;font-size:10px;text-transform:uppercase;color:#6d7178;font-weight:600;margin:0 0 9px}
+.app-frame .ad-launch h2{font-family:"Bodoni Moda",Georgia,serif;font-size:clamp(28px,3vw,41px);line-height:1.12;letter-spacing:-.025em;margin:0 0 8px;font-weight:400}
+.app-frame .ad-launch-heading p:not(.ad-launch-kicker){color:#64676e;font-size:12px;line-height:1.65;max-width:560px}
+.app-frame .ad-launch-status{color:#5e6571;font-size:10px;border:1px solid #d7dae0;padding:8px 10px;border-radius:2px;white-space:nowrap;margin-top:12px}
+.app-frame .ad-launch-details>summary{cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-weight:600;font-size:12px;padding:15px 0;border-top:1px solid #e2e3e6}
+.app-frame .ad-launch-steps{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:17px 0}
+.app-frame .ad-launch-step{padding:13px 9px;background:#f4f4f2;min-width:0;display:flex;flex-direction:column;gap:6px}
+.app-frame .ad-launch-step strong{font-size:10px;font-weight:600;color:#6e7178}
+.app-frame .ad-launch-step span{font-size:11px;font-weight:600}
+.app-frame .ad-launch-step b{font-weight:500;font-size:10px;color:#72767e}
+.app-frame .ad-launch-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.app-frame .ad-launch fieldset{border:1px solid #e4e4e1;padding:16px;min-width:0;margin:0 0 14px}
+.app-frame .ad-launch legend{font-size:13px;font-weight:650;padding:0 8px}
+.app-frame .ad-launch-label{display:block;margin:0 0 14px;font-size:11px;color:#474b53;font-weight:600}
+.app-frame .ad-launch-label span,.app-frame .ad-launch-label small{display:block;margin-bottom:6px}
+.app-frame .ad-launch-label small{font-size:10px;color:#777b83;margin-top:5px;font-weight:400}
+.app-frame .ad-launch textarea,.app-frame .ad-launch input{width:100%;border:1px solid #d6d9df;border-radius:2px;background:#fff;color:#24262a;font:400 16px/1.5 Inter,sans-serif;padding:11px;min-height:44px;resize:vertical}
+.app-frame .ad-launch-hooks p{font-size:11px;color:#686e76;line-height:1.6}
+.app-frame .ad-launch-check{border:1px solid #e5e5e1;background:#fafaf8;padding:10px 14px;font-size:11px;line-height:1.6;color:#5c626a;margin-top:6px}
+.app-frame .ad-launch-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:16px}
+.app-frame .ad-launch-actions button{display:inline-flex;align-items:center;gap:9px;min-height:44px;padding:9px 14px;background:#fff;color:#171b20;border:1px solid #d5d7dc;cursor:pointer;font-size:12px}
+.app-frame .ad-launch-actions button.ad-launch-save{background:#20252e;border-color:#20252e;color:#fff}
+.app-frame .ad-launch-actions span{font-size:11px;color:#585e67}
+@media(max-width:750px){.app-frame .ad-launch-grid{grid-template-columns:1fr}.app-frame .ad-launch-steps{grid-template-columns:repeat(3,1fr)}.app-frame .ad-launch-heading{display:block}.app-frame .ad-launch-status{display:inline-block;margin-top:0}}
+

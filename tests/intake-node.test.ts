@@ -11,7 +11,7 @@ it("loads the compiled shared intake model in the real Node ESM runtime", async 
     await mkdir(root + "/src/intake", { recursive: true });
     await mkdir(root + "/src/creative", { recursive: true });
     await mkdir(root + "/src/opportunity", { recursive: true });
-    for (const file of ["src/creative/model", "src/opportunity/model", "src/domain", "src/intake/model"]) {
+    for (const file of ["src/creative/model", "src/creative/launch", "src/opportunity/model", "src/domain", "src/intake/model"]) {
       const compiled = ts.transpileModule(
         await readFile(file + ".ts", "utf8"),
         {

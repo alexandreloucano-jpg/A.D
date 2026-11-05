@@ -1,3 +1,4 @@
+import { launchPlanSchema } from "./creative/launch.js";
 import { z } from "zod";
 import { creativeBoardSchema } from "./creative/model.js";
 import { opportunityLinkSchema } from "./opportunity/model.js";
@@ -75,10 +76,11 @@ export const workspaceSchema = z
     signals: z.array(signalSchema).max(10000),
     creativeBoards: z.array(creativeBoardSchema).max(1000).optional(),
     opportunityLinks: z.array(opportunityLinkSchema).max(1000).optional(),
+    launchPlans: z.array(launchPlanSchema).max(1000).optional(),
   })
   .strict()
   .superRefine((s, ctx) => {
-    const ids = [...s.references, ...s.projects, ...s.tasks, ...s.signals, ...(s.creativeBoards || []),...(s.opportunityLinks || [])].map(
+    const ids = [...s.references, ...s.projects, ...s.tasks, ...s.signals, ...(s.creativeBoards || []),...(s.opportunityLinks || []), ...(s.launchPlans || [])].map(
       (x) => x.id,
     );
     if (new Set(ids).size !== ids.length)
@@ -91,6 +93,9 @@ export const workspaceSchema = z
     if (s.opportunityLinks?.some(l=>!projects.has(l.projectId)) ||
       new Set((s.opportunityLinks||[]).map(l=>l.opportunityId)).size!==(s.opportunityLinks||[]).length)
       ctx.addIssue({code:"custom",message:"Liaison opportunité orpheline ou dupliquée."});
+    if ((s.launchPlans||[]).some(p=>!projects.has(p.projectId)) ||
+        new Set((s.launchPlans||[]).map(p=>p.projectId)).size!==(s.launchPlans||[]).length)
+      ctx.addIssue({code:"custom",message:"Plan de lancement orphelin ou dupliqué."});
     if (
       s.tasks.some((t) => !projects.has(t.projectId)) ||
       s.references.some((r) => r.projectId && !projects.has(r.projectId))
@@ -109,6 +114,7 @@ export const emptyWorkspace = (): Workspace => ({
   signals: [],
   creativeBoards: [],
   opportunityLinks: [],
+  launchPlans: [],
 });
 export function newTask(
   projectId: string,
