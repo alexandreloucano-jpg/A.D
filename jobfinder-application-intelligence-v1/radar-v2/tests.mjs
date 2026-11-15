@@ -43,4 +43,10 @@ test('RoleFinder extracts employer, real geography and direct careers URL',()=>{
 test('RoleFinder rejects missing direct employer link',()=>assert.equal(parseRoleFinderDetail('<h1>Creative Director</h1><li><span class="k">Location</span>Paris</li>',{title:'Creative Director'}),null));
 test('Rejection diagnostics available',()=>{const a=normalizeJob({title:'Graphic Designer',url:'https://jobs.example.com/1',location:'Paris'},SOURCES[0]);assert.equal(rankAndFilter([a]).stats.rejectionReasons.design,1)});
 
+
+test('Whitespace company aliases deduplicate',()=>{const a=normalizeJob({title:'Social Media Director',company:'Hcompany',url:'https://jobs.ashbyhq.com/hcompany/a',location:'Paris'},SOURCES[0]);const b={...a,company:'H Company',sourceType:'rolefinder',url:'https://jobs.urbanodx.com/job/abc'};assert.equal(rankAndFilter([a,b]).jobs.length,1)});
+test('Prefer employer ATS over secondary index on duplicates',()=>{const a=normalizeJob({title:'Brand Lead',company:'H Company',url:'https://jobs.ashbyhq.com/hcompany/abc',location:'Paris'},SOURCES[0]);const b={...a,sourceType:'rolefinder',source:'RoleFinder',url:'https://example.org/job/abc'};const x=rankAndFilter([b,a]);assert.equal(x.jobs[0].sourceType,'greenhouse')});
+test('RoleFinder exploratory score capped',()=>{const j=fitOpportunity(job('Creative Director','Paris',{sourceType:'rolefinder'}));assert.equal(j.tier,'explore');assert(j.score<=76)});
+test('Explicit graphic design duties excluded even in Art Director role',()=>assert.equal(fitOpportunity(job('Art Director','Paris',{description:'Create graphic assets, design mockups and production graphics for clients'})).tier,'rejected'));
+
 console.log(total+'/'+total+' radar tests passed');
