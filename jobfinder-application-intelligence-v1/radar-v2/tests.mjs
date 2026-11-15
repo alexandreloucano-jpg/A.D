@@ -66,5 +66,7 @@ const wttjCard= '<div data-role="jobs:thumb"><a href="/fr/companies/havas-sa/job
 test('WTTJ public job cards extract title and Pantin',()=>{const a=parseWttjLanding(wttjCard);assert.equal(a.length,1);assert.equal(a[0].title,'BETC Fullsix - Social Media Strategist Senior (H/F/X) - CDI');assert.equal(a[0].location,'Pantin');assert.equal(a[0].company,'Havas France');assert.equal(a[0].description,'')});
 test('WTTJ refuses non-native job links',()=>assert.equal(parseWttjLanding(wttjCard.replace('/fr/companies/havas-sa/jobs/','/en/jobs/')).length,0));
 test('WTTJ approved public listing pages',()=>{assert(WTTJ_PAGES.includes('emploi-social-media-manager'));assert(!WTTJ_PAGES.some(x=>x.includes('?')))});
+test('WTTJ 3 additional curated communication categories',()=>{for(const slug of ['emploi-community-manager','emploi-charge-de-communication','emploi-chef-de-projet-marketing'])assert(WTTJ_PAGES.includes(slug))});
+test('WTTJ does not query private search endpoints',()=>{assert(WTTJ_PAGES.every(slug=>/^emploi-[a-z0-9-]+$/.test(slug)))});
 test('WTTJ jobs do not inherit fictional description',()=>{const j=parseWttjLanding(wttjCard)[0];const n=normalizeJob(j,{type:'wttj',label:'Welcome to the Jungle',company:''});assert.equal(n.description,'');assert.equal(n.sourceType,'wttj')});
 console.log(total+'/'+total+' radar tests passed');
