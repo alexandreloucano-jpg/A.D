@@ -4,8 +4,8 @@ const rx=(s,re)=>re.test(norm(s));
 const DEF={
   direction:/\b(creative director|directeur creatif|directrice creative|directeur de creation|directrice de creation|head of creative|creative head|executive creative director|chief creative|global creative|direction artistique|directeur artistique|directrice artistique|art director|art direction|creative lead|creative leadership)\b/,
   strategy:/\b(creative strateg(y|ist)|brand strateg(y|ist)|senior strategist|strategie de marque|strateg(e|ie) creatif|creative planning|head of strategy|strategy director|directeur conseil|brand positioning|brand narrative|brand director|directeur de marque|directrice de marque|brand lead|head of brand|brand marketing director|brand communications director|brand communication lead|strategic planning director|planning strategique)\b/,
-  social:/\b(head of social|social media director|director of social|social strategy|social strategist|social media lead|social media.*director|social.*influence.*director|strategic influence lead|chef.fe de groupe social media|social media strategist|social media strategy|influencer strategist|head of community|responsable social media|directeur social media|directrice social media|senior social media|social media manager|social first|head of influence|influencer strategy lead)\b/,
-  content:/\b(head of content|content director|content strategy|content strategist|head of editorial|editorial director|creative producer|campaign director|head of campaigns|campaign lead|content lead|content marketing director|head of communications|communications director|marketing communications director|global marketing director|creative operations)\b/,
+  social:/\b(head of social|social media director|director of social|social strategy|social strategist|social media lead|social media.*director|social media.*strategist|social content strategist|directeur de clientele.*influence|directrice de clientele.*influence|social.*influence.*director|strategic influence lead|chef.fe de groupe social media|social media strategist|social media strategy|influencer strategist|head of community|responsable social media|directeur social media|directrice social media|senior social media|social media manager|social first|head of influence|influencer strategy lead)\b/,
+  content:/\b(head of content|content director|content strategy|content strategist|local lead,? creative campaigns|creative campaigns lead|creative campaigns|head of editorial|editorial director|creative producer|campaign director|head of campaigns|campaign lead|content lead|content marketing director|head of communications|communications director|marketing communications director|global marketing director|creative operations)\b/,
   adjacent:/\b(brand marketing|head of marketing|director of marketing|marketing manager|communications manager|influencer marketing|partnerships manager|partnerships director|community manager|content manager|growth marketing|marketing lead|marketing director|social media)\b/
 };
 // These titles require production/drawing skill, not directing the creative work.
@@ -52,11 +52,11 @@ export function fitOpportunity(input,options={}){
  // Dates are evidence of freshness only when explicitly published, never inferred from an update timestamp.
  const d=new Date(input?.date);const age=Number.isFinite(d.valueOf())?(Date.now()-d.getTime())/86400000:null;
  if(age!==null&&age>=0&&age<21){score+=5;reasons.push('Publication récente')}
- else if(age!==null&&age>120)return {tier:'rejected',score:0,reasons:['Publication de plus de 120 jours'],role,geo};
+ else if(age!==null&&age>120){score-=12;reasons.push('Annonce ancienne mais toujours listée : vérifier la disponibilité')}
  else if(age!==null&&age>60){score-=8;reasons.push('Date ancienne : vérifier l’ouverture')}
  // Remote without European eligibility cannot enter the priority tier.
  score=Math.max(0,Math.min(100,score));let tier=score>=82&&['paris','france','europe-remote'].includes(geo)&&role!=='Marketing adjacent'?'priority':'explore';
- if(role==='Marketing adjacent')tier='explore';
+ if(role==='Marketing adjacent'||(age!==null&&age>120))tier='explore';
  if(/\b(social media manager|community manager|marketing manager|content manager)\b/.test(title)&&!/(senior|head|director|lead)/.test(title))tier='explore';
  if(score<48)tier='rejected';
  return {tier,score,reasons,role,geo,sector:sectorFor(whole+' '+employer),ageDays:age===null?null:Math.round(age)};
