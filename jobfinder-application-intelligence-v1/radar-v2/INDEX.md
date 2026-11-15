@@ -11,8 +11,11 @@ Statut : candidat à la publication, **pas encore déployé**. Dernière mise à
 | `radarCore.mjs` | P0 | Code actif | Classification du poste et éligibilité géographique |
 | `radarSources.mjs` | P0 | Code actif | Sources ATS, agrégateurs autorisés, WTTJ et RoleFinder |
 | `wttjSource.mjs` | P0 | Code actif | Parsing des pages éditoriales publiques WTTJ sans recherche privée |
-| `tests.mjs` | P1 | Tests actifs | Tests métier et source ; vérifier le total à chaque livraison |
-| `page.jsx` et `radar.css` | P2 | UI active | Affichage Priority / À explorer, source et lien au dossier |
+| `tests.mjs` | P1 | Tests actifs | Tests métier, source et régression de l’interface minimaliste ; vérifier le total à chaque livraison |
+| `page.jsx` et `radar.css` | P2 | UI minimaliste | Affichage Priorité / À explorer, recherche, offres et dossier ; pas de score, statistiques décoratives ni watchlist sur l’écran |
 | `install.cjs` | P1 | Installation | Copie source vers la plateforme privée, exigence de SHA figée |
 
 En cas de contradiction, privilégier les règles P0 et le comportement testé du code ; signaler les divergences et adapter les documents. Chaque ajout, retrait ou modification de fichier doit se répercuter dans cet INDEX. Les listes historiques V2 et V3 ne sont pas la source de vérité de cette livraison.
+
+## Arbitrage UX (2026-11-15)
+UI épurée à l’extrême : un titre, des filtres, une recherche et des lignes d’annonces. Aucun composant qui ne contribue directement à décider d’ouvrir une offre ou préparer un dossier. Les détails des sources sont dans un volet refermé par défaut.
