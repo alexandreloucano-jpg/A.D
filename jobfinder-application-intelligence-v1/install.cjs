@@ -14,11 +14,14 @@ const mapping={
  'application-intelligence.css':app+'/application-intelligence.css',
  'engine.mjs':app+'/lib/application-intelligence.mjs',
  'api/contacts-route.js':app+'/api/application-intel/contacts/route.js',
+ 'api/contact-helpers.mjs':app+'/lib/contact-helpers.mjs',
  'api/offer-route.js':app+'/api/application-intel/offer/route.js',
  'routes/intelligence-index.jsx':app+'/intelligence/page.jsx',
  'routes/intelligence-layout.jsx':app+'/intelligence/layout.jsx',
  'routes/step-page.jsx':app+'/intelligence/[step]/page.jsx',
  'tests.mjs':'tests/application-intelligence.test.mjs',
+ 'tests-regressions.mjs':'tests/application-regressions.test.mjs',
+ 'api/contacts-tests.mjs':'tests/contact-source.test.mjs',
  'INDEX.md':'INDEX.md',
  'PROCESS.md':'PROCESS.md',
  'REGLES.md':'REGLES.md',
@@ -40,6 +43,7 @@ function readAsset(file){return new Promise((resolve,reject)=>{
  const contents={};for(const [asset,dest]of Object.entries(mapping)){const value=await readAsset(asset);if(value.length<12)throw Error('Asset missing: '+asset);contents[dest]=value}
  // A separate tests copy preserves relative engine.mjs import for Node tests.
  contents['tests/engine.mjs']=contents[app+'/lib/application-intelligence.mjs'];
+ contents['tests/contact-helpers.mjs']=contents[app+'/lib/contact-helpers.mjs'];
  let nextEntry=entry;
  nextEntry=nextEntry.replace('if(path==="/apply")return null;','if(path==="/apply"||path.startsWith("/intelligence"))return null;');
  nextEntry=nextEntry.replace('href="/apply"','href="/intelligence/offer"');
