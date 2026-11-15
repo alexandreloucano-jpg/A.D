@@ -6,6 +6,16 @@ export const SOURCES=[
  company('greenhouse','thefork','TheFork','Hospitality'),
  company('greenhouse','mirakl','Mirakl','Tech / Brand'),
  company('greenhouse','blockchain','Blockchain.com','Brand'),
+ company('greenhouse','monks','Monks','Creative Agency'),
+ company('greenhouse','deliveroo','Deliveroo','Brand / Consumer'),
+ company('greenhouse','braze','Braze','Brand / Marketing'),
+ company('greenhouse','datadog','Datadog','Technology / Brand'),
+ company('greenhouse','algolia','Algolia','Brand / Digital'),
+ company('greenhouse','glossier','Glossier','Beauty / Brand'),
+ company('greenhouse','fender','Fender','Culture / Music'),
+ company('greenhouse','reddit','Reddit','Social / Community'),
+ company('greenhouse','wise','Wise','Consumer / Brand'),
+ company('greenhouse','duolingo','Duolingo','Social / Creative'),
  company('greenhouse','figma','Figma','Creative / Brand'),
  company('greenhouse','canonical','Canonical','Content / Brand'),
  company('lever','malt','Malt','Brand / Creative'),
@@ -15,6 +25,21 @@ export const SOURCES=[
  company('lever','farfetch','Farfetch','Fashion / Luxury'),
  company('lever','sunshinesachs','Sunshine Sachs','Culture / PR'),
  company('lever','vestiairecollective','Vestiaire Collective','Fashion / Luxury'),
+ company('lever','spotify','Spotify','Music / Brand'),
+ company('lever','swile','Swile','Brand / Lifestyle'),
+ company('lever','contentsquare','Contentsquare','Brand / Tech'),
+ company('lever','heetch','Heetch','Consumer / Brand'),
+ company('lever','blablacar','BlaBlaCar','Brand / Consumer'),
+
+ company('ashby','doctolib','Doctolib','Brand / Health'),
+ company('ashby','alan','Alan','Brand / Health'),
+ company('ashby','voodoo','Voodoo','Creative / Digital'),
+ company('ashby','qonto','Qonto','Brand / Digital'),
+ company('ashby','backmarket','Back Market','Lifestyle / Brand'),
+ company('ashby','webflow','Webflow','Brand / Creative'),
+ company('ashby','lemlist','Lemlist','Brand / Marketing'),
+ company('ashby','ledger','Ledger','Brand / Web3'),
+ company('ashby','photoroom','Photoroom','Creative / AI'),
  company('ashby','joko','Joko','Consumer / Brand'),
  company('ashby','mistral.ai','Mistral AI','Technology / Brand'),
  company('ashby','jellyfishcareers','Jellyfish','Agency'),
@@ -64,7 +89,7 @@ async function getOne(s,limitMs=6000){const begin=Date.now();try{const r=await f
 // Bounded fan-out avoids exhausted functions; sources fail individually, never suppress other feeds.
 export async function fetchRadar({maxSources=SOURCES.length,timeout=5600}={}){
  const all=SOURCES.slice(0,maxSources),sourceOut=[];
- for(let i=0;i<all.length;i+=8){const chunk=await Promise.all(all.slice(i,i+8).map(s=>getOne(s,timeout)));sourceOut.push(...chunk)}
+ for(let i=0;i<all.length;i+=12){const chunk=await Promise.all(all.slice(i,i+12).map(s=>getOne(s,timeout)));sourceOut.push(...chunk)}
  const ranked=rankAndFilter(sourceOut.flatMap(x=>x.jobs));
  return {jobs:ranked.jobs.slice(0,300),watchlist:WATCHLIST,sources:sourceOut.map(({status,source,type,feedCount,error,timeMs})=>({status,source,type,feedCount,error,timeMs})),stats:{...ranked.stats,shown:Math.min(300,ranked.jobs.length),activeSources:sourceOut.filter(x=>x.status==='ok').length,sourceCount:sourceOut.length},generatedAt:new Date().toISOString(),method:'Priorité : responsabilités créatives, stratégie de marque et social media senior, avec géographie admissible. À explorer : postes adjacents ou conditions à vérifier. Aucun score ne prédit le recrutement.'};
 }
