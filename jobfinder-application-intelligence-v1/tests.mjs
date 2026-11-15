@@ -18,5 +18,10 @@ test('outreach portfolio exact',()=>assert.ok(buildOutreach({offer:{title:'x'},p
 test('french copy',()=>assert.ok(buildOutreach({offer:{title:'x'},language:'fr'}).body.includes('Bonjour')));
 test('contact links user initiated',()=>assert.equal(candidateSearchLinks({company:'X',title:'Y'}).length,3));
 test('record scoped by offer',()=>assert.equal(createRecord({title:'A',company:'B'}).id,offerKey({title:'A',company:'B'})));
-test('source evidence ids preserved',()=>assert.deepEqual(selectTopEvidence({selected:[{id:'cv:a'}]},[]),['cv:a']));
+test('source evidence ids preserved',()=>assert.deepEqual(selectTopEvidence({selected:[{id:'cv:a'}],coverage:60,state:'review'},[{id:'cv:a'}]),['cv:a']));
+test('scoped applicant jobs cannot share a blank draft id',()=>assert.notEqual(createRecord({}).id,createRecord({}).id));
+test('published contact has validated official source',()=>assert.equal(sourceVerified({email:'careers@example.com',status:'published',sourceUrl:'https://example.com/contact'}),true));
+test('published contact does not trust unrelated domain',()=>assert.equal(sourceVerified({email:'careers@fake.example',status:'published',sourceUrl:'https://example.com/contact'}),false));
+test('published contact never trusts HTTP',()=>assert.equal(sourceVerified({email:'careers@example.com',status:'published',sourceUrl:'http://example.com/contact'}),false));
+test('user-attested contact rejects malformed source URL',()=>assert.equal(sourceVerified({email:'jobs@example.com',status:'verified',sourceUrl:'https://'}),false));
 console.log(`${tests}/${tests} tests passed`)
