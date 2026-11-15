@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict';import {fitOpportunity,normalizeJob,rankAndFilter} from './radarCore.mjs';import {SOURCES,fetchRadar,parseRoleFinderIndex,parseRoleFinderDetail} from './radarSources.mjs';
+import assert from 'node:assert/strict';import {fitOpportunity,normalizeJob,rankAndFilter} from './radarCore.mjs';import {SOURCES,fetchRadar,parseRoleFinderIndex,parseRoleFinderDetail} from './radarSources.mjs';import {parseWttjLanding,WTTJ_PAGES,getWttj} from './wttjSource.mjs';
 let total=0;const test=(label,fn)=>{fn();total++;console.log('PASS '+label)};
 const job=(title,location='Paris, France',extra={})=>({title,company:'Editorial Agency',location,description:'Creative strategy and campaign production leadership for luxury and beauty brands',date:new Date().toISOString(),...extra});
 for(const t of ['Graphic Designer','Product Designer','UX/UI Designer','Visual Designer','Motion Designer','Illustrateur','Graphiste','Photographer','3D Artist','Web Designer','Print Designer'])test('Exclude hands-on '+t,()=>assert.equal(fitOpportunity(job(t)).tier,'rejected'));
@@ -55,4 +55,16 @@ test('LATAM-only remote Creative Director excluded',()=>assert.equal(fitOpportun
 test('Mexico-only remote Head of Influencer excluded',()=>assert.equal(fitOpportunity(job('Head of Influencer Marketing','Remote Mexico',{workplaceType:'Remote'})).tier,'rejected'));
 test('Biggie vs Biggie Group are same employer for dedup',()=>{const a=normalizeJob({title:'Directeur de Clientèle Influence',company:'Biggie',url:'https://jobs.lever.co/biggie/1',location:'Paris'},SOURCES[0]);const b={...a,company:'Biggie Group',url:'https://example.net/biggie/2'};assert.equal(rankAndFilter([a,b]).jobs.length,1)});
 
+test('Remote Barcelona without France/EU eligibility rejected',()=>assert.equal(fitOpportunity(job('Marketing Manager, Spain','Barcelona',{workplaceType:'Remote'})).tier,'rejected'));
+test('Remote Berlin without France/EU eligibility rejected',()=>assert.equal(fitOpportunity(job('Creative Strategist','Berlin',{workplaceType:'Remote'})).tier,'rejected'));
+
+for(const t of ['Pantin','Levallois-Perret','Boulogne-Billancourt','Gentilly','Issy-les-Moulineaux','Saint-Denis','Puteaux','La Défense'])test('Paris metro geo recognised '+t,()=>assert.equal(fitOpportunity(job('Senior Creative Strategist',t)).geo,'paris'));
+for(const t of ['IA Designer','Senior Designer','Brand Designer','Graphic Designer','Motion Designer'])test('Designer role never included '+t,()=>assert.equal(fitOpportunity(job(t)).tier,'rejected'));
+for(const t of ['Senior Brand & Content Manager','Responsable communication et réseaux sociaux','Directeur de clientèle social media','Consultant Social Media Confirmé','Chef de projet communication'])test('Brand/social lead included '+t,()=>assert.notEqual(fitOpportunity(job(t)).tier,'rejected'));
+test('WTTJ secondary is only explore',()=>{const x=fitOpportunity(job('Senior Brand & Content Manager','Pantin',{sourceType:'wttj'}));assert.equal(x.tier,'explore');assert(x.score<=76)});
+const wttjCard= '<div data-role="jobs:thumb"><a href="/fr/companies/havas-sa/jobs/betc-senior_pantin"><h2>BETC Fullsix - Social Media Strategist Senior (H/F/X) - CDI</h2></a><img alt="Havas France" data-testid="job-thumb-logo-123"/><span>Havas France</span><span>Pantin</span><span>Télétravail fréquent</span></div>';
+test('WTTJ public job cards extract title and Pantin',()=>{const a=parseWttjLanding(wttjCard);assert.equal(a.length,1);assert.equal(a[0].title,'BETC Fullsix - Social Media Strategist Senior (H/F/X) - CDI');assert.equal(a[0].location,'Pantin');assert.equal(a[0].company,'Havas France');assert.equal(a[0].description,'')});
+test('WTTJ refuses non-native job links',()=>assert.equal(parseWttjLanding(wttjCard.replace('/fr/companies/havas-sa/jobs/','/en/jobs/')).length,0));
+test('WTTJ approved public listing pages',()=>{assert(WTTJ_PAGES.includes('emploi-social-media-manager'));assert(!WTTJ_PAGES.some(x=>x.includes('?')))});
+test('WTTJ jobs do not inherit fictional description',()=>{const j=parseWttjLanding(wttjCard)[0];const n=normalizeJob(j,{type:'wttj',label:'Welcome to the Jungle',company:''});assert.equal(n.description,'');assert.equal(n.sourceType,'wttj')});
 console.log(total+'/'+total+' radar tests passed');
