@@ -36,7 +36,7 @@ export default function ApplicationIntelligence({step='offer'}){
  useEffect(()=>{if(hydrated)try{localStorage.setItem(STORAGE,JSON.stringify(db))}catch{}},[db,hydrated]);
  const record=db.records[db.active]||createRecord({}),offer=record.offer||{},fit=useMemo(()=>evaluateFit(CAREER_CV,offer),[offer]),evidence=useMemo(()=>listEvidence(CAREER_CV),[]),editorial=useMemo(()=>editorialSuggestions(fit,offer),[fit,offer]);
  const selectedIds=Array.isArray(record.selectedEvidenceIds)?record.selectedEvidenceIds:selectTopEvidence(fit,evidence);
- const portfolioProjects=record.portfolioProjects||recommendProjects(offer),portfolioUrl=curatedPortfolioUrl(portfolioProjects),selectedProjectNames=PROJECTS.filter(p=>portfolioProjects.includes(p.slug)).map(p=>p.name);
+ const portfolioProjects=record.portfolioProjects||recommendProjects(offer),portfolioUrl=curatedPortfolioUrl(portfolioProjects),selectedProjectNames=portfolioProjects.map(slug=>PROJECTS.find(p=>p.slug===slug)?.name).filter(Boolean);
  const contact=(record.contacts||[]).find(c=>c.id===record.selectedContactId)||null;
  const copy=buildOutreach({offer,contact:contact||{},portfolioUrl,language:record.language||'en',channel:record.channel||'recruiter',applied:record.applied,projectNames:selectedProjectNames});
  const patchRecord=p=>setDb(old=>{const r=old.records[old.active]||createRecord({});return {...old,records:{...old.records,[old.active]:{...r,...p,updatedAt:new Date().toISOString()}}}});
