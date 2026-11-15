@@ -10,3 +10,6 @@
 8. Preserve the private Vercel SSO on Job Finder. The curated public portfolio must contain no CV details, contact research, private notes or HR records.
 9. Store drafts per offer in the user's browser. Explain that this does not sync to other devices.
 10. Every substantive release updates INDEX.md and runs regression checks before altering production.
+
+11. Une adresse détectée sur le site officiel porte le statut `published`, pas celui d’une personne identifiée, d’une boîte délivrable ou d’un recruteur confirmé. Un ancien contact automatique libellé `verified` doit être rétrogradé lors de la lecture des brouillons.
+12. Les requêtes asynchrones sont rattachées à l’identifiant du dossier d’origine pour éviter de mélanger les informations de deux employeurs.
