@@ -14,7 +14,7 @@ Reject: graphic designer, product designer, UX/UI, motion designer, illustrator,
 
 ## Pipeline and constraints
 
-Public job listing feeds: Greenhouse Board API, Lever Postings API, Ashby Public Posting API, SmartRecruiters public company board; clearly marked cross-company job boards Arbeitnow, Remotive, Jobicy, Himalayas. All are live sources, not an invented catalog. 28 feeds configured. Failed or empty feeds are individually reported.
+Public job listing feeds: Greenhouse Board API, Lever Postings API, Ashby Public Posting API, SmartRecruiters public company board; clearly marked cross-company job boards Arbeitnow, Remotive, Jobicy, Himalayas. All are live sources, not an invented catalog. 52 feeds configured, including 24 additional company boards checked live. Failed or empty feeds are individually reported.
 
 Classification combines title, source and geography, then scores the match. No percentage is a hiring probability or ATS score. The full job description is preserved when available. Direct application opens the verified job URL and dossier in Application Intelligence. Never invent a contact or a listing, and never silently label an unverified remote position Paris-eligible.
 
