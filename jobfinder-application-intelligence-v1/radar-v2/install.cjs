@@ -12,6 +12,7 @@ const MAPPING={
  'jobs-route.js':app+'/api/jobs/route.js',
  'radarCore.mjs':app+'/lib/radarCore.mjs',
  'radarSources.mjs':app+'/lib/radarSources.mjs',
+ 'wttjSource.mjs':app+'/lib/wttjSource.mjs',
  'tests.mjs':'tests/radar-v2.test.mjs',
  'RADAR.md':'RADAR.md'
 };
@@ -20,7 +21,7 @@ function get(name){return new Promise((resolve,reject)=>{if(base==='--local'){tr
 const changes=await Promise.all(Object.entries(MAPPING).map(async ([source,destination])=>{const data=await get(source);if(data.length<100)throw Error('Empty source '+source);return {destination,data}}));
 const core=changes.find(x=>x.destination===app+'/lib/radarCore.mjs');
 const sources=changes.find(x=>x.destination===app+'/lib/radarSources.mjs');
-changes.push({destination:'tests/radarCore.mjs',data:core.data},{destination:'tests/radarSources.mjs',data:sources.data});
+changes.push({destination:'tests/radarCore.mjs',data:core.data},{destination:'tests/radarSources.mjs',data:sources.data},{destination:'tests/wttjSource.mjs',data:changes.find(x=>x.destination===app+'/lib/wttjSource.mjs').data});
 const radar=changes.find(x=>x.destination===app+'/radar/page.jsx');if(!radar.data.includes('jf-intelligence-inbound')||!radar.data.includes('PRÉPARER LE DOSSIER'))throw Error('Application Intelligence handoff missing');
 const jobs=changes.find(x=>x.destination===app+'/api/jobs/route.js');if(!jobs.data.includes('fetchRadar'))throw Error('Jobs API incompatible');
 for(const {destination,data} of changes){fs.mkdirSync(path.dirname(destination),{recursive:true});fs.writeFileSync(destination,data)}
