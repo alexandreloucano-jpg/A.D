@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict';import {fitOpportunity,normalizeJob,rankAndFilter} from './radarCore.mjs';import {SOURCES,fetchRadar} from './radarSources.mjs';
+import assert from 'node:assert/strict';import {fitOpportunity,normalizeJob,rankAndFilter} from './radarCore.mjs';import {SOURCES,fetchRadar,parseRoleFinderIndex,parseRoleFinderDetail} from './radarSources.mjs';
 let total=0;const test=(label,fn)=>{fn();total++;console.log('PASS '+label)};
 const job=(title,location='Paris, France',extra={})=>({title,company:'Editorial Agency',location,description:'Creative strategy and campaign production leadership for luxury and beauty brands',date:new Date().toISOString(),...extra});
 for(const t of ['Graphic Designer','Product Designer','UX/UI Designer','Visual Designer','Motion Designer','Illustrateur','Graphiste','Photographer','3D Artist','Web Designer','Print Designer'])test('Exclude hands-on '+t,()=>assert.equal(fitOpportunity(job(t)).tier,'rejected'));
@@ -28,4 +28,19 @@ test('Exact official https link required',()=>assert.equal(normalizeJob({title:'
 test('Normalize original ATS job',()=>assert.equal(normalizeJob({title:'Creative Director',absolute_url:'https://jobs.example.com/a',location:'Paris'},SOURCES[0]).company,'Pinterest'));
 test('Deduplicate similar posts',()=>{const j=normalizeJob({title:'Creative Director',url:'https://job-boards.greenhouse.io/acme/a',location:'Paris'},SOURCES[0]);const result=rankAndFilter([j,{...j,id:'another',url:'https://jobs.lever.co/acme/a'}]);assert.equal(result.jobs.length,1);assert.equal(result.stats.deduplicated,1)});
 test('Source config has broad employer & aggregator coverage',()=>{assert(SOURCES.length>=57);assert(SOURCES.filter(s=>s.type==='aggregate').length>=3)});
+
+for(const t of ['Responsable communication digitale','Directeur de la communication','Responsable communication et marketing','Director of Marketing and Communications','Influencer and Social Media Lead','Influencer Marketing Manager','Brand Content Manager','Digital & Content Manager','Social Media and Content Strategist - Community','Global Content Lead'])test('Include leadership / strategy '+t,()=>assert.notEqual(fitOpportunity(job(t)).tier,'rejected'));
+for(const t of ['Art Director, Brand & Marketing Design','Creative Lead & Maker','Content Creator','UI Designer','Senior Brand Designer'])test('Reject hands-on role '+t,()=>assert.equal(fitOpportunity(job(t)).tier,'rejected'));
+test('Reject hands-on Illustrator role inside Art Director',()=>assert.equal(fitOpportunity(job('Art Director','Paris',{description:'Create graphic assets and design mockups daily. Adobe Illustrator required.'})).tier,'rejected'));
+test('Berlin hybrid is not France-eligible remote',()=>assert.equal(fitOpportunity(job('Creative Director','Berlin, Germany',{workplaceType:'Hybrid'})).tier,'rejected'));
+test('Remote Netherlands only must be rejected',()=>assert.equal(fitOpportunity(job('Head of Social Media','Remote - The Netherlands',{workplaceType:'Remote'})).tier,'rejected'));
+test('Unrestricted Europe remote remains eligible',()=>assert.equal(fitOpportunity(job('Head of Social Media','Remote Europe',{workplaceType:'Remote'})).tier,'priority'));
+test('Secondary aggregation cannot be Priority',()=>assert.equal(fitOpportunity(job('Creative Director','Paris',{sourceType:'rolefinder'})).tier,'explore'));
+const listingHtml='<script type="application/ld+json">'+JSON.stringify({'@type':'ItemList',itemListElement:[{name:'Directeur communication',url:'https://jobs.urbanodx.com/job/abc'},{name:'Unknown',url:'https://evil.test/abc'}]})+'</script>';
+test('RoleFinder only accepts indexed native job URLs',()=>assert.equal(parseRoleFinderIndex(listingHtml).length,1));
+const detailHtml='<h1>Social Media Director</h1><p class="company-line"><a href="/companies/brand">Maison Brand</a></p><li><span class="k">Location</span>Paris; London</li><li><span class="k">Work type</span>Hybrid</li><li><span class="k">Posted</span>13 November 2026</li><a href="https://jobs.ashbyhq.com/brand/abc?utm_source=rolefinder&amp;utm_campaign=campaign" data-click="apply" data-co="Maison Brand">Apply</a>';
+test('RoleFinder extracts employer, real geography and direct careers URL',()=>{const x=parseRoleFinderDetail(detailHtml,{title:'Social Media Director',url:'https://jobs.urbanodx.com/job/a'});assert.equal(x.company,'Maison Brand');assert.equal(x.location,'Paris; London');assert(x.url.startsWith('https://jobs.ashbyhq.com/'))});
+test('RoleFinder rejects missing direct employer link',()=>assert.equal(parseRoleFinderDetail('<h1>Creative Director</h1><li><span class="k">Location</span>Paris</li>',{title:'Creative Director'}),null));
+test('Rejection diagnostics available',()=>{const a=normalizeJob({title:'Graphic Designer',url:'https://jobs.example.com/1',location:'Paris'},SOURCES[0]);assert.equal(rankAndFilter([a]).stats.rejectionReasons.design,1)});
+
 console.log(total+'/'+total+' radar tests passed');
