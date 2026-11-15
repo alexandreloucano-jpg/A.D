@@ -7,3 +7,6 @@ Commencer par `INDEX.md`. Sources Python/JS : `radarCore.mjs`, `radarSources.mjs
 **Attention :** les liens Welcome to the Jungle provenant de pages éditoriales publiques sont **secondaires**, restent exploratoires et n'apportent pas le descriptif intégral. Ne pas présenter ces résultats comme des offres ATS employeur confirmées.
 
 Installer uniquement via le bootstrap SHA figé de `jobfinder-application-intelligence-v1/bootstrap.cjs` (GitHub), une fois versionné. En date du 15/11/2026, le site public de Job Finder n'a pas encore reçu cette version en raison du quota de déploiements Vercel.
+
+## Interface (Radar V4 compact)
+Le tableau de bord Radar est réduit aux fonctions de décision. Aucun score marketing affiché ; l’algorithme conserve un classement interne pour ordonner la liste. Les sources sont consultables sous la liste sans encombrer l’interface.
