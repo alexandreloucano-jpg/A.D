@@ -1,5 +1,6 @@
 /** Official public ATS endpoints, plus labeled independent job-board feeds. */
 import {normalizeJob,rankAndFilter,fitOpportunity} from './radarCore.mjs';
+import {getWttj,WTTJ_PAGES} from './wttjSource.mjs';
 const company=(type,slug,label,sector)=>({type,slug,label,company:label,sector});
 export const SOURCES=[
  company('greenhouse','pinterest','Pinterest','Social / Creative'),
@@ -62,6 +63,7 @@ export const SOURCES=[
  company('ashby','elevenlabs','ElevenLabs','Brand / Creative'),
  company('smart','Accor','Accor','Hospitality'),
  company('smart','LVMH','LVMH','Luxury'),
+ ...WTTJ_PAGES.map(slug=>({type:'wttj',slug,label:'Welcome to the Jungle / '+slug.replace(/^emploi-/,'').replace(/-/g,' '),company:'',sector:'Creative / Social / Brand'})),
  {type:'aggregate',slug:'arbeitnow',label:'Arbeitnow',company:'',sector:'Cross-company'},
  {type:'aggregate',slug:'arbeitnow',page:2,label:'Arbeitnow / page 2',company:'',sector:'Cross-company'},
  {type:'aggregate',slug:'arbeitnow',page:3,label:'Arbeitnow / page 3',company:'',sector:'Cross-company'},
@@ -148,7 +150,7 @@ async function getRoleFinder(s,limitMs){
   return {status:'ok',source:s.label,type:s.type,feedCount:entries.length,jobs,timeMs:Date.now()-start};
  }catch(err){return {status:'error',source:s.label,type:s.type,feedCount:0,jobs:[],error:String(err.message).slice(0,90),timeMs:Date.now()-start}}
 }
-async function getOne(s,limitMs=6000){if(s.type==='rolefinder')return getRoleFinder(s,limitMs);const begin=Date.now();try{const r=await fetch(boardUrl(s),{headers:{'user-agent':'CreativeJobFinderRadar/2.2 (public ATS feeds and permitted indices)','accept':'application/json'},cache:'no-store',signal:AbortSignal.timeout(limitMs)});if(!r.ok)throw Error('HTTP '+r.status);const bytes=+(r.headers.get('content-length')||0);if(bytes>6500000)throw Error('Source exceeds safe size');const json=await r.json();const parsed=parseFrom(s,json);return {status:'ok',source:s.label,type:s.type,feedCount:parsed.length,jobs:parsed,timeMs:Date.now()-begin}}catch(err){return {status:'error',source:s.label,type:s.type,feedCount:0,jobs:[],error:String(err?.name==='TimeoutError'?'Timeout':err.message).slice(0,90),timeMs:Date.now()-begin}}}
+async function getOne(s,limitMs=6000){if(s.type==='rolefinder')return getRoleFinder(s,limitMs);if(s.type==='wttj'){const result=await getWttj(s,Math.max(limitMs,7500));return {...result,jobs:result.jobs.map(j=>normalizeJob(j,s)).filter(Boolean)}}const begin=Date.now();try{const r=await fetch(boardUrl(s),{headers:{'user-agent':'CreativeJobFinderRadar/2.2 (public ATS feeds and permitted indices)','accept':'application/json'},cache:'no-store',signal:AbortSignal.timeout(limitMs)});if(!r.ok)throw Error('HTTP '+r.status);const bytes=+(r.headers.get('content-length')||0);if(bytes>6500000)throw Error('Source exceeds safe size');const json=await r.json();const parsed=parseFrom(s,json);return {status:'ok',source:s.label,type:s.type,feedCount:parsed.length,jobs:parsed,timeMs:Date.now()-begin}}catch(err){return {status:'error',source:s.label,type:s.type,feedCount:0,jobs:[],error:String(err?.name==='TimeoutError'?'Timeout':err.message).slice(0,90),timeMs:Date.now()-begin}}}
 // Bounded fan-out avoids exhausted functions; sources fail individually, never suppress other feeds.
 export async function fetchRadar({maxSources=SOURCES.length,timeout=5600}={}){
  const all=SOURCES.slice(0,maxSources),sourceOut=[];
