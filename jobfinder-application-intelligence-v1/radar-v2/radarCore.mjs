@@ -21,6 +21,7 @@ const FOREIGN_ONSITE=/\b(new york|san francisco|los angeles|boston|chicago|austi
 const RESTRICTED=/\b(us residents only|us candidates only|us only|must reside in the us|must be based in the us|uk only|must be based in the uk|canada only|north america only|remote within the us|remote in the us|remote uk|netherlands only|germany only|poland only|spain only|italy only|remote in (germany|the netherlands|spain|poland|usa|uk|canada)|remote - (the netherlands|germany|spain|poland|uk|united states|canada))\b/;
 const PARIS=/\b(paris|ile.de.france|ile de france)\b/;
 const LATAM_RESTRICTED=/\b(latin america|latam|south america|argentina|argentinian|mexico|mexican|brazil|brazilian|chile|chilean|colombia|colombian|peru|peruvian|remote - mexico|remote - latam)\b/;
+const SINGLE_FOREIGN_LOCATION=/\b(barcelona|madrid|spain|germany|berlin|hamburg|munich|frankfurt|amsterdam|netherlands|rotterdam|dublin|ireland|milan|italy|rome|lisbon|portugal|vienna|austria|warsaw|poland|copenhagen|denmark|stockholm|sweden|oslo|norway|helsinki|finland|zurich|geneva|switzerland|brussels|belgium|luxembourg|mexico|bogota|colombia|argentina|buenos aires)\b/;
 const GAME_ART=/\b(game|gaming|midcore|gameplay|character art|environment art|concept artist)\b/;
 function sectorFor(s){const x=norm(s);if(/luxur|luxe|beaut|cosmetic|skincare|perfume|fashion|couture|retail|jewelry|joaill|fragrance/.test(x))return 'Mode / Beauté';if(/hotel|hospitality|restaurant|travel|tourism|food|gastronom/.test(x))return 'Hospitality';if(/music|festival|culture|art|film|media|entertainment|publishing/.test(x))return 'Culture / Media';return 'Marque / Digital'}
 export function fitOpportunity(input,options={}){
@@ -51,7 +52,7 @@ export function fitOpportunity(input,options={}){
  if(role==='Marketing adjacent'&&!/\b(brand|communication|social|creative|campaign|content|editorial|influence|storytelling|image|luxe|luxury|marketing manager|marketing lead|marketing director)\b/.test(title+' '+description.slice(0,2500)))return {tier:'rejected',score:0,reasons:['Marketing non qualifié créativement'],role,geo:'unknown'};
  let geo='unknown';const remote=REMOTE.test(location+' '+work),france=FRENCH.test(location),europe=EUROPE.test(location+' '+work),foreign=FOREIGN_ONSITE.test(location);
  const locationScope=location+' '+work+' '+description.slice(0,1600);
- if(remote&&(RESTRICTED.test(locationScope)||(!france&&!europe&&LATAM_RESTRICTED.test(location))||(foreign&&!france&&!europe)))return {tier:'rejected',score:0,reasons:['Télétravail limité à un pays non compatible'],role,geo:'restricted'};
+ if(remote&&(RESTRICTED.test(locationScope)||(!france&&!europe&&(LATAM_RESTRICTED.test(location)||SINGLE_FOREIGN_LOCATION.test(location)))||(foreign&&!france&&!europe)))return {tier:'rejected',score:0,reasons:['Télétravail limité à un pays non compatible'],role,geo:'restricted'};
  if(PARIS.test(location)){geo='paris';score+=13;reasons.push('Paris / Île-de-France')}
  else if(france){geo='france';score+=10;reasons.push('France')}
  else if(remote&&europe){geo='europe-remote';score+=7;reasons.push('Remote Europe / EMEA')}
