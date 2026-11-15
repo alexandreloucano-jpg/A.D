@@ -3,6 +3,8 @@ let total=0;const test=(label,fn)=>{fn();total++;console.log('PASS '+label)};
 const job=(title,location='Paris, France',extra={})=>({title,company:'Editorial Agency',location,description:'Creative strategy and campaign production leadership for luxury and beauty brands',date:new Date().toISOString(),...extra});
 for(const t of ['Graphic Designer','Product Designer','UX/UI Designer','Visual Designer','Motion Designer','Illustrateur','Graphiste','Photographer','3D Artist','Web Designer','Print Designer'])test('Exclude hands-on '+t,()=>assert.equal(fitOpportunity(job(t)).tier,'rejected'));
 for(const t of ['Art Director','Creative Director','Senior Creative Strategist','Head of Social Media','Brand Strategist','Head of Content','Brand Director','Director of Social Media'])test('Include senior creative '+t,()=>assert.notEqual(fitOpportunity(job(t)).tier,'rejected'));
+test('WPP Media social influence director identified',()=>assert.equal(fitOpportunity(job('Social Media & Influence Director H/F - CDI')).tier,'priority'));
+test('Influence lead identified',()=>assert.notEqual(fitOpportunity(job('Strategic Influence Lead H/F - CDD 18 mois')).tier,'rejected'));
 test('Paris Creative Director gets priority',()=>assert.equal(fitOpportunity(job('Creative Director')).tier,'priority'));
 test('Remote EMEA strategy eligible',()=>assert.equal(fitOpportunity(job('Head of Social Media','Remote Europe',{workplaceType:'Remote'})).tier,'priority'));
 test('US only remote rejected',()=>assert.equal(fitOpportunity(job('Creative Director','Remote, United States',{workplaceType:'Remote'})).tier,'rejected'));
@@ -23,5 +25,5 @@ test('Empty date still eligible',()=>assert.notEqual(fitOpportunity(job('Creativ
 test('Exact official https link required',()=>assert.equal(normalizeJob({title:'Creative Director',url:'http://example.com'},SOURCES[0]),null));
 test('Normalize original ATS job',()=>assert.equal(normalizeJob({title:'Creative Director',absolute_url:'https://jobs.example.com/a',location:'Paris'},SOURCES[0]).company,'Pinterest'));
 test('Deduplicate similar posts',()=>{const j=normalizeJob({title:'Creative Director',url:'https://job-boards.greenhouse.io/acme/a',location:'Paris'},SOURCES[0]);const result=rankAndFilter([j,{...j,id:'another',url:'https://jobs.lever.co/acme/a'}]);assert.equal(result.jobs.length,1);assert.equal(result.stats.deduplicated,1)});
-test('Source config has broad employer & aggregator coverage',()=>{assert(SOURCES.length>=50);assert(SOURCES.filter(s=>s.type==='aggregate').length>=3)});
+test('Source config has broad employer & aggregator coverage',()=>{assert(SOURCES.length>=54);assert(SOURCES.filter(s=>s.type==='aggregate').length>=3)});
 console.log(total+'/'+total+' radar tests passed');
