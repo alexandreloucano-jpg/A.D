@@ -11,7 +11,7 @@ const DEF={
 // These titles require production/drawing skill, not directing the creative work.
 const HANDS_ON=/\b(graphic designer|graphics designer|graphiste|designer graphique|graphic design intern|visual designer|brand designer|product designer|ux designer|ui designer|ux\/ui|ui\/ux|web designer|webdesigner|motion designer|motion graphics|motion design|illustrator|illustratrice|illustrateur|3d artist|3d designer|set designer|print designer|packaging designer|layout designer|production designer|design engineer|design system|video editor|videaste|photographe|photographer|retoucher|retoucheur|artworker|artwork designer|character artist|game artist|interior designer|architecte d'interieur)\b/;
 const JUNIOR=/\b(intern(ship)?|stage|stagiaire|alternance|alternant|apprenti|apprentice|junior|trainee|graduate scheme|working student|student program|student job|assistant social media|assistant marketing|social media assistant)\b/;
-const TECH=/\b(software engineer|frontend|front end|backend|back end|full stack|developer|developpeur|data engineer|data scientist|accountant|comptable|sales development representative|business development representative|account executive|customer success|legal counsel|juriste|recruiter|talent acquisition|revenue operations|product manager|product owner|financial analyst)\b/;
+const TECH=/\b(product marketing|field marketing|performance marketing|paid media specialist|search engine optimization|seo specialist|demand generation|revenue marketing|cms content manager|software engineer|frontend|front end|backend|back end|full stack|developer|developpeur|data engineer|data scientist|accountant|comptable|sales development representative|business development representative|account executive|customer success|legal counsel|juriste|recruiter|talent acquisition|revenue operations|product manager|product owner|financial analyst)\b/;
 const HEAVY_EXECUTION=/\b(hands.on graphic design|design mockups|create graphic assets|create illustrations|design in figma|create ui|execute visual designs|adobe illustrator required|illustration portfolio|graphic design portfolio|daily graphic production|produire des maquettes|creation de maquettes|dessin vectoriel|dessin technique|production graphique quotidienne)\b/;
 const CREATIVE_LEAD=/\b(creative director|art director|creative lead|head of creative|director of creative|directeur artistique|directrice artistique|direction artistique|directeur de creation|directrice de creation)\b/;
 const FRENCH=/\b(paris|ile.de.france|ile de france|france|lyon|bordeaux|lille|marseille|nantes|toulouse|strasbourg|montpellier|nice|rennes)\b/;
@@ -47,7 +47,7 @@ export function fitOpportunity(input,options={}){
  else if(france){geo='france';score+=10;reasons.push('France')}
  else if(remote&&europe){geo='europe-remote';score+=7;reasons.push('Remote Europe / EMEA')}
  else if(remote){geo='remote-unverified';score+=1;reasons.push('Remote : pays d’éligibilité non confirmé')}
- else if(foreign){return {tier:'rejected',score:0,reasons:['Présentiel hors de France'],role,geo:'foreign'};}
+ else if(foreign||(!remote&&location)){return {tier:'rejected',score:0,reasons:['Poste hors France, sans télétravail compatible'],role,geo:'foreign'};}
  else {geo='location-unverified';score-=4;reasons.push('Localisation à confirmer')}
  // Dates are evidence of freshness only when explicitly published, never inferred from an update timestamp.
  const d=new Date(input?.date);const age=Number.isFinite(d.valueOf())?(Date.now()-d.getTime())/86400000:null;
@@ -56,7 +56,9 @@ export function fitOpportunity(input,options={}){
  else if(age!==null&&age>60){score-=8;reasons.push('Date ancienne : vérifier l’ouverture')}
  // Remote without European eligibility cannot enter the priority tier.
  score=Math.max(0,Math.min(100,score));let tier=score>=82&&['paris','france','europe-remote'].includes(geo)&&role!=='Marketing adjacent'?'priority':'explore';
- if(role==='Marketing adjacent')tier='explore';if(score<48)tier='rejected';
+ if(role==='Marketing adjacent')tier='explore';
+ if(/\b(social media manager|community manager|marketing manager|content manager)\b/.test(title)&&!/(senior|head|director|lead)/.test(title))tier='explore';
+ if(score<48)tier='rejected';
  return {tier,score,reasons,role,geo,sector:sectorFor(whole+' '+employer),ageDays:age===null?null:Math.round(age)};
 }
 export function normalizeJob(raw,source){const title=String(raw.title||raw.text||raw.name||'').trim();const company=String(raw.company||source.company||'').trim();const url=String(raw.url||raw.absolute_url||raw.hostedUrl||raw.jobUrl||'').trim();if(!title||!company||!/^https:\/\//i.test(url))return null;
