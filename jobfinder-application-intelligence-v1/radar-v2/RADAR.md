@@ -1,34 +1,32 @@
-# Radar V2.2 | Job Finder
+# Career Radar V3 | Source de vérité
 
-Priority: active. Maintainer: candidate. Last revised: 2026-11-15.
+Status: active. Reviewed: 2026-11-15. Priority: P0 for all Radar changes.
 
-## Core professional targeting
+## Positionnement du candidat
 
-The candidate is a Creative Director / Art Director in the sense of creative leadership, a Senior Creative Strategist, Head of Social Media and Brand Strategist. **The candidate is not a hands-on designer** and does not seek roles whose principal deliverable is drawing, UI/UX design, graphic layout, illustration, motion design, 3D, graphic-production execution or Figma interface design.
+Target: Creative Director, directeur artistique au sens de direction de campagne et supervision (pas d'exécution graphique), Senior Creative Strategist, Brand Strategist, Head of Social Media, social/influence strategy, direction des contenus, direction de communication et marque. Adjacent roles must be clearly marked **À explorer**.
 
-Promote: Creative Director, Art Director (leadership), Head of Creative, Creative Strategist, Brand Strategist, Head of Social, Social Media Director, Senior Social Media Strategist, Head of Content, campaign/content strategy, senior brand marketing with strong creative ownership.
+**Never** recommend jobs whose core responsibility is graphic design, layout, illustration, interface design, daily asset creation, motion design, photography execution, video editing, or Figma mockups. A managerial title alone does not make hands-on design acceptable. Exclude internships, junior roles, technical product roles and sales.
 
-Explore, never mislabel as high certainty: generic communications / content / marketing management, unspecific remote geographies, roles without a full description, positions requiring regular hands-on graphic production.
+## Sources et géographie
 
-Reject: graphic designer, product designer, UX/UI, motion designer, illustrator, photographer, video editor, software/technical or sales positions, interns and junior positions, on-site positions outside France, remote restricted to US/UK/Canada.
+- Direct public employer ATS: Greenhouse, Ashby, Lever, SmartRecruiters.
+- Third-party public jobs APIs (labeled): Arbeitnow (pages 1-4, with attribution), Remotive, Himalayas, Jobicy.
+- RoleFinder public index (Paris/France/Remote marketing pages): parse JSON-LD listings, fetch ONLY plausible job details, and extract direct employer application links. Treat as secondary, never silently upgrade to verified employer posting. Confirm geography from the job DETAIL; never infer Paris from an index page title.
+- Manual watchlist: Welcome to the Jungle, APEC, FashionJobs, luxury recruiters. Never count manually monitored sites as automated postings.
+- Priority geography: Paris, elsewhere France or **verified eligible** remote EU/EMEA. A foreign on-site or country-restricted remote role is rejected. A remote role with unknown eligibility is exploratory, not priority.
 
-## Pipeline and constraints
+## Scoring is NOT ATS accuracy
 
-Public job listing feeds: Greenhouse Board API, Lever Postings API, Ashby Public Posting API, SmartRecruiters public company board; clearly marked cross-company job boards Arbeitnow, Remotive, Jobicy, Himalayas. All are live sources, not an invented catalog. 52 feeds configured, including 24 additional company boards checked live. Failed or empty feeds are individually reported.
+The heuristic score ranks job descriptions for review. It is not a hiring chance, applicant compatibility guarantee or salary estimate. Each record has source, URL, date if published, reason, role, geographic state, and tier. When remote eligibility or role ownership is unknown, mark uncertain.
 
-Classification combines title, source and geography, then scores the match. No percentage is a hiring probability or ATS score. The full job description is preserved when available. Direct application opens the verified job URL and dossier in Application Intelligence. Never invent a contact or a listing, and never silently label an unverified remote position Paris-eligible.
+## UX and integration
 
-## Success metrics
+- `/radar`: separate Priority / À explorer filters, search, direct employer link, dossier action.
+- `/api/jobs`: live refresh, bounded fan-out, individually reported source errors, counts; `rejectionReasons` diagnoses over-filtering.
+- `/intelligence/offer`: receive selected role via sessionStorage, preserve existing application dossiers and human confirmation.
+- No LinkedIn scraping. No guessing contact emails. No automatic email sends.
 
-The requested +170% is a target, **not a verified outcome**. To validate, record baseline and new counts across the same time window: (1) open, unique qualified postings; (2) verified employer-job links; (3) posts matching target role and geography; (4) median age when a publication date exists; (5) share of opportunities advancing to dossier. Only a measured lift, not number of API sources, demonstrates success.
+## Measurement
 
-## Integration
-
-- Radar page: `/radar`
-- Jobs API: `/api/jobs` serving jobs, counts, active source status, manually monitored specialist sources
-- Dossier: `/intelligence/offer`
-- CV: `/intelligence/cv`
-- Contacts: `/intelligence/contacts`
-- Portfolio: `/intelligence/portfolio`
-- Outreach: `/intelligence/outreach`
-- Source: `radar-v2/radarCore.mjs`, `radar-v2/radarSources.mjs`, and their integration tests.
+Baseline from same-day live V2.2: 52 sources, 4740 raw postings, 17 retained, 1 priority. New count must be measured live on same collection day, not attributed to job quality or success alone. The requested +170% remains a goal, never a claimed achieved result without normalized comparison and inspection of role appropriateness.
