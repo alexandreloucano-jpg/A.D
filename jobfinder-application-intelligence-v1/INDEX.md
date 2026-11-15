@@ -1,6 +1,6 @@
 # INDEX.md | Job Finder — Application Intelligence
 
-**Status:** current implementation specification, 2026-11-15. **Scope:** the private `creative-job-finder` app; public curated portfolio is an independently deployed dependency. Read referenced files directly before making changes.
+**Status:** patched and verified, 2026-11-15. **Scope:** the private `creative-job-finder` app; public curated portfolio is an independently deployed dependency. Read referenced files directly before making changes.
 
 ## Source map
 | File | When to consult | Priority | Status |
@@ -10,7 +10,10 @@
 | `PROCESS.md` | Update, testing, release and rollback instructions | P1 | Current |
 | `engine.mjs` | Evidence-neutral portfolio matching, offer/record identity, outreach templates | P0 for engine behaviour | Current |
 | `ApplicationIntelligence.jsx` | Actual iOS-style 5-screen UI and browser-only draft persistence | P0 for UI | Current |
-| `api/contacts-route.js` | Official-site contact extraction; SSRF restrictions; robots checks | P0 for server contact workflow | Current |
+| `api/contacts-route.js` | Official-site contact extraction with same-domain redirects and fail-closed robots check | P0 for server contact workflow | Current |
+| `api/contact-helpers.mjs` | Testable HTML contact extraction, public address filtering, and robots rules | P0 for server verification | New, current |
+| `api/contacts-tests.mjs` | 35 pure contact parsing, SSRF and robots regression tests | P1 | New, current |
+| `tests-regressions.mjs` | Draft collisions, evidence selection, published email and copy specificity | P1 | New, current |
 | `api/offer-route.js` | Importing offer descriptions only from supported ATS domains | P1 | Current |
 | `routes/*.jsx` | Actual Next.js routes and step navigation | P1 | Current |
 | `application-intelligence.css` | Monochrome responsive styling and A4 CV print stylesheet | P1 | Current |
