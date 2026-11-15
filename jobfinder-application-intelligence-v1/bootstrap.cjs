@@ -12,5 +12,7 @@ function get(url){return new Promise((resolve,reject)=>{https.get(url,{timeout:1
   console.log('Installing '+tag+' from pinned release.');execFileSync(process.execPath,[file,source],{stdio:'inherit',timeout:60000});
  }
  console.log('Running Application Intelligence unit tests.');execFileSync(process.execPath,['tests/application-intelligence.test.mjs'],{stdio:'inherit',timeout:20000});
- console.log('All installers and unit tests complete.');
+ console.log('Running application regression and contact safety tests.');
+ for(const file of ['tests/application-regressions.test.mjs','tests/contact-source.test.mjs'])execFileSync(process.execPath,[file],{stdio:'inherit',timeout:20000});
+ console.log('All installers and regression tests complete.');
 })().catch(e=>{console.error('Job Finder release failed closed:',e.message);process.exit(1)});
