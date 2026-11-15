@@ -34,3 +34,7 @@ Baseline from same-day live V2.2: 52 sources, 4740 raw postings, 17 retained, 1 
 ## Operational rollout
 
 69 configured public feeds, subject to per-run availability. 6 extra verified employer boards added: DEPT, VaynerMedia, Ogilvy, Biggie, H Company and Nabla. Duplicate employer spellings are reconciled, and direct ATS links are preferred over a secondary index. Source output is benchmarked by real live candidate count before release, not by the number of raw adverts.
+
+## V3 validation notes
+
+In live test before final exclusions: 69/69 live sources, 6764 received, 43 unique retained, 4 priority, 39 explore (2026-11-15). QA found game-art director, LATAM/Mexico restricted remote, and Biggie/Biggie Group duplicate; these are deliberately removed before public release. **Only the final production scan should be used to claim live lead volume**. Visual classification of source provenance is displayed in Radar.
