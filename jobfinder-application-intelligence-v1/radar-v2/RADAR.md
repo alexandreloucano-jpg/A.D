@@ -1,4 +1,4 @@
-# Career Radar V3 | Source de vérité
+# Career Radar V3.1 | Source de vérité
 
 Status: active. Reviewed: 2026-11-15. Priority: P0 for all Radar changes.
 
@@ -30,3 +30,7 @@ The heuristic score ranks job descriptions for review. It is not a hiring chance
 ## Measurement
 
 Baseline from same-day live V2.2: 52 sources, 4740 raw postings, 17 retained, 1 priority. New count must be measured live on same collection day, not attributed to job quality or success alone. The requested +170% remains a goal, never a claimed achieved result without normalized comparison and inspection of role appropriateness.
+
+## Operational rollout
+
+69 configured public feeds, subject to per-run availability. 6 extra verified employer boards added: DEPT, VaynerMedia, Ogilvy, Biggie, H Company and Nabla. Duplicate employer spellings are reconciled, and direct ATS links are preferred over a secondary index. Source output is benchmarked by real live candidate count before release, not by the number of raw adverts.
