@@ -10,3 +10,11 @@ Statut : développement et audit le 15 novembre 2026.
 6. **Contradiction à résoudre** : plus de postes ne doit pas signifier plus de faux positifs. Mesurer nombre et pertinence sur les flux live, plus la proportion d'offres sans description confirmée.
 
 7. Ajouter uniquement les pages publiques WTTJ qui donnent au moins un poste admissible, et rejeter les catégories 100 % techniques même si elles augmentent le nombre de pages.
+
+## Arbitrage UX validé : supprimer le surplus
+- Supprimer les grands indicateurs de sourcing en tête, notes techniques, classement numérique des offres et échelle arbitraire /100 de la surface principale.
+- Conserver seulement le titre à gauche, les filtres Toutes / Priorité / À explorer, la recherche, l’entreprise, le poste, le lieu et les deux actions Voir l’annonce / Préparer le dossier.
+- Garder la transparence des sources dans un volet discret accessible si besoin.
+- Préserver le design noir et blanc, la typographie éditoriale, le mobile-first et la navigation par pages.
+- Ne jamais modifier la qualification métier uniquement pour augmenter le volume affiché.
+- Le déploiement n’est pas effectué tant que la limite API Vercel est active.
