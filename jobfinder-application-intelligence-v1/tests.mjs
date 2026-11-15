@@ -1,0 +1,22 @@
+import assert from 'node:assert/strict';
+import {STEPS,normaliseOffer,offerKey,recommendProjects,curatedPortfolioUrl,validEmail,sourceVerified,buildOutreach,createRecord,selectTopEvidence,candidateSearchLinks} from './engine.mjs';
+let tests=0; const test=(name,fn)=>{fn();tests++;console.log('PASS',name)};
+test('5 distinct route stages',()=>assert.deepEqual(STEPS,['offer','cv','contacts','portfolio','outreach']));
+test('description length safe',()=>assert.equal(normaliseOffer({description:'a'.repeat(30000)}).description.length,15000));
+test('stable offer id',()=>assert.equal(offerKey({title:'A',company:'B'}),offerKey({title:'A',company:'B'})));
+test('different offer id',()=>assert.notEqual(offerKey({title:'A',company:'B'}),offerKey({title:'A',company:'C'})));
+test('beauty puts Byredo first',()=>assert.equal(recommendProjects({title:'Beauty Creative Director',company:'X',description:''})[0],'byredo'));
+test('music puts Beyond Fears first',()=>assert.equal(recommendProjects({title:'Music festival Social Media',company:'X',description:''})[0],'beyond-fears'));
+test('portfolio link curates whitelisted projects',()=>assert.equal(new URL(curatedPortfolioUrl(['manikya','x','byredo','manikya'])).searchParams.get('selected'),'manikya,byredo'));
+test('unknown project ignored',()=>assert.equal(curatedPortfolioUrl(['bogus']), 'https://sandro-portfolio-public.vercel.app/'));
+test('email validation',()=>assert.equal(validEmail('not an email'),false));
+test('only sources verify email',()=>assert.equal(sourceVerified({email:'test@example.com',status:'verified',sourceUrl:''}),false));
+test('valid verified contact',()=>assert.equal(sourceVerified({email:'test@example.com',status:'verified',sourceUrl:'https://example.com/team'}),true));
+test('outreach no invented applications',()=>assert.ok(!buildOutreach({offer:{title:'Head of Social',company:'X'},applied:false}).body.includes('applied through')));
+test('outreach applied status explicitly',()=>assert.ok(buildOutreach({offer:{title:'Head of Social',company:'X'},applied:true}).body.includes('applied through')));
+test('outreach portfolio exact',()=>assert.ok(buildOutreach({offer:{title:'x'},portfolioUrl:'https://example.com/?selected=coya'}).body.includes('https://example.com/?selected=coya')));
+test('french copy',()=>assert.ok(buildOutreach({offer:{title:'x'},language:'fr'}).body.includes('Bonjour')));
+test('contact links user initiated',()=>assert.equal(candidateSearchLinks({company:'X',title:'Y'}).length,3));
+test('record scoped by offer',()=>assert.equal(createRecord({title:'A',company:'B'}).id,offerKey({title:'A',company:'B'})));
+test('source evidence ids preserved',()=>assert.deepEqual(selectTopEvidence({selected:[{id:'cv:a'}]},[]),['cv:a']));
+console.log(`${tests}/${tests} tests passed`)
