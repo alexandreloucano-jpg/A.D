@@ -70,3 +70,16 @@ test('WTTJ 3 additional curated communication categories',()=>{for(const slug of
 test('WTTJ does not query private search endpoints',()=>{assert(WTTJ_PAGES.every(slug=>/^emploi-[a-z0-9-]+$/.test(slug)))});
 test('WTTJ jobs do not inherit fictional description',()=>{const j=parseWttjLanding(wttjCard)[0];const n=normalizeJob(j,{type:'wttj',label:'Welcome to the Jungle',company:''});assert.equal(n.description,'');assert.equal(n.sourceType,'wttj')});
 console.log(total+'/'+total+' radar tests passed');
+
+
+// UX surface regression: data and application workflow survive the intentionally minimal screen.
+import fs from 'node:fs';
+const radarUiPath=fs.existsSync('app/radar/page.jsx')?'app/radar/page.jsx':fs.existsSync('src/app/radar/page.jsx')?'src/app/radar/page.jsx':new URL('./page.jsx',import.meta.url);
+const radarUi=fs.readFileSync(radarUiPath,'utf8');
+test('Minimal UI retains actionable search and tabs',()=>{assert(radarUi.includes('type="search"'));assert(radarUi.includes("'priority'"));assert(radarUi.includes("'explore'"))});
+test('Minimal UI retains application handoff',()=>{assert(radarUi.includes('jf-intelligence-inbound'));assert(radarUi.includes('/intelligence/offer'));assert(radarUi.includes('Préparer le dossier'))});
+test('Minimal UI keeps employer listing link',()=>assert(radarUi.includes('href={job.url}')));
+test('Minimal UI removes decorative sourcing counters',()=>{assert(!radarUi.includes('radar-v2-metrics'));assert(!radarUi.includes('radar-min-metrics'))});
+test('Minimal UI removes noisy scoring and ranking',()=>{assert(!radarUi.includes('job.score'));assert(!radarUi.includes('radar-v2-rank'));assert(!radarUi.includes('radar-v2-reasons'))});
+test('Minimal UI keeps source provenance without watchlist clutter',()=>{assert(radarUi.includes('sourceType'));assert(radarUi.includes('radar-min-source-info'));assert(!radarUi.includes('watchlist'))});
+console.log(total+'/'+total+' all Radar tests (including minimal UI) passed');
