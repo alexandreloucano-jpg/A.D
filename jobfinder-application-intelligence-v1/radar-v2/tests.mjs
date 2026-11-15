@@ -49,4 +49,10 @@ test('Prefer employer ATS over secondary index on duplicates',()=>{const a=norma
 test('RoleFinder exploratory score capped',()=>{const j=fitOpportunity(job('Creative Director','Paris',{sourceType:'rolefinder'}));assert.equal(j.tier,'explore');assert(j.score<=76)});
 test('Explicit graphic design duties excluded even in Art Director role',()=>assert.equal(fitOpportunity(job('Art Director','Paris',{description:'Create graphic assets, design mockups and production graphics for clients'})).tier,'rejected'));
 
+
+test('Game asset art director excluded despite leadership title',()=>assert.equal(fitOpportunity(job('Art Director - Draft Showdown','Paris',{description:'Define artistic vision for a midcore mobile game. Character and environment art, UI/UX and VFX assets.'})).tier,'rejected'));
+test('LATAM-only remote Creative Director excluded',()=>assert.equal(fitOpportunity(job('Creative Director / Associate Creative Director','LATAM, AR',{workplaceType:'Remote'})).tier,'rejected'));
+test('Mexico-only remote Head of Influencer excluded',()=>assert.equal(fitOpportunity(job('Head of Influencer Marketing','Remote Mexico',{workplaceType:'Remote'})).tier,'rejected'));
+test('Biggie vs Biggie Group are same employer for dedup',()=>{const a=normalizeJob({title:'Directeur de Clientèle Influence',company:'Biggie',url:'https://jobs.lever.co/biggie/1',location:'Paris'},SOURCES[0]);const b={...a,company:'Biggie Group',url:'https://example.net/biggie/2'};assert.equal(rankAndFilter([a,b]).jobs.length,1)});
+
 console.log(total+'/'+total+' radar tests passed');
