@@ -55,4 +55,6 @@ test('LATAM-only remote Creative Director excluded',()=>assert.equal(fitOpportun
 test('Mexico-only remote Head of Influencer excluded',()=>assert.equal(fitOpportunity(job('Head of Influencer Marketing','Remote Mexico',{workplaceType:'Remote'})).tier,'rejected'));
 test('Biggie vs Biggie Group are same employer for dedup',()=>{const a=normalizeJob({title:'Directeur de Clientèle Influence',company:'Biggie',url:'https://jobs.lever.co/biggie/1',location:'Paris'},SOURCES[0]);const b={...a,company:'Biggie Group',url:'https://example.net/biggie/2'};assert.equal(rankAndFilter([a,b]).jobs.length,1)});
 
+test('Remote Barcelona without France/EU eligibility rejected',()=>assert.equal(fitOpportunity(job('Marketing Manager, Spain','Barcelona',{workplaceType:'Remote'})).tier,'rejected'));
+test('Remote Berlin without France/EU eligibility rejected',()=>assert.equal(fitOpportunity(job('Creative Strategist','Berlin',{workplaceType:'Remote'})).tier,'rejected'));
 console.log(total+'/'+total+' radar tests passed');
