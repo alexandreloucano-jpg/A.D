@@ -1,4 +1,4 @@
-# INDEX.md | Job Finder / Career Radar V3
+# INDEX.md | Job Finder / Career Radar V3.1
 
 Priority: P0. Status: active. Updated: 2026-11-15.
 
