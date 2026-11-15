@@ -6,6 +6,8 @@ export const SOURCES=[
  company('greenhouse','thefork','TheFork','Hospitality'),
  company('greenhouse','mirakl','Mirakl','Tech / Brand'),
  company('greenhouse','blockchain','Blockchain.com','Brand'),
+ company('greenhouse','wppmedia','WPP Media','Social / Influence / Agency'),
+ company('greenhouse','oliver','OLIVER Agency','Creative / Social Agency'),
  company('greenhouse','monks','Monks','Creative Agency'),
  company('greenhouse','deliveroo','Deliveroo','Brand / Consumer'),
  company('greenhouse','braze','Braze','Brand / Marketing'),
@@ -57,6 +59,10 @@ export const SOURCES=[
  {type:'aggregate',slug:'himalayas',label:'Himalayas',company:'',sector:'Remote'},
 ];
 export const WATCHLIST=[
+ {name:'Welcome to the Jungle',url:'https://www.welcometothejungle.com/fr/jobs',sector:'Stratégie / Brand / Social',status:'manual'},
+ {name:'FashionJobs France',url:'https://fr.fashionjobs.com/s/',sector:'Mode / Luxe / Beauté',status:'manual'},
+ {name:'APEC',url:'https://www.apec.fr/candidat/recherche-emploi.html/emploi',sector:'Cadres / Direction',status:'manual'},
+ {name:'RoleFinder Paris',url:'https://jobs.urbanodx.com/jobs/marketing/paris',sector:'Marketing / Brand Paris',status:'manual'},
  {name:'Lemens & Partners',url:'https://lemensandpartners.com/en/offers/',sector:'Luxury / Creative',status:'manual'},
  {name:'MCG Luxury',url:'https://www.mcg-luxury.fr/nos-offres-emploi/',sector:'Luxury',status:'manual'},
  {name:'Beyond Talent',url:'https://beyondtalentrecruitment.com/fashion-jobs',sector:'Fashion / Executive',status:'manual'},
