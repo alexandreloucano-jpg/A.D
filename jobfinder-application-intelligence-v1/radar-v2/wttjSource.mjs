@@ -7,7 +7,8 @@ const ALLOWED=new Set([
  'emploi-responsable-communication','emploi-directeur-artistique','emploi-directeur-marketing',
  'emploi-chef-de-projet-communication','emploi-chef-de-projet-editorial',
  'emploi-marketing-communication-paris-75000','emploi-marketing-communication-ile-de-france',
- 'emploi-marketing','emploi-marketing-communication','emploi-directeur-de-communication',
+ 'emploi-marketing','emploi-marketing-communication','emploi-community-manager',
+ 'emploi-charge-de-communication','emploi-chef-de-projet-marketing','emploi-directeur-de-communication',
  'emploi-head-of-marketing','emploi-marketing-manager'
 ]);
 export const WTTJ_PAGES=[...ALLOWED];
