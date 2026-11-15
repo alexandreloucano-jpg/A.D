@@ -1,40 +1,16 @@
-# Career Radar V3.1 | Source de vérité
+# Radar V4 — Contrat produit
 
-Status: active. Reviewed: 2026-11-15. Priority: P0 for all Radar changes.
+**Profil :** Senior Creative Strategist, Creative Director / directeur artistique de campagne (conception et pilotage), Head of Social Media, Brand / Content Strategy, senior communications, creative campaign and influencer strategy. Pas de métier de designer exécutant.
 
-## Positionnement du candidat
+**Répartition du flux :**
+- `Priorité` : fonctions adaptées dans un ATS public d'employeur, avec géographie française ou remote Europe éligible et responsabilités de direction ou stratégie.
+- `À explorer` : rôles adjacents, remote à vérifier ou annonces issues de répertoires secondaires, dont WTTJ et RoleFinder.
+- Rejets stricts : design graphique, UX/UI, illustration, motion, fabrication de maquettes Figma, game art, junior, stages, fonctions purement techniques, vente ou géographie incompatible.
 
-Target: Creative Director, directeur artistique au sens de direction de campagne et supervision (pas d'exécution graphique), Senior Creative Strategist, Brand Strategist, Head of Social Media, social/influence strategy, direction des contenus, direction de communication et marque. Adjacent roles must be clearly marked **À explorer**.
+**Sources :** ATS publics Greenhouse, Lever, Ashby, SmartRecruiters et agrégateurs publics autorisés; index secondaire RoleFinder ; pages éditoriales statiques Welcome to the Jungle `/fr/pages/emploi-*` (pas les recherches automatisées). Les liens WTTJ ne prouvent ni l'ouverture ni l'accès au recruteur. Si une description manque, le dossier de candidature doit demander sa confirmation.
 
-**Never** recommend jobs whose core responsibility is graphic design, layout, illustration, interface design, daily asset creation, motion design, photography execution, video editing, or Figma mockups. A managerial title alone does not make hands-on design acceptable. Exclude internships, junior roles, technical product roles and sales.
+**Géographie :** Paris, petite couronne, France, remote Europe éligible. `Pantin` n'est pas Berlin, et `remote` ne veut pas systématiquement dire accessible depuis Paris.
 
-## Sources et géographie
+**Benchmark:** baseline V3.1 au 15/11/2026 : 38 emplois distincts sur ~6 733 annonces brutes, 4 prioritaires. V4 doit être mesurée sur source live ; ne jamais fabriquer un `+170%`. Les sources disponibles et l'heure du relevé doivent être déclarées.
 
-- Direct public employer ATS: Greenhouse, Ashby, Lever, SmartRecruiters.
-- Third-party public jobs APIs (labeled): Arbeitnow (pages 1-4, with attribution), Remotive, Himalayas, Jobicy.
-- RoleFinder public index (Paris/France/Remote marketing pages): parse JSON-LD listings, fetch ONLY plausible job details, and extract direct employer application links. Treat as secondary, never silently upgrade to verified employer posting. Confirm geography from the job DETAIL; never infer Paris from an index page title.
-- Manual watchlist: Welcome to the Jungle, APEC, FashionJobs, luxury recruiters. Never count manually monitored sites as automated postings.
-- Priority geography: Paris, elsewhere France or **verified eligible** remote EU/EMEA. A foreign on-site or country-restricted remote role is rejected. A remote role with unknown eligibility is exploratory, not priority.
-
-## Scoring is NOT ATS accuracy
-
-The heuristic score ranks job descriptions for review. It is not a hiring chance, applicant compatibility guarantee or salary estimate. Each record has source, URL, date if published, reason, role, geographic state, and tier. When remote eligibility or role ownership is unknown, mark uncertain.
-
-## UX and integration
-
-- `/radar`: separate Priority / À explorer filters, search, direct employer link, dossier action.
-- `/api/jobs`: live refresh, bounded fan-out, individually reported source errors, counts; `rejectionReasons` diagnoses over-filtering.
-- `/intelligence/offer`: receive selected role via sessionStorage, preserve existing application dossiers and human confirmation.
-- No LinkedIn scraping. No guessing contact emails. No automatic email sends.
-
-## Measurement
-
-Baseline from same-day live V2.2: 52 sources, 4740 raw postings, 17 retained, 1 priority. New count must be measured live on same collection day, not attributed to job quality or success alone. The requested +170% remains a goal, never a claimed achieved result without normalized comparison and inspection of role appropriateness.
-
-## Operational rollout
-
-69 configured public feeds, subject to per-run availability. 6 extra verified employer boards added: DEPT, VaynerMedia, Ogilvy, Biggie, H Company and Nabla. Duplicate employer spellings are reconciled, and direct ATS links are preferred over a secondary index. Source output is benchmarked by real live candidate count before release, not by the number of raw adverts.
-
-## V3 validation notes
-
-In live test before final exclusions: 69/69 live sources, 6764 received, 43 unique retained, 4 priority, 39 explore (2026-11-15). QA found game-art director, LATAM/Mexico restricted remote, and Biggie/Biggie Group duplicate; these are deliberately removed before public release. **Only the final production scan should be used to claim live lead volume**. Visual classification of source provenance is displayed in Radar.
+**Comportement application :** une page pour chaque étape, un bouton de préparation du dossier par annonce, lien vers annonce d'origine, distinction des sources, conservation de la protection SSO.
