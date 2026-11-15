@@ -16,3 +16,7 @@
 **Comportement application :** une page pour chaque étape, un bouton de préparation du dossier par annonce, lien vers annonce d'origine, distinction des sources, conservation de la protection SSO.
 
 **Sources WTTJ additionnelles** : pages Community Manager, Chargé de communication et Chef de projet marketing, seulement pour des fonctions non juniors et non graphiques.
+
+## Interface minimale (arbitrage utilisateur)
+
+La collecte, la classification et les preuves restent exhaustives dans le moteur. Leur présentation publique est volontairement minimale : **Radar**, les trois filtres, une recherche, une liste d'offres et les liens vers l'annonce et le dossier. Supprimer tout classement numéroté, les KPI occupant l'écran, les scores affichés, les longs textes de méthode, le pied de page et le catalogue de veille. Conserver un panneau de sources facultatif, fermé par défaut. Le blanc/noir et la typographie éditoriale restent prioritaires.
