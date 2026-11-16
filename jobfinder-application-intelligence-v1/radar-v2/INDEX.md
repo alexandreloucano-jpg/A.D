@@ -1,6 +1,6 @@
 # INDEX — Job Finder / Career Radar V4
 
-Statut : candidat à la publication, **pas encore déployé**. Dernière mise à jour : 2026-11-15.
+Statut : **déployé en production le 2026-11-16**. Dernière mise à jour : 2026-11-16. Release logicielle figée au commit `df3581ad6d53e54436f794262f6280332914446f`, déploiement Vercel `dpl_8vXKRmc4LWy8YU6bAJfHHSsXBqug`. Tests Radar 109/109 ; routes publiques de Job Finder protégées par SSO.
 
 | Source | Priorité | Statut | Quand la consulter |
 | --- | --- | --- | --- |
