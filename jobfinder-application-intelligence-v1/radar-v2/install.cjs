@@ -22,7 +22,7 @@ const changes=await Promise.all(Object.entries(MAPPING).map(async ([source,desti
 const core=changes.find(x=>x.destination===app+'/lib/radarCore.mjs');
 const sources=changes.find(x=>x.destination===app+'/lib/radarSources.mjs');
 changes.push({destination:'tests/radarCore.mjs',data:core.data},{destination:'tests/radarSources.mjs',data:sources.data},{destination:'tests/wttjSource.mjs',data:changes.find(x=>x.destination===app+'/lib/wttjSource.mjs').data});
-const radar=changes.find(x=>x.destination===app+'/radar/page.jsx');if(!radar.data.includes('jf-intelligence-inbound')||!radar.data.includes('PRÉPARER LE DOSSIER'))throw Error('Application Intelligence handoff missing');
+const radar=changes.find(x=>x.destination===app+'/radar/page.jsx');if(!radar.data.includes('jf-intelligence-inbound')||!radar.data.includes('openDossier(job)')||!radar.data.includes("window.location.assign('/intelligence/offer')"))throw Error('Application Intelligence handoff missing');
 const jobs=changes.find(x=>x.destination===app+'/api/jobs/route.js');if(!jobs.data.includes('fetchRadar'))throw Error('Jobs API incompatible');
 for(const {destination,data} of changes){fs.mkdirSync(path.dirname(destination),{recursive:true});fs.writeFileSync(destination,data)}
 const current=fs.existsSync('INDEX.md')?fs.readFileSync('INDEX.md','utf8'):'';
